@@ -9,3 +9,5 @@
 *.jpg
 .DS_Store
 *.nb.html
+*.json
+*.txt
