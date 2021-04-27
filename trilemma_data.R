@@ -91,4 +91,6 @@ foot %>% names()
 
 ### this file is only for the last year... it does not have time series
 ### I've emailed the footprint network to see if we can get access to the time series.
-foot 
+
+countries <- jsonlite::read_json("data/countries.json", simplifyVector = TRUE) %>% 
+    as_tibble()

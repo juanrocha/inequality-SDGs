@@ -1,0 +1,73 @@
+---
+title: "Ecological footprint"
+author: "Juan Rocha"
+date: "4/26/2021"
+output: html_document
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(plotly)
+library(patchwork)
+
+theme_set(theme_light())
+```
+
+
+A short document to remind myself how to get ecological footpint data. The global footprint network has an API documented [here](https://data.footprintnetwork.org/#/api). Through their service one can download all the time series of the ecological foot print per country. The API uses `curl`, so one can do it from `bash` directly or using `Rcurl`.
+
+Here is an example of the command I used on bash (with the key from email):
+
+```{bash}
+# curl -u juan:<api-key-here> http://api.footprintnetwork.org/v1/years -o years.json
+```
+
+That way I got the `types`, `countries` and `years` json files. Now I parse them into data frames to extract the relevant variables:
+
+```{r}
+countries <- jsonlite::read_json("data/countries.json", simplifyVector = TRUE) %>% 
+    as_tibble()
+years <- jsonlite::read_json("data/years.json", simplifyVector = TRUE) %>% 
+    as_tibble()
+types <- jsonlite::read_json("data/types.json", simplifyVector = TRUE) %>% 
+    as_tibble()
+
+```
+
+
+
+```{bash}
+#curl -u juan:<api-key-here>  "https://api.footprintnetwork.org/v1/data/all/[1961-2017]" -o "all_#1.json"
+
+```
+
+```{r}
+test <- jsonlite::read_json("data/ecofootprint/all_2000.json", simplifyVector = TRUE) %>% 
+    as_tibble()
+```
+
+```{r}
+ecofp <- list()
+fls <- list.files("data/ecofootprint/")
+ecofp <- map(fls, function(x) {
+    jsonlite::read_json(
+        path = paste0("data/ecofootprint/", x),
+        simplifyVector = TRUE)
+    }) %>% 
+    bind_rows()
+```
+
+```{r}
+ecofp
+```
+
+```{r}
+ecofp %>% 
+    ggplot(aes(year, value)) +
+    geom_line(aes(color = shortName), show.legend = FALSE) +
+    facet_wrap(~record, scales = "free_y" ) +
+    theme_light(base_size = 9)
+```
+
