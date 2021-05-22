@@ -2,7 +2,11 @@
 title: "Ecological footprint"
 author: "Juan Rocha"
 date: "4/26/2021"
-output: html_document
+output:
+  html_notebook:
+      theme:
+          code_font:
+            google: Fira Code
 ---
 
 
@@ -61,6 +65,9 @@ ecofp <- map(fls, function(x) {
 
 ```{r}
 ecofp
+
+## share file with Tong and Maike:
+# write_csv(ecofp, file = "eco_footprint_processed.csv")
 ```
 
 ```{r}

@@ -71,7 +71,7 @@ inq %>%
     #filter(resource == "Income (net/gross)") %>% 
     ggplot(aes(year, gini_reported)) +
     geom_line(aes(color = country), show.legend = FALSE) +
-    facet_grid(resource_detailed ~ region_un)
+    facet_grid(region_un ~ resource_detailed )
 
 ## Need to read the docs carefully, it seems many measurements per year and it's hard to tell what is the unit per time that we should use for the analysis.
 

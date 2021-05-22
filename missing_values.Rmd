@@ -1,0 +1,291 @@
+---
+title: "Missing values"
+author: "Juan Rocha"
+date: "May 2021"
+output:
+  html_notebook:
+      toc: true
+      toc_float: true
+      highlight: tango
+      code_folding: hide
+      theme: 
+          code_font:
+            google: Fira Code
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(naniar)
+library(plotly)
+library(patchwork)
+
+theme_set(theme_light())
+```
+
+## Ecological footprint
+
+```{r}
+ecofp <- list()
+fls <- list.files("data/ecofootprint/")
+ecofp <- map(fls, function(x) {
+    jsonlite::read_json(
+        path = paste0("data/ecofootprint/", x),
+        simplifyVector = TRUE)
+    }) %>% 
+    bind_rows()
+
+ecofp
+```
+
+
+
+```{r}
+ecofp %>% 
+    ggplot(aes(year, value)) +
+    geom_line(aes(color = shortName), show.legend = FALSE) +
+    facet_wrap(~record, scales = "free_y" ) +
+    theme_light(base_size = 9)
+```
+
+```{r}
+ecofp %>%
+    filter(record == "EFConsPerCap") %>%
+    mutate(missing = is.na(value)) %>% 
+    ggplot(aes(year, countryName)) +
+    geom_tile(aes(fill = value)) +
+    scale_fill_viridis_c(option = "C") +
+    theme(axis.text.y = element_text(size = 4), legend.position = "top")
+```
+
+```{r}
+g1 <- ecofp %>%
+    filter(record == "EFConsPerCap") %>%
+    select(countryName, year, value) %>% 
+    pivot_wider(id_col = countryName, names_from = year, values_from = value) %>% 
+    pivot_longer(cols = 2:last_col(), names_to = "year", values_to = "value") %>% 
+    mutate(missing = is.na(value), year = as.numeric(year)) %>% 
+    group_by(year) %>% 
+    summarise(n_nas  = sum(missing)) %>% 
+    ggplot(aes(year, n_nas)) + 
+    geom_col(aes(fill = (year>1995)), alpha = 0.5) + 
+    coord_flip() +
+    theme_light(base_size = 7) +
+    theme(legend.position = c(0.8,0.8)) + labs(title = "Missing values per year")
+
+g2 <- ecofp %>%
+    filter(record == "EFConsPerCap", year > 1995) %>%
+    select(countryName, year, value) %>% 
+    pivot_wider(id_col = countryName, names_from = year, values_from = value) %>% 
+    pivot_longer(cols = 2:last_col(), names_to = "year", values_to = "value") %>% 
+    mutate(missing = is.na(value), year = as.numeric(year)) %>% 
+    group_by(countryName) %>% 
+    summarise(n_nas  = sum(missing)) %>% 
+    filter(n_nas > 0) %>% 
+    mutate(countryName = as_factor(countryName) %>% fct_reorder(., n_nas)) %>% 
+    ggplot(aes(countryName, n_nas)) + 
+    geom_col(aes(fill = (n_nas < 11)), alpha = 0.5) + coord_flip() +
+    theme_light(base_size = 7) + 
+    labs(title = "Missing values per country after 1995") +
+    theme(legend.position = c(0.8, 0.1))
+
+g1 + g2
+```
+
+An alternative is use the data after 1995 where `NA`s start decreasing but still give us a couple of decades worth of data to work with. Another is limiting to countries where the count of `NA`s is less than 10.
+
+## Gini: Inequality
+
+```{r}
+inq <- readxl::read_xlsx(
+    path = "~/Documents/Projects/DATA/WIID_World_Income_Inequality_DB/WIID_06MAY2020.xlsx")
+
+
+inq %>% 
+    #filter(resource == "Income (net/gross)") %>% 
+    ggplot(aes(year, gini_reported)) +
+    geom_line(aes(color = country), show.legend = FALSE) +
+    facet_grid(region_un ~ resource_detailed ) +
+    theme_light(base_size = 6)
+
+```
+Need to read the docs carefully, it seems many measurements per year and it's hard to tell what is the unit per time that we should use for the analysis.
+
+```{r}
+inq %>% 
+    ggplot(aes(year, gini_reported)) +
+    geom_line(aes(color = country), show.legend = FALSE) +
+    facet_grid(region_un ~ resource)
+```
+It seems that `Income (net)` is the variable with most observations. Let's see:
+
+```{r}
+g <- inq %>% 
+    filter(year > 1950, resource == "Income (gross)") %>% 
+    ggplot(aes(year, gini_reported)) +
+    geom_line(aes(color = country), size = 0.1, show.legend = FALSE) +
+    facet_wrap(~resource_detailed)
+
+g
+```
+```{r}
+inq %>% 
+    filter(year > 1950, resource_detailed == "Income, gross") %>% 
+    ggplot(aes(gini_reported, palma)) +
+    geom_miss_point(size = 1, alpha = 0.5) +
+    theme(legend.position = c(0.1,0.8))
+```
+
+```{r}
+inq %>% 
+    filter(year > 1950, resource_detailed == "Income, gross") %>% 
+    filter(country == "Australia")
+```
+Note there are multiple estimates per year-country because the database report different sources. 
+
+```{r}
+inq %>% 
+    filter(year > 1950, resource_detailed == "Income, gross") %>% 
+    group_by(country, year) %>% 
+    summarize(gini_mean = mean(gini_reported, na.rm = TRUE)) %>% 
+    pivot_wider(id_cols = country, names_from = year, values_from = gini_mean) %>% 
+    pivot_longer(2:last_col(), names_to = "year", values_to = "gini") %>% 
+    mutate(year = as.numeric(year)) %>% 
+    ggplot(aes(year, country)) +
+    geom_tile(aes(fill = gini)) +
+    scale_fill_viridis_c(option = "C") +
+    theme(axis.text.y = element_text(size = 4), legend.position = "top")
+```
+```{r}
+inq %>% 
+    filter(!is.na(palma), year > 1990) %>% select(country, year, palma) %>% 
+    group_by(country, year) %>% 
+    summarize(palma_mean = mean(palma, na.rm = TRUE)) %>% 
+    pivot_wider(id_cols = country, names_from = year, values_from = palma_mean) %>% 
+    pivot_longer(2:last_col(), names_to = "year", values_to = "palma_mean") %>%
+    mutate(year = as.numeric(year)) %>%
+    ggplot(aes(year, country)) +
+    geom_tile(aes(fill = palma_mean)) +
+    scale_fill_viridis_c(option = "C") +
+    theme(axis.text.y = element_text(size = 4), legend.position = "top")
+```
+To be fair with Gini, let's to the same over all Gini's reported. Even if Gini comes computed by different studies and in different currencies, the coefficient is always between 0-100, meaning it is comparable.
+
+```{r}
+inq %>% 
+    filter(!is.na(gini_reported), year > 1990) %>% select(country, year, gini_reported) %>% 
+    group_by(country, year) %>% 
+    summarize(gini_mean = mean(gini_reported, na.rm = TRUE)) %>% 
+    pivot_wider(id_cols = country, names_from = year, values_from = gini_mean) %>% 
+    pivot_longer(2:last_col(), names_to = "year", values_to = "gini_mean") %>%
+    mutate(year = as.numeric(year)) %>%
+    ggplot(aes(year, country)) +
+    geom_tile(aes(fill = gini_mean)) +
+    scale_fill_viridis_c(option = "C") +
+    theme(axis.text.y = element_text(size = 4), legend.position = "top")
+```
+So how many country / years can we use? Remember the data has `r inq$country %>% unique() %>% length()` countries
+
+```{r}
+inq %>% 
+    filter(!is.na(gini_reported), year > 1990) %>% select(country, year, gini_reported) %>% 
+    group_by(country, year) %>% 
+    summarize(gini_mean = mean(gini_reported, na.rm = TRUE)) %>% 
+    pivot_wider(id_cols = country, names_from = year, values_from = gini_mean) %>% 
+    pivot_longer(2:last_col(), names_to = "year", values_to = "gini_mean") %>%
+    mutate(year = as.numeric(year), missing = is.na(gini_mean)) %>% 
+    group_by(year) %>% 
+    summarise(n_nas = sum(missing), missingness = n_nas / 200)
+```
+We are dealing with ~50% of missing values on the best years, at best we can work with 100 countries. Which ones?
+
+```{r}
+inq %>% 
+    filter(!is.na(gini_reported), year > 1990) %>% select(country, year, gini_reported) %>% 
+    group_by(country, year) %>% 
+    summarize(gini_mean = mean(gini_reported, na.rm = TRUE)) %>% 
+    pivot_wider(id_cols = country, names_from = year, values_from = gini_mean) %>% 
+    pivot_longer(2:last_col(), names_to = "year", values_to = "gini_mean") %>%
+    mutate(year = as.numeric(year), missing = is.na(gini_mean)) %>% 
+    group_by(country) %>% 
+    summarise(n_nas = sum(missing), missingness = n_nas / (2018-1990)) %>% 
+    arrange(missingness)
+```
+
+If we allow for 60% missing values, we get 80 countries, 30% NAs is ~60 countries. If needed one can impute `NA`s with a mean trend. But how much is that messing with the real trends? Double click on the legend to select particular countries:
+
+```{r fig.width=7}
+g <- inq %>% 
+    filter(!is.na(gini_reported), year > 1990) %>% select(country, year, gini_reported) %>% 
+    group_by(country, year) %>% 
+    summarize(gini_mean = mean(gini_reported, na.rm = TRUE)) %>% 
+    pivot_wider(id_cols = country, names_from = year, values_from = gini_mean) %>% 
+    pivot_longer(2:last_col(), names_to = "year", values_to = "gini_mean") %>%
+    mutate(year = as.numeric(year), missing = is.na(gini_mean)) %>% 
+    ggplot(aes(year, gini_mean)) +
+    geom_line(aes(color = country), show.legend = FALSE, size = 0.5) 
+    # geom_miss_point(show.legend = FALSE)
+ggplotly(g)
+```
+
+This justifies why the step-wise approach that Tong first proposed makes sense. If we restrict the analysis to good-data countries, we miss key actors like South Africa, the country with highest inequality in the world. 
+
+## GNI: Prosperity
+
+```{r}
+dat1 <- read_csv(
+    "~/Documents/Projects/DATA/WorldBank/SDG_csv/SDGData.csv") %>% 
+    janitor::clean_names()
+```
+
+```{r}
+dat1 %>% 
+    select(-x33) %>% 
+    filter(str_detect(indicator_name, "GNI")) %>% 
+    pivot_longer(cols = x1990:x2017, names_to = "year", values_to = "value") %>% 
+    mutate(year = str_remove(year, "x")) %>% 
+    mutate(year = as.numeric(year)) %>% 
+    ggplot(aes(year, value)) +
+    geom_line(aes(color = country_name), show.legend = FALSE) +
+    #geom_miss_point(show.legend = FALSE) +
+    facet_wrap(~indicator_name, scales = "free_y")
+```
+
+```{r}
+## How many missing values? 10506, but who has more?
+missingness <- dat1 %>% 
+    select(-x33) %>% 
+    filter(str_detect(indicator_name, "GNI")) %>% 
+    pivot_longer(cols = x1990:x2017, names_to = "year", values_to = "value") %>% 
+    mutate(year = str_remove(year, "x")) %>% 
+    mutate(year = as.numeric(year)) %>% 
+    mutate(ismissing = is.na(value)) %>% 
+    group_by(country_code, indicator_name, country_name) %>% 
+    summarize(missingness = sum(ismissing)/n())
+
+missingness %>% 
+    ggplot(aes(country_code, indicator_name)) +
+    geom_tile(aes(fill = missingness)) + 
+    scale_fill_viridis_c(option = "C") +
+    theme(axis.text.x = element_text(angle =90), legend.position = "top")
+```
+
+Decide who to exclude and which variable to use
+
+```{r}
+missingness %>% 
+    ungroup() %>% 
+    group_by(indicator_name) %>% 
+    summarize(x = mean(missingness)) %>% 
+    arrange(x)
+```
+
+```{r}
+missingness %>% 
+    ungroup() %>% 
+    group_by(country_name) %>% 
+    summarize(x = mean(missingness)) %>% 
+    arrange(desc(x)) 
+```
+It seems that `GNI per capita (current US$)` is the one with less missing values. Tong recomments using the one with Atlas method wich is close on missingness, only 18%. A threshold of 50% missigness per country will left out places like Somalia, Iraq, Costa Rica, Zambia, China or Chile. Perhaps 60% is tolerable? 
