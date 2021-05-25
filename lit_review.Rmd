@@ -1,0 +1,245 @@
+---
+title: "Literature review: Inequality and the biosphere"
+author: "Juan Rocha"
+date: "May 2021"
+output:
+  html_notebook:
+    toc: true
+    toc_float: true
+    highlight: tango
+    code_folding: hide
+    theme: 
+      bootswatch: cosmo
+      code_font:
+        google: Fira Code
+    selfcontained: true
+---
+
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  cache = TRUE, warning = FALSE, message = FALSE, echo = TRUE,
+  fig.width = 8, fig.height = 5
+)
+
+
+library(tidyverse)
+library(tidytext)
+library(tm)
+library (topicmodels)
+library(lda)
+library(naniar)
+library(plotly)
+library(patchwork)
+
+theme_set(theme_light(10))
+```
+
+Below I read the data and organize the data by most citations with the mock data (N=2000) that Emmy provided:
+```{r}
+dat <- read_csv(file = "data/April27_1-2000.csv") %>% 
+    janitor::clean_names()
+dat %>% 
+    select(title, authors, cited_by, year, author_keywords, abbreviated_source_title) %>% 
+    arrange(desc(cited_by))
+```
+
+## Topic model
+
+The topic model below is a quick and rough analysis. A proper one would need a sensitivity analysis over a number of choices that I'm making here arbirtrarily such as the algorithm to use, number of topics to fit, etc. Works for brainstorming, do not trust the end result.
+
+```{r}
+## extra words
+too_words <- tibble(
+    word = c("paper", "study", "aim", "aims", "objective", "purpose")
+)
+
+dtm <- dat %>% 
+    select(abstract, title, year) %>%
+    filter(!is.na(abstract)) %>%
+    unique() %>% # 2193
+    unnest_tokens(word, abstract) %>% 
+    filter(!is.na(word)) %>% ## Books don't have abstract so they get dropped (n = 8)
+    anti_join(stop_words) %>% 
+    anti_join(too_words) %>%
+    filter(!str_detect(word, "[:digit:]")) %>%
+    group_by(title) %>%
+    count(word, sort = TRUE) %>%
+    cast_dtm(document = title, term = word, value = n)
+
+dtm
+
+```
+
+Now we have a document term matrix with `r dim(dtm)[1]` documents (abstracts) and `r dim(dtm)[2]` words, after cleaning for common words, stop words and numbers. I pre-computed the topic models outside this notebook because it takes some time and memory, so not suitable for computing at runing time. Here are some visualizatins of the preliminary results: 
+
+```{r}
+load("data/topic_models_gibbs.RData")
+k <- c(5,10,25,50,100)
+df_topic_number <- tibble(
+    topic_number = k,
+    entropy = map_dbl (topicNumber.TM, function (x)
+        mean(apply(posterior(x)$topics, 1, function (z) - sum(z * log(z)))) # maximize Entropy
+    ),
+    alpha = map_dbl(topicNumber.TM, slot, "alpha"),
+    log_lik = map_dbl(topicNumber.TM, logLik) #,  #maximize loglik
+    #perplexity = map_dbl(topicNumber.TM, perplexity) #minimize perplexity
+)
+
+df_stats <- tibble(
+    model = names(lapply(tset.TM, logLik)),
+    loglik = as.numeric(lapply(tset.TM, logLik)), #maximize loglik
+    entropy = lapply (tset.TM, function (x) 
+        mean(apply(posterior(x)$topics,
+                   1, function (z) - sum(z * log(z))))) %>% as.numeric()#maximize ENTROPY
+    
+)
+
+
+perp <-  lapply(tset.TM[c(1,2,4)], perplexity)
+perp$Gibbs <- NA
+# pretty names:
+df_stats$model <- c("VEM alpha", "VEM fixed", "Gibbs", "CTM")
+
+g1 <- df_stats %>%
+    add_column(perplexity = as.numeric(perp[c(1,2,4,3)])) %>% #minimize perplexity
+    pivot_longer(cols = 2:4, names_to = "measure", values_to = "value") %>%
+    ggplot(aes(model, value)) + 
+    geom_col() + 
+    # scale_y_continuous(labels = scales::label_scientific) +
+    facet_wrap(.~measure, scales = "free_y") +
+    labs(x = "Algorithm", y = "Value", tag = "A") +
+    theme_light(base_size = 8) + 
+    theme(axis.text.x = element_text(size = 5))
+
+g2 <- df_topic_number %>%
+    # mutate(alpha_log = log10(alpha)) %>%
+    pivot_longer(cols = 2:last_col(), names_to = "measure", values_to = "value") %>%
+    # filter(measure != "alpha") %>%
+    ggplot(aes(as.factor(topic_number), value)) +
+    geom_col() + 
+    # scale_y_continuous(labels = scales::label_scientific) +
+    labs(x = "Number of topics", y = "Value", tag = "B") +
+    facet_wrap(.~measure, scales = "free", ncol = 4, nrow = 1) +
+    theme_light(base_size = 8)
+
+g1/g2
+```
+
+The best algorithm should maximize entropy and the log-likelihood while reducing perplexity. The latter cannot be calculated for Gibbs sampling, but with the small dataset we have, it seems to be the best performing algorithm. The optimal number of topics is something between 25 and 50, but not higher than 100, where the log-likelihood starts to decay again. For now I will be using 25 topics and Gibbs sampling for the rest of the analysis.
+
+The heatmap below shows how a few documents (on the rows) have a high content of certain topics (on columns). 
+
+```{r}
+gplots::heatmap.2(
+    posterior(topicNumber.TM[[3]])$topics, 
+    key=T, trace="none", margins=c(5,5), 
+    cexRow=0.7, cexCol=0.7, col="topo.colors", keysize=1, key.par = list(cex = 0.5),
+    labRow = FALSE, key.title = NA, key.xlab = "probability", key.ylab = "count" )
+```
+
+And below are the topics. A topic is the (posterior) probability distributions of words being likely to be representing together certain hidden structures (topics) in the text. All words in the vocabulary (N = `r dim(dtm)[2]` words) have a probability of explaining a topic, here I'm only showing the top 10 words per topic: 
+
+```{r fig.width=8, fig.height=6}
+df_topics25 <- tidy(topicNumber.TM[[3]], matrix = "beta")
+
+g_25 <- df_topics25 %>%
+    group_by(topic) %>%
+    top_n(10, beta) %>% 
+    ungroup() %>%
+    arrange(topic, - beta) %>%
+    mutate(term = reorder_within(term, beta, topic)) %>%
+    ggplot(aes(term, beta)) +
+    geom_col(aes(fill = as.factor(topic)),show.legend = FALSE) +
+    coord_flip() + 
+    scale_x_reordered() +
+    labs(tag = "D", y = "Probability of word explaining the topic", x = "Word ranking") +
+    facet_wrap(.~ topic, scales = "free_y", ncol = 5) +
+    theme_light(base_size = 7) + 
+    theme(axis.text.x = element_text(size = 5))
+
+
+g_25
+```
+
+Now let's see how topics change over time:
+
+```{r}
+df_documents <- tidy(topicNumber.TM[[3]], matrix = "gamma")
+
+papers_yr <- dat %>%
+    #filter(year > 2000, year < 2021) %>%
+    group_by(year) %>%
+    tally() %>% rename(total_papers = n)
+
+
+g_stack <-  df_documents %>% 
+    left_join(
+        dat %>% 
+            select(abstract, title, year) %>%
+            filter(!is.na(abstract)) %>%
+            unique(),
+        by = c("document" = "title") ) %>%
+    mutate(year = as.numeric(year)) %>% 
+    filter(year > 2000, year <2021) %>%
+    group_by(topic, year) %>% 
+    summarize(gamma_yr_tp = sum(gamma), .groups = "drop") %>% 
+    group_by(year) %>%
+    mutate(total = sum(gamma_yr_tp)) %>%
+    ungroup() %>% 
+    mutate(proportion = gamma_yr_tp / total,
+           topic = as.factor(topic)) %>%
+    ggplot(aes(x = year, y = proportion, group = topic)) +
+    geom_area(aes(fill = topic, color = topic), 
+              position = "stack", show.legend = FALSE, alpha = 0.5, size = 0.25) +
+    labs(y = "Relative proportion of topics", x = "Year") +
+    theme_classic(base_size = 10) 
+
+g_stack
+```
+
+If you're interested in learning more about the method or applications, you can learn more [here](https://arxiv.org/abs/2012.14312) or the references therein. 
+
+## Co-author networks 
+
+Below some code to construct the network. Note however that it's very slow. With over 4500 authors we have a network of co-authorship with over 232k links. The network alone is over 200Mb in RAM so at this stage any expensive computation is not worthed until we get the final data set (e.g. centrality, community detection, etc). I leave the graph here as demonstration, but in the explorative phase it is perhaps more useful tables with high impact papers per topic, and key authors per topic to follow up with the qualitative analysis.
+
+```{r fig.width=8}
+library(network)
+authors <- dat %>% 
+    select(authors, doi) %>% 
+    mutate(authors = str_split(authors, pattern = ", ")) %>% 
+    unnest(cols = authors) %>% 
+    mutate(presence = 1)
+
+mat <- authors %>% unique() %>% 
+    pivot_wider(names_from = authors, values_from = presence, values_fill = 0) %>% 
+    select(-doi) %>%
+    as.matrix()
+
+mat <- t(mat) %*% (mat)
+
+
+df_authors <- as_tibble(mat, rownames = "author") 
+
+df_authors <- df_authors %>% 
+    pivot_longer(2:last_col(), names_to = "co_author", values_to = "n_papers") %>% 
+    filter(author != co_author, n_papers > 0)
+
+net <- df_authors %>% 
+    # filtering reduces from 232k links and >4.5k authors to 708 links shared by 233 authors
+    filter(n_papers > 1) %>% 
+    network(., directed = FALSE, matrix.type = "edgelist")
+
+networkD3::simpleNetwork(
+    Data= df_authors %>% filter(n_papers >1) ,
+    Source = "author", Target = "co_author", 
+    zoom = TRUE, linkColour = "grey", nodeColour = "blue"
+)
+
+## free memory
+rm(mat, authors)
+
+```
+
