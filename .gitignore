@@ -11,3 +11,5 @@
 *.nb.html
 *.json
 *.txt
+*.csv
+*.Rdata
