@@ -1,0 +1,287 @@
+---
+title: "Trilemma"
+author: "Juan Rocha"
+date: "Updated `r Sys.Date()`"
+output:
+  html_notebook:
+    toc: yes
+    toc_float: yes
+    highlight: tango
+    code_folding: hide
+    df_print: paged
+    theme: 
+      bootswatch: cosmo
+      code_font:
+        google: Fira Code
+
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  cache = TRUE, warning = FALSE, message = FALSE, echo = TRUE,
+  fig.width = 8, fig.height = 5
+)
+
+
+library(tidyverse)
+library(naniar)
+library(plotly)
+library(patchwork)
+
+# time series
+library(tsibble)
+library(fable)
+library(imputeTS)
+library(slider)
+
+# # clustering
+# library(vegan)
+# library(NbClust)
+# library(clValid)
+# library(mclust)
+
+# theme_set(theme_light(base_size = 10))
+```
+
+
+## Data
+
+
+```{r}
+ecofp <- list()
+fls <- list.files("data/ecofootprint/")
+ecofp <- map(fls, function(x) {
+    jsonlite::read_json(
+        path = paste0("data/ecofootprint/", x),
+        simplifyVector = TRUE)
+    }) %>% 
+    bind_rows()
+
+ecofp
+```
+
+```{r}
+inq <- readxl::read_xlsx(
+    path = "~/Documents/Projects/DATA/WIID_World_Income_Inequality_DB/WIID_06MAY2020.xlsx")
+inq
+```
+
+
+```{r}
+dat1 <- read_csv(
+    "~/Documents/Projects/DATA/WorldBank/SDG_csv/SDGData.csv") %>% 
+    janitor::clean_names()
+```
+
+## Analysis
+
+The bottle neck is certaintly our proxies of inequality, no matter what we use. Below a mock up example with some arbitrary choices.
+
+```{r}
+
+dat <- ecofp %>%
+  filter(record == "EFConsPerCap") %>%
+  select(countryName, isoa2, year, value) %>% 
+  rename(EFconsPerCap = value, country = countryName) %>% 
+  filter(year >= 1990)
+
+dat <- dat %>% 
+  left_join(
+    .,
+    inq %>% 
+      filter(!is.na(gini_reported), year >= 1990) %>% 
+      select(country, isoa2 = c2, country_code = c3, year, gini_reported) %>% 
+      group_by(country, year, isoa2, country_code) %>% 
+      summarize(gini_mean = mean(gini_reported, na.rm = TRUE)) 
+      
+  )
+
+dat <- dat %>% 
+  left_join(
+    ., 
+    dat1 %>% 
+      select(-x33) %>% 
+      filter(indicator_name == "GNI per capita (current US$)") %>% 
+      pivot_longer(cols = x1990:x2017, names_to = "year", values_to = "value") %>%
+      mutate(year = str_remove(year, "x")) %>% 
+      mutate(year = as.numeric(year)) %>% 
+      mutate(ismissing = is.na(value)) %>% 
+      filter(year >= 1990) %>% 
+      rename(country = country_name, gni = value)
+  )
+
+dat
+
+```
+
+Compute missing values for inequality:
+```{r}
+missingness <- dat %>% 
+    mutate(ismissing = is.na(gini_mean)) %>% 
+    group_by(country) %>% 
+    summarize(missingness = sum(ismissing)/n()) %>% 
+    arrange(missingness)
+
+
+key_countries <- missingness %>% 
+    filter(missingness < 0.3) %>% 
+    pull(country)
+```
+
+```{r}
+#library(tsibbledata)
+df_dat <- dat %>% 
+    select(-starts_with("indicator")) %>% 
+    filter(country %in% key_countries) %>% 
+    as_tsibble(key = country, index = year) 
+    
+df_dat <- df_dat %>% 
+    fill_gaps(.full = TRUE)
+
+```
+
+```{r}
+
+df_dat <- df_dat %>% 
+    group_by(country) %>% 
+    mutate(
+        gini = na_interpolation(gini_mean),
+        gni2 = na_interpolation(gni),
+        EFconsPerCap = na_interpolation(EFconsPerCap)
+    ) 
+```
+
+
+
+```{r message=FALSE, warning=FALSE}
+df_dat %>% 
+    select(year, EFconsPerCap, gni2, gini) %>% 
+    GGally::ggpairs(
+        columns = 3:5 
+    # lower = list(continuous = GGally::wrap("points", alpha = 0.5, size = 0.5)),
+    # diag = list(continuous = GGally::wrap("densityDiag", alpha = 0.2)),
+    # upper = list(continuous = GGally::wrap("cor", size = 2))
+    ) + theme_light(base_size = 16)
+```
+
+
+```{r}
+df_dat <- df_dat %>% 
+    select(EFconsPerCap, gini, gni2) %>% 
+    filter(!is.na(gni2))   # lost 2 more countries due to NAs
+    
+```
+
+```{r}
+df_dat %>% 
+    pivot_longer(cols = c("EFconsPerCap", "gini", "gni2"),
+                 names_to = "variable", values_to = "value") %>% 
+    ggplot(aes(year, value)) +
+    geom_line(aes(group = country)) +
+    facet_wrap(~variable, ncol = 1, scales = "free") +
+    theme_light(base_size = 15)
+```
+
+```{r}
+p1 <- df_dat %>% 
+  ggplot(aes(EFconsPerCap, gini, group = country)) +
+  geom_point(size = 0.5) +
+  geom_path(size = 0.2, aes(color = year)) +
+  theme(legend.position = c(0.8, 0.8))
+
+p2<- df_dat %>% 
+  ggplot(aes(gni2, gini, group = country)) +
+  geom_point(size = 0.5, show.legend = FALSE) +
+  geom_path(size = 0.2, aes(color = year)) +
+  scale_x_log10()
+
+p3<- df_dat %>% 
+  ggplot(aes(gni2, EFconsPerCap, group = country)) +
+  geom_point(size = 0.5, show.legend = FALSE) +
+  geom_path(size = 0.2, aes(color = year)) +
+  scale_x_log10()
+
+p1 + p2 + p3 + plot_layout(guides = "collect") & theme_light(base_size = 15)
+```
+
+```{r}
+df_dat %>% 
+    as_tibble() %>% 
+    group_by(country) %>% 
+    summarize(
+        mean_ef = mean(EFconsPerCap),
+        mean_gni = mean(gni2),
+        mean_gini = mean(gini)
+    ) %>% 
+    arrange(desc(mean_ef))
+```
+### Experimenting with phase plane
+
+```{r}
+df_dat |> 
+    mutate(
+        d_EF = slide_dbl(EFconsPerCap, diff, .before = 1, .after = 0, .complete = TRUE),
+        d_gini = slide_dbl(gini, diff, .before = 1, .after = 0, .complete = TRUE),
+        d_gni2 = slide_dbl(gni2, diff, .before = 1, .after = 0, .complete = TRUE)
+    ) |> 
+    mutate(
+        theta = atan(d_gini/d_EF),
+        gamma = atan(d_gini/d_gni2)
+    )
+```
+
+
+
+## Clustering
+
+I'm not sure if the clustering requires one column per variable * year. Since really the unit of observation is country. Need to read upon it.
+
+```{r}
+m <- "ward.D2" # minimize the total within-cluster variance
+
+clust_num <- NbClust::NbClust( 
+    data = df_dat %>% as.data.frame() %>% 
+        select(where(is.numeric), -year),
+    #distance = "maximum",
+    min.nc = 2, max.nc = 10, 
+    method = m, 
+    index = 'all')
+```
+
+It is a bit contested because the numeric indices favours 2 clusters with 6 of them, but 3 and 4 clusters are favoured by 5 metrics each. The Hubert index (which is graphical) favours 4 indexes as well, tieing up with the 2 cluster option.
+
+```{r}
+## Stability & Internal validation
+stab <- clValid::clValid(
+    obj = df_dat %>% as.data.frame() %>%
+        select(where(is.numeric), -year) %>%
+        as.matrix(),
+    nClust = c(2:9),
+    clMethods = c("hierarchical", "kmeans",  #"som", "model", "diana", "fanny",
+                 "sota", "pam", "clara", "agnes"),
+    validation = c('stability', "internal"),
+    #metric = "manhattan",
+    method = "ward",
+    verbose = FALSE
+) ## Hierarchical is the optimal method
+
+clValid::optimalScores(stab)
+```
+The stability analysis also supports the choice of either 2 or 9 clusters. Partition around medioids does perform well with 9 clusters, but others are supporting the 2 clusters.
+
+
+Here is an attempt with another package `kml` that take into consideration the fact that our data is longitudinal. However, looking into the documentation, it seems that it only handles a variable at the time. For the sake of testing:
+
+```{r}
+# library(kml)
+
+test_dat <- df_dat %>% 
+  select(country, gini, year) %>% 
+  as_tibble() %>% 
+  pivot_wider(names_from = year, values_from = gini, names_prefix = "yr_") %>% 
+  as_data_frame() %>% 
+  kml::cld(idAll = "country", timeInData = 2:29)
+
+```
+An error I don't understand.

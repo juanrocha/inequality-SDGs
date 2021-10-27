@@ -13,3 +13,5 @@
 *.txt
 *.csv
 *.Rdata
+*.xlsx
+*.docx

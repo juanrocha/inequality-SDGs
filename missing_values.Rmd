@@ -3,18 +3,6 @@ title: "Missing values"
 author: "Juan Rocha"
 date: "May 2021"
 output:
-  html_document:
-    toc: yes
-    toc_float: yes
-    highlight: tango
-    code_folding: hide
-    df_print: paged
-    theme: 
-      bootswatch: cosmo
-      code_font:
-        google: Fira Code
-    self_contained: true
-    
   html_notebook:
     toc: yes
     toc_float: yes
@@ -25,6 +13,18 @@ output:
       bootswatch: cosmo
       code_font:
         google: Fira Code
+  html_document:
+    
+    toc: yes
+    toc_float: yes
+    highlight: tango
+    code_folding: hide
+    df_print: paged
+    theme: 
+      bootswatch: cosmo
+      code_font:
+        google: Fira Code
+    self_contained: true
 ---
 
 
@@ -224,7 +224,8 @@ g <- inq %>%
     pivot_longer(2:last_col(), names_to = "year", values_to = "gini_mean") %>%
     mutate(year = as.numeric(year), missing = is.na(gini_mean)) %>% 
     ggplot(aes(year, gini_mean)) +
-    geom_line(aes(color = country), show.legend = FALSE, size = 0.5) 
+    geom_line(aes(color = country), show.legend = FALSE, size = 0.5) +
+  theme_light(base_size = 7)
 ggplotly(g, tooltip = "country") 
 ```
 
