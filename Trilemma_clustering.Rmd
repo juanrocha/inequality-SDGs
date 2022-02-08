@@ -13,7 +13,8 @@ output:
       bootswatch: cosmo
       code_font:
         google: Fira Code
-
+editor_options: 
+  chunk_output_type: inline
 ---
 
 
@@ -41,7 +42,7 @@ library(slider)
 # library(clValid)
 # library(mclust)
 
-# theme_set(theme_light(base_size = 10))
+#theme_set(theme_light(base_size = 12))
 ```
 
 
@@ -72,6 +73,22 @@ inq
 dat1 <- read_csv(
     "~/Documents/Projects/DATA/WorldBank/SDG_csv/SDGData.csv") %>% 
     janitor::clean_names()
+
+missingness <- dat1 %>% 
+    select(-last_col()) %>% 
+    filter(str_detect(indicator_name, "GNI")) %>% 
+    pivot_longer(cols = x1990:x2019, names_to = "year", values_to = "value") %>% 
+    mutate(year = str_remove(year, "x")) %>% 
+    mutate(year = as.numeric(year)) %>% 
+    mutate(ismissing = is.na(value)) %>% 
+    group_by(country_code, indicator_name, country_name) %>% 
+    summarize(missingness = sum(ismissing)/n())
+
+missingness%>% 
+    ggplot(aes(country_code, indicator_name)) +
+    geom_tile(aes(fill = missingness)) + 
+    scale_fill_viridis_c(option = "C") +
+    theme(axis.text.x = element_text(angle =90), legend.position = "top")
 ```
 
 ## Analysis
@@ -101,9 +118,9 @@ dat <- dat %>%
   left_join(
     ., 
     dat1 %>% 
-      select(-x33) %>% 
-      filter(indicator_name == "GNI per capita (current US$)") %>% 
-      pivot_longer(cols = x1990:x2017, names_to = "year", values_to = "value") %>%
+      select(-last_col()) %>% 
+      filter(indicator_name == "GNI per capita (US$)") %>% 
+      pivot_longer(cols = x1990:x2019, names_to = "year", values_to = "value") %>%
       mutate(year = str_remove(year, "x")) %>% 
       mutate(year = as.numeric(year)) %>% 
       mutate(ismissing = is.na(value)) %>% 
@@ -162,7 +179,7 @@ df_dat %>%
     # lower = list(continuous = GGally::wrap("points", alpha = 0.5, size = 0.5)),
     # diag = list(continuous = GGally::wrap("densityDiag", alpha = 0.2)),
     # upper = list(continuous = GGally::wrap("cor", size = 2))
-    ) + theme_light(base_size = 16)
+    ) + theme_light(base_size = 20)
 ```
 
 
@@ -202,7 +219,7 @@ p3<- df_dat %>%
   geom_path(size = 0.2, aes(color = year)) +
   scale_x_log10()
 
-p1 + p2 + p3 + plot_layout(guides = "collect") & theme_light(base_size = 15)
+p1 + p2 + p3 + plot_layout(guides = "collect") & theme_light(base_size = 18)
 ```
 
 ```{r}
@@ -212,23 +229,84 @@ df_dat %>%
     summarize(
         mean_ef = mean(EFconsPerCap),
         mean_gni = mean(gni2),
-        mean_gini = mean(gini)
+        mean_gini = mean(gini),
+        var_ef = var(EFconsPerCap),
+        var_gni = var(gni2),
+        var_gini = var(gini)
     ) %>% 
     arrange(desc(mean_ef))
 ```
 ### Experimenting with phase plane
 
 ```{r}
-df_dat |> 
+df_dat <- df_dat |> 
+    # change scale of GNI to log so the magnitud is not so dominated by $
+    mutate(gni_log = log(gni2)) |> 
     mutate(
         d_EF = slide_dbl(EFconsPerCap, diff, .before = 1, .after = 0, .complete = TRUE),
         d_gini = slide_dbl(gini, diff, .before = 1, .after = 0, .complete = TRUE),
-        d_gni2 = slide_dbl(gni2, diff, .before = 1, .after = 0, .complete = TRUE)
+        d_gni = slide_dbl(gni_log, diff, .before = 1, .after = 0, .complete = TRUE)
     ) |> 
     mutate(
+        magni = sqrt(d_EF^2 + d_gini^2 + d_gni^2), 
         theta = atan(d_gini/d_EF),
-        gamma = atan(d_gini/d_gni2)
-    )
+        gamma = atan(d_gini/d_gni)
+    ) 
+```
+
+```{r}
+df_dat |> 
+    as_tibble() |> 
+    ungroup() |> 
+    group_by(country) |> 
+    summarize(mgt = sum(magni, na.rm = TRUE), 
+              theta = sum(theta, na.rm = TRUE),
+              gamma = sum(gamma, na.rm = TRUE)) |> 
+    arrange(desc(mgt))
+```
+```{r}
+df_dat |> 
+    as_tibble() |> 
+    select(country, year, d_EF, d_gini, d_gni) |> 
+    pivot_longer(cols = starts_with("d_"), names_to = "vars", values_to = "vals") |> 
+    filter(!is.na(vals)) |> 
+    ggplot(aes(year, vals, group = country)) +
+    geom_path(size = 0.2, alpha = 0.5) +
+    facet_wrap(~vars, scales = "free") +
+    theme_light(base_size = 18)
+```
+```{r}
+df_dat |> 
+    ggplot(aes(EFconsPerCap, gini)) +
+    geom_density2d() +
+    geom_point(aes(color = gni_log)) +
+    geom_path(aes(group = country), size = 0.15) +
+    scico::scale_color_scico() +
+    theme_light(base_size = 18)
+```
+```{r}
+df_dat |> 
+    ggplot(aes(gni_log, gini)) +
+    geom_density2d() +
+    geom_point(aes(color = EFconsPerCap)) +
+    geom_path(aes(group = country), size = 0.15) +
+    scico::scale_color_scico(palette = "berlin") +
+    theme_light(base_size = 18)
+```
+```{r}
+df_dat |> 
+    ggplot(aes(gni_log, EFconsPerCap)) +
+    geom_density2d() +
+    geom_point(aes(color = gini)) +
+    geom_path(aes(group = country), size = 0.15) +
+    scico::scale_color_scico() +
+    theme_light(base_size = 18)
+```
+Who is the weird trajectory out there, world? No it's Luxemburg
+
+```{r}
+df_dat |> 
+    arrange(desc(EFconsPerCap))
 ```
 
 
@@ -238,13 +316,30 @@ df_dat |>
 I'm not sure if the clustering requires one column per variable * year. Since really the unit of observation is country. Need to read upon it.
 
 ```{r}
+df_summary <- df_dat |> 
+    as_tibble() |> 
+    ungroup() |> 
+    group_by(country) |> 
+    summarize(m = sum(magni, na.rm = TRUE), 
+              t = sum(theta, na.rm = TRUE),
+              g = sum(gamma, na.rm = TRUE),
+              sd_mag = sd(magni, na.rm = TRUE),
+              sd_t = sd(theta, na.rm = TRUE),
+              sd_g = sd(gamma, na.rm = TRUE), 
+              ef = mean(EFconsPerCap, na.rm = TRUE),
+              inq = mean(gini, na.rm = TRUE),
+              gni = mean(gni_log, na.rm = TRUE),
+              #sd_ef = sd(ef, na.rm = TRUE),
+              sd_inq = sd(gini, na.rm = TRUE),
+              sd_gni = sd(gni_log, na.rm = TRUE)) 
+
 m <- "ward.D2" # minimize the total within-cluster variance
 
 clust_num <- NbClust::NbClust( 
-    data = df_dat %>% as.data.frame() %>% 
-        select(where(is.numeric), -year),
+    data = df_summary %>% as.data.frame() %>% 
+        select(where(is.numeric)),
     #distance = "maximum",
-    min.nc = 2, max.nc = 10, 
+    min.nc = 2, max.nc = 7, 
     method = m, 
     index = 'all')
 ```
@@ -254,10 +349,10 @@ It is a bit contested because the numeric indices favours 2 clusters with 6 of t
 ```{r}
 ## Stability & Internal validation
 stab <- clValid::clValid(
-    obj = df_dat %>% as.data.frame() %>%
-        select(where(is.numeric), -year) %>%
+    obj = df_summary %>% as.data.frame() %>% 
+        select(where(is.numeric)) %>%
         as.matrix(),
-    nClust = c(2:9),
+    nClust = c(2:7),
     clMethods = c("hierarchical", "kmeans",  #"som", "model", "diana", "fanny",
                  "sota", "pam", "clara", "agnes"),
     validation = c('stability', "internal"),
@@ -270,6 +365,58 @@ clValid::optimalScores(stab)
 ```
 The stability analysis also supports the choice of either 2 or 9 clusters. Partition around medioids does perform well with 9 clusters, but others are supporting the 2 clusters.
 
+
+```{r}
+stab@clusterObjs$pam$`2`$clustering
+```
+
+```{r fig.width=7, fig.height=8}
+df_summary |> 
+    mutate(clus = stab@clusterObjs$pam$`2`$clustering) |> 
+    arrange(desc(m)) |> 
+    mutate(country = as_factor(country)) |> 
+    mutate(country = fct_reorder2(country, m,g)) |> 
+    pivot_longer(cols = m:sd_gni, names_to = "vars", values_to = "vals") |> 
+    ggplot(aes(vals, country)) +
+    geom_col(aes(fill = as.factor(clus))) +
+    facet_grid(clus~vars, scales = "free") +
+    theme_light(base_size = 10)
+```
+
+```{r}
+df_dat |> 
+    as_tibble() |> 
+    group_by(country) |> 
+    summarize(
+        ef = sum(d_EF, na.rm = TRUE),
+        gini = sum(d_gini, na.rm = TRUE),
+        gni = sum(d_gni, na.rm = TRUE)
+    ) |> 
+    mutate(clus = stab@clusterObjs$pam$`2`$clustering) |> 
+    ggplot(aes(ef, gini)) +
+    geom_segment(
+        aes(x = 0, y = 0, xend = ef, yend = gini, color = as.factor(clus)), arrow = arrow(length = unit(0.5, "cm"))) +
+    geom_text(aes(label = country)) +
+    theme_light(base_size = 20)
+```
+
+```{r}
+df_dat |> 
+    as_tibble() |> 
+    group_by(country) |> 
+    summarize(
+        ef = sum(d_EF, na.rm = TRUE),
+        gini = sum(d_gini, na.rm = TRUE),
+        gni = sum(d_gni, na.rm = TRUE)
+    ) |> 
+    mutate(clus = stab@clusterObjs$pam$`2`$clustering) |> 
+    ggplot(aes(gni, gini)) +
+    geom_segment(aes(x = 0, y = 0, xend = gni, yend = gini, color = as.factor(clus)), arrow = arrow(length = unit(0.5, "cm"))) +
+    geom_text(aes(label = country)) +
+    theme_light(base_size = 20)
+```
+
+### Old stuff
 
 Here is an attempt with another package `kml` that take into consideration the fact that our data is longitudinal. However, looking into the documentation, it seems that it only handles a variable at the time. For the sake of testing:
 
