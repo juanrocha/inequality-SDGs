@@ -93,7 +93,7 @@ missingness%>%
 
 ## Analysis
 
-The bottle neck is certaintly our proxies of inequality, no matter what we use. Below a mock up example with some arbitrary choices.
+The bottle neck is certaintly our proxies of inequality, no matter what we use. Based on the missing data explorations, inequality data improves from 1995 onward.
 
 ```{r}
 
@@ -101,13 +101,13 @@ dat <- ecofp %>%
   filter(record == "EFConsPerCap") %>%
   select(countryName, isoa2, year, value) %>% 
   rename(EFconsPerCap = value, country = countryName) %>% 
-  filter(year >= 1990)
+  filter(year >= 1995)
 
 dat <- dat %>% 
   left_join(
     .,
     inq %>% 
-      filter(!is.na(gini_reported), year >= 1990) %>% 
+      filter(!is.na(gini_reported), year >= 1995) %>% 
       select(country, isoa2 = c2, country_code = c3, year, gini_reported) %>% 
       group_by(country, year, isoa2, country_code) %>% 
       summarize(gini_mean = mean(gini_reported, na.rm = TRUE)) 
@@ -124,7 +124,7 @@ dat <- dat %>%
       mutate(year = str_remove(year, "x")) %>% 
       mutate(year = as.numeric(year)) %>% 
       mutate(ismissing = is.na(value)) %>% 
-      filter(year >= 1990) %>% 
+      filter(year >= 1995) %>% 
       rename(country = country_name, gni = value)
   )
 
@@ -142,7 +142,11 @@ missingness <- dat %>%
 
 
 key_countries <- missingness %>% 
-    filter(missingness < 0.3) %>% 
+    filter(missingness <= 0.3) %>% 
+    pull(country)
+
+droped_countries <- missingness %>% 
+    filter(missingness > 0.3) %>% 
     pull(country)
 ```
 
@@ -172,14 +176,21 @@ df_dat <- df_dat %>%
 
 
 ```{r message=FALSE, warning=FALSE}
-df_dat %>% 
-    select(year, EFconsPerCap, gni2, gini) %>% 
+p <- df_dat %>% 
+    select(year, `Ecological footprint` = EFconsPerCap, GNI = gni2, Gini = gini) %>% 
     GGally::ggpairs(
-        columns = 3:5 
-    # lower = list(continuous = GGally::wrap("points", alpha = 0.5, size = 0.5)),
-    # diag = list(continuous = GGally::wrap("densityDiag", alpha = 0.2)),
+        columns = 3:5 ,
+    lower = list(continuous = GGally::wrap("points", alpha = 0.5, size = 0.5)),
+    diag = list(continuous = GGally::wrap("densityDiag", alpha = 0.2))
     # upper = list(continuous = GGally::wrap("cor", size = 2))
-    ) + theme_light(base_size = 20)
+    ) + theme_light(base_size = 6)
+
+# ggsave(
+#     plot = p,
+#     file = "correlogram.png", path = "figures/", device = "png",
+#     width = 4, height = 4, dpi = 300, bg = "white"
+# )
+p + theme_light(base_size = 20)
 ```
 
 
@@ -202,16 +213,44 @@ df_dat %>%
 
 ```{r}
 p1 <- df_dat %>% 
-  ggplot(aes(EFconsPerCap, gini, group = country)) +
-  geom_point(size = 0.5) +
-  geom_path(size = 0.2, aes(color = year)) +
-  theme(legend.position = c(0.8, 0.8))
+    ggplot(aes(EFconsPerCap, gini, group = country)) +
+    geom_point(size = 0.5) +
+    geom_path(size = 0.2, aes(color = year)) +
+    annotate(geom = "rect", xmin = 0, xmax = 1.68, ymin = 20, ymax = 30,
+             fill = "skyblue", alpha = 0.25) +
+    annotate(geom ="rect",xmin = 0, xmax = 1.68, ymin = 30, ymax = 62,
+             fill = "orange", alpha = 0.1) +
+    annotate(geom ="rect", xmin = 1.68, xmax = 18, ymin = 20, ymax = 30,
+             fill = "orange", alpha = 0.1) +
+    annotate(geom="rect", xmin = 1.68, xmax = 18, ymin = 30, ymax = 62,
+             fill = "red", alpha = 0.1) +
+    geom_hline(yintercept = 30, linetype = 2, color = "gray50") +
+    geom_vline(xintercept = 1.68, linetype = 2, color = "gray50") +
+    scico::scale_color_scico("Year", palette = "bilbao") +
+    labs(y = "Gini", x = "Ecological footprint") + theme_light() +
+    theme(legend.position = "top", panel.grid = element_blank(),
+          legend.key.width = unit(10, "mm"), legend.key.height = unit(3,"mm"))
 
 p2<- df_dat %>% 
   ggplot(aes(gni2, gini, group = country)) +
   geom_point(size = 0.5, show.legend = FALSE) +
   geom_path(size = 0.2, aes(color = year)) +
-  scale_x_log10()
+    annotate(geom = "rect", xmin = 10, xmax = 1.68, ymin = 20, ymax = 30,
+             fill = "skyblue", alpha = 0.25) +
+    annotate(geom ="rect",xmin = 0, xmax = 1.68, ymin = 30, ymax = 62,
+             fill = "orange", alpha = 0.1) +
+    annotate(geom ="rect", xmin = 1.68, xmax = 18, ymin = 20, ymax = 30,
+             fill = "orange", alpha = 0.1) +
+    annotate(geom="rect", xmin = 1.68, xmax = 18, ymin = 30, ymax = 62,
+             fill = "red", alpha = 0.1) +
+    geom_hline(yintercept = 30, linetype = 2, color = "gray50") +
+    geom_vline(xintercept = 12746, linetype = 2, color = "gray50") +
+    scico::scale_color_scico("Year", palette = "bilbao") +
+      scale_x_log10() +
+    labs(y = "Gini", x = "Ecological footprint") + theme_light() +
+    theme(legend.position = "top", panel.grid = element_blank(),
+          legend.key.width = unit(10, "mm"), legend.key.height = unit(3,"mm"))
+
 
 p3<- df_dat %>% 
   ggplot(aes(gni2, EFconsPerCap, group = country)) +
@@ -264,25 +303,40 @@ df_dat |>
               gamma = sum(gamma, na.rm = TRUE)) |> 
     arrange(desc(mgt))
 ```
-```{r}
-df_dat |> 
+```{r fig.width=6, fig.height=3}
+p <- df_dat |> 
     as_tibble() |> 
     select(country, year, d_EF, d_gini, d_gni) |> 
     pivot_longer(cols = starts_with("d_"), names_to = "vars", values_to = "vals") |> 
     filter(!is.na(vals)) |> 
+    mutate(vars = case_when(
+        vars == "d_EF" ~ "Ecological Footprint",
+        vars == "d_gni" ~ "GNI [log]",
+        vars == "d_gini" ~ "Gini"
+    )) |> 
     ggplot(aes(year, vals, group = country)) +
     geom_path(size = 0.2, alpha = 0.5) +
     facet_wrap(~vars, scales = "free") +
-    theme_light(base_size = 18)
+    labs(x = "Year", y = "First difference") +
+    theme_light(base_size = 7)
+
+# ggsave(
+#     plot = p, path = "figures/", file = "first_diff.png", device = "png",
+#     width = 6, height = 3, dpi = 300, bg = "white")
+p + theme_light(base_size = 20)
 ```
-```{r}
+```{r fig.width=3, fig.height=3}
 df_dat |> 
     ggplot(aes(EFconsPerCap, gini)) +
+    geom_hline(yintercept = c(30,40), linetype = 2, color = "gray50") +
+    geom_vline(xintercept = 1.68, linetype = 2, color = "gray50") +
     geom_density2d() +
     geom_point(aes(color = gni_log)) +
     geom_path(aes(group = country), size = 0.15) +
-    scico::scale_color_scico() +
-    theme_light(base_size = 18)
+    scico::scale_color_scico("GNI [log]") +
+    labs(y = "Gini", x = "Ecological footprint") +
+    theme_light(base_size = 18) +
+    theme(legend.position = "top", panel.grid = element_blank())
 ```
 ```{r}
 df_dat |> 

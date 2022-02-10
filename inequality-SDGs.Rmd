@@ -1,0 +1,63 @@
+---
+title: "SDGs"
+author: "Juan Rocha"
+date: "Updated `r Sys.Date()`"
+output:
+  html_notebook:
+    toc: yes
+    toc_float: yes
+    highlight: tango
+    code_folding: hide
+    df_print: paged
+    theme: 
+      bootswatch: cosmo
+      code_font:
+        google: Fira Code
+editor_options: 
+  chunk_output_type: inline
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  cache = TRUE, warning = FALSE, message = FALSE, echo = TRUE,
+  fig.width = 8, fig.height = 5
+)
+
+
+library(tidyverse)
+library(naniar)
+library(plotly)
+library(patchwork)
+
+# time series
+library(tsibble)
+library(fable)
+library(imputeTS)
+library(slider)
+
+# # clustering
+# library(vegan)
+# library(NbClust)
+# library(clValid)
+# library(mclust)
+
+#theme_set(theme_light(base_size = 12))
+```
+
+This notebooks explores synergies and trade-offs between inequality and other SDGs with the World Bank dataset on sustainable development goals at the national scale.
+
+```{r}
+dat <- read_csv(file = "~/Documents/Projects/DATA/WorldBank/SDG_csv/SDGData.csv") |> 
+    janitor::clean_names()
+
+dat
+```
+```{r}
+key <- read_csv(
+    file = "~/Documents/Projects/DATA/WorldBank/SDG_csv/SDGSeries.csv"
+) |> janitor::clean_names()
+
+key |> pull(topic) |> unique()
+```
+

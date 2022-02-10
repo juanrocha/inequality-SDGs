@@ -102,7 +102,7 @@ toc() #43955.608 or 12.2hrs
 save(tset.TM, topicNumber.TM, dtm, file = "data/211020_topic_models_gibbs.RData")
 
 
-
+load("data/211020_topic_models_gibbs.RData")
 
 
 #### visualizations ####
@@ -247,9 +247,10 @@ ggsave(
 df_documents |> 
     group_by(topic) |> 
     arrange(desc(gamma)) |> 
-    top_n(10) |> 
-    left_join(select(dat, document = title, year, doi)) |> 
-    write_csv("data/top_papers.csv")
+    #top_n(10) |> 
+    left_join(select(dat, document = title, year)) #|> 
+    #write_csv("data/topic_papers.csv")
+    #save(x, file = "data/topic_papers.RData")
 
 
 ### networks
