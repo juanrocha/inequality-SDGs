@@ -1,0 +1,123 @@
+---
+title: "SDGs UN data"
+author: "Juan Rocha"
+date: "Updated `r Sys.Date()`"
+output:
+  html_notebook:
+    toc: yes
+    toc_float: yes
+    highlight: tango
+    code_folding: hide
+    df_print: paged
+    theme: 
+      bootswatch: cosmo
+      code_font:
+        google: Fira Code
+editor_options: 
+  chunk_output_type: inline
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  cache = TRUE, warning = FALSE, message = FALSE, echo = TRUE,
+  fig.width = 8, fig.height = 5
+)
+
+
+library(tidyverse)
+library(naniar)
+library(plotly)
+library(patchwork)
+
+# time series
+library(tsibble)
+library(fable)
+library(imputeTS)
+library(slider)
+
+# # clustering
+# library(vegan)
+# library(NbClust)
+# library(clValid)
+# library(mclust)
+
+#theme_set(theme_light(base_size = 12))
+```
+
+This notebooks explores synergies and trade-offs between inequality and other SDGs with the UN dataset on sustainable development goals at the national scale.
+
+
+```{r}
+dat <- read_csv(
+    file = "~/Documents/Projects/DATA/SDGs_UNStats/20180817102044132_juan.rocha@su.se_data.csv") |> 
+    janitor::clean_names()
+
+```
+
+Filter out non-countries:
+
+```{r}
+# dat |> pull(geo_area_name) |> unique()
+
+no_country <- c(
+    "World", "South America" ,"Oceania","Western Africa","Central America", "Eastern Africa", 
+    "Northern Africa","Middle Africa", "Southern Africa","Northern America", "Caribbean" ,"Eastern Asia", 
+    "Southern Asia" ,"South-Eastern Asia", "Southern Europe", "Australia and New Zealand",  "Melanesia", 
+    "Polynesia" , "Central and Southern Asia" ,"Caucasus and Central Asia" , "Asia" ,"Central Asia" , 
+    "Western Asia" , "Europe", "Eastern Europe", "Northern Europe" , "Western Europe",
+    "Least Developed Countries (LDCs)","Sub-Saharan Africa" , "Latin America and the Caribbean" ,
+    "Landlocked developing countries (LLDCs)", 
+    "Western Asia (exc. Armenia, Azerbaijan, Cyprus, Israel and Georgia)", "Europe and Northern America",
+    "Developed regions (Europe, Cyprus, Israel, Northern America, Japan, Australia & New Zealand)", 
+    "Eastern Asia (excluding Japan)","Oceania (exc. Australia and New Zealand)", 
+    "Micronesia (Federated States of)" , "Small island developing States (SIDS)" ,
+    "Sub-Saharan Africa (inc. Sudan)", "Northern Africa (exc. Sudan)","Northern Africa and Western Asia", 
+    "Eastern and South-Eastern Asia" , "French Polynesia" , "China, Macao Special Administrative Region"  , 
+    "New Caledonia" ,"British Virgin Islands" ,"American Samoa", "Guam" ,"Northern Mariana Islands",
+    "Tokelau", "Wallis and Futuna Islands", "Holy See",  "China, Hong Kong Special Administrative Region",
+    "Africa", "Americas", "Micronesia", "Southern Asia (excluding India)" ,
+    "Eastern Asia (excluding Japan and China)" , "Developing regions" , "Other non-specified areas",
+    "Faroe Islands",  "Falkland Islands (Malvinas)","Greenland" , "Guadeloupe", "Martinique", "Montserrat",
+    "Réunion" ,"United States Virgin Islands" , "International Centers (FAO)" , "Regional Centres (FAO)",
+    "Mayotte" , "Cayman Islands" , "Netherlands Antilles","Curaçao" , "Sint Maarten (Dutch part)",
+    "Bonaire, Sint Eustatius and Saba" , "Gibraltar" , "Saint Pierre and Miquelon" , "Channel Islands",
+    "British Indian Ocean Territory" , "Christmas Island" , "Cocos (Keeling) Islands",
+    "South Georgia and the South Sandwich Islands" , "Åland Islands" , "French Southern Territories",
+    "Heard Island and McDonald Islands" , "Norfolk Island", "United States Minor Outlying Islands" ,
+    "Pitcairn",  "Saint Barthélemy" , "Saint Helena", "Saint Martin (French Part)" , "Western Sahara",
+    "Svalbard and Jan Mayen Islands","Guernsey", "Jersey" ,"European Union", "Bouvet Island", "Antarctica" ,
+    "Iraq (Central Iraq)" , "Iraq (Kurdistan Region)" , "United Kingdom (England and Wales)" ,
+    "European Union (EU) Institutions" 
+) 
+
+# Included Northern Ireland and Scotland as countries although they are listed as part of the UK
+## Dataset reduced to countries and SDGs 10, 14, 15
+dat <- dat |> 
+    filter(!geo_area_name %in% no_country) |> 
+    filter(goal %in% c(10,14,15))
+```
+
+
+```{r}
+n_ctrs <- dat$geo_area_name |> unique() |> length() # number of countries
+
+p <- dat |> 
+    mutate(value = as.numeric(value), is_na = is.na(value)) |> 
+    group_by(series_description, time_period, goal) |> 
+    summarize(nas = sum(is_na) / n_ctrs) |> 
+    mutate(series_description = str_trunc(series_description, width = 100, side = "right")) |> 
+    ggplot(aes(time_period, series_description)) +
+    geom_tile(aes(fill = nas)) +
+    scale_fill_viridis_c() +
+    facet_wrap(~goal, scales = "free", nrow = 3) +
+    theme_light(base_size = 6)
+
+ggsave(
+    plot = p, filename = "UN_SDG_10-14-15.png", path = "figures/", device = "png",
+    width = 7, height = 5, dpi = 400, bg = "white"
+)
+
+p + theme_light(base_size = 12)
+```
+

@@ -59,5 +59,61 @@ key <- read_csv(
 ) |> janitor::clean_names()
 
 key |> pull(topic) |> unique()
+
+countries <- read_csv(
+    file = "~/Documents/Projects/DATA/WorldBank/SDG_csv/SDGCountry.csv") |> 
+    janitor::clean_names()
+
+countries_list <- countries |> filter(!is.na(currency_unit)) |> pull(country_code)
+
 ```
 
+```{r}
+dat$indicator_name |> unique() |> length()
+```
+Extract environmental variables only
+
+```{r}
+env_topics <- key$topic |> str_subset("Environment")
+
+env_vars <- key |> 
+    filter(topic %in% env_topics) |> 
+    pull(indicator_name) |> 
+    unique()
+```
+
+```{r}
+n_countries <- dat |> filter(country_code %in% countries_list) |> 
+    pull(country_code) |> unique() |> length()
+
+p <- dat |>
+    filter(indicator_name %in% env_vars, country_code %in% countries_list) |> 
+    select(-x35) |> 
+    pivot_longer(cols = x1990:last_col(), values_to = "value", names_to = "year") |> 
+    mutate(year = str_remove(year, "x"), year = as.numeric(year)) |> 
+    group_by(indicator_name, year) |> 
+    mutate(nas = is.na(value)) |> 
+    summarise(missing = sum(nas) / n_countries) |> 
+    ggplot(aes(year, indicator_name)) +
+    geom_tile(aes(fill = missing)) +
+    scale_fill_viridis_c() +
+    theme_light(base_size = 6)
+
+ggsave(
+    plot = p, filename = "WB_environment_SDGs.png", path = "figures/", device = "png",
+    width = 6, height = 4, dpi = 400, bg = "white"
+)
+
+p + theme_light(base_size = 8)
+```
+And the inequality variables
+
+```{r}
+ineq_topics <- c("Financial Sector: Access", ) 
+
+key$topic |> unique()
+```
+
+## To-dos
+
+Wait until Maike and Tong revise the selection of variables. Take the analysis from there. Alternatively, select a couple of topics as example, just to explore how to deal with missing values and what is doable. Once one take missing values into account, the number of variables and countries get reduced quickly.

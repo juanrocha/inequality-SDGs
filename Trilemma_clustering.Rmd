@@ -353,45 +353,48 @@ c1 <- df_dat |>
     ggplot(aes(EFconsPerCap, gini)) +
     geom_hline(yintercept = 30, linetype = 2, color = "gray50") +
     geom_vline(xintercept = 1.68, linetype = 2, color = "gray50") +
-    geom_density2d() +
-    geom_point(aes(color = gni_log)) +
-    geom_path(aes(group = country), size = 0.15) +
+    geom_density2d(size = 0.25, color = "#446B9C") +
+    geom_point(aes(color = gni_log), size = 0.5) +
+    geom_path(aes(group = country), size = 0.1) +
     scico::scale_color_scico("GNI [log]") +
     labs(y = "Gini", x = "Ecological footprint") +
-    theme_light(base_size = 7) +
-    theme(legend.position = "top", panel.grid = element_blank())
+    theme_light(base_size = 6) +
+    theme(legend.position = "top", panel.grid = element_blank(),
+          legend.key.width = unit(7, "mm"), legend.key.height = unit(2,"mm"))
 
 c1 + theme_light(base_size = 18)
 ```
 ```{r fig.width=3, fig.height=3}
 c2 <- df_dat |> 
     ggplot(aes(gni2, gini)) +
-    geom_density2d() +
-    geom_point(aes(color = EFconsPerCap)) +
-    geom_path(aes(group = country), size = 0.15) +
+    geom_density2d(size = 0.25, color = "#446B9C") +
+    geom_point(aes(color = EFconsPerCap), size = 0.5) +
+    geom_path(aes(group = country), size = 0.1) +
     geom_hline(yintercept = 30, linetype = 2, color = "gray50") +
     geom_vline(xintercept = (12546), linetype = 2, color = "gray50") +
     scico::scale_color_scico("Ecological footprint",palette = "berlin") +
     labs(x= "GNI [log]", y = "Gini") +
     scale_x_log10() +
-    theme_light(base_size = 7) +
-    theme(legend.position = "top", panel.grid = element_blank())
+    theme_light(base_size = 6) +
+    theme(legend.position = "top", panel.grid = element_blank(),
+          legend.key.width = unit(7, "mm"), legend.key.height = unit(3,"mm"))
 
 c2 + theme_light(base_size = 7)
 ```
 ```{r fig.width=3, fig.height=3}
 c3 <- df_dat |> 
     ggplot(aes(gni2, EFconsPerCap)) +
-    geom_density2d() +
-    geom_point(aes(color = gini)) +
-    geom_path(aes(group = country), size = 0.15) +
+    geom_density2d(size = 0.25, color = "#446B9C") +
+    geom_point(aes(color = gini), size =0.5) +
+    geom_path(aes(group = country), size = 0.1) +
     scico::scale_color_scico("Gini") +
     labs(x = "GNI", y = "Ecological footprint") +
     scale_x_log10()+
     geom_hline(yintercept = 1.68, linetype = 2, color = "gray50") +
     geom_vline(xintercept = (12546), linetype = 2, color = "gray50") +
-    theme_light(base_size = 7) +
-    theme(legend.position = "top", panel.grid = element_blank())
+    theme_light(base_size = 6) +
+    theme(legend.position = "top", panel.grid = element_blank(),
+          legend.key.width = unit(7, "mm"), legend.key.height = unit(3,"mm"))
 
 c3 + theme_light(base_size = 18)
 ```
@@ -422,19 +425,20 @@ df_summary <- df_dat |>
               sd_EF = sd(EFconsPerCap, na.rm = TRUE),
               sd_Gini = sd(gini, na.rm = TRUE),
               sd_GNI = sd(gni_log, na.rm = TRUE),
-              magnitude_m = mean(magni, na.rm = TRUE), 
-              theta_m = mean(theta, na.rm = TRUE),
-              gamma_m = mean(gamma, na.rm = TRUE),
-              magnitude_a = sum(magni, na.rm = TRUE), 
+              #magnitude_m = mean(magni, na.rm = TRUE),
+              #theta_m = mean(theta, na.rm = TRUE),
+              #gamma_m = mean(gamma, na.rm = TRUE),
+              magnitude_a = sum(magni, na.rm = TRUE),
               theta_a = sum(theta, na.rm = TRUE),
-              gamma_a = sum(gamma, na.rm = TRUE)) 
+              gamma_a = sum(gamma, na.rm = TRUE)
+              ) 
 
 
 m <- "ward.D2" # minimize the total within-cluster variance
 
 clust_num <- NbClust::NbClust( 
-    data = df_summary %>% as.data.frame() %>% 
-        select(where(is.numeric)),
+    data = (df_summary %>% as.data.frame() %>% 
+        select(where(is.numeric)) ),
     #distance = "maximum",
     min.nc = 2, max.nc = 7, 
     method = m, 
@@ -443,18 +447,22 @@ clust_num <- NbClust::NbClust(
 
 The Hubert index (which is graphical) favours 4 groups while D index favours 3 groups. Thus in total 9 metrics proposed 2 groups, 9 metrics proposed 3 groups, and all other options are minorities. Let's continue the analysis with 3 to favour diversity.
 
-```{r}
+```{r warning = FALSE, message=FALSE}
+
+library(clValid)
+library(mclust)
 ## Stability & Internal validation
 stab <- clValid::clValid(
     obj = df_summary %>% as.data.frame() %>% 
         select(where(is.numeric)) %>%
         as.matrix(),
-    nClust = c(2:7),
-    clMethods = c("hierarchical", "kmeans",  #"som", "model", "diana", "fanny",
-                 "sota", "pam", "clara", "agnes"),
+    nClust = 3,
+    clMethods = c(
+        "hierarchical", "kmeans",  "som", 
+        "model", "diana", "sota", "pam", "clara", "agnes"),
     validation = c('stability', "internal"),
     #metric = "manhattan",
-    method = "ward.D2",
+    method = "ward",
     verbose = FALSE
 ) ## Hierarchical is the optimal method
 
@@ -464,22 +472,28 @@ The stability analysis also supports the choice of either 2 or 7 clusters. Parti
 
 
 ```{r}
-stab@clusterObjs$pam$`2`$clustering
+# stab@clusterObjs$pam$`2`$clustering
+
+stab@clusterObjs$kmeans$`3`$cluster
+
+stab@clusterObjs$diana |> plot()
 ```
 
 ```{r fig.width=7, fig.height=8}
 df_summary |> 
-    mutate(clus = stab@clusterObjs$pam$`2`$clustering) |> 
+    mutate(clus = stab@clusterObjs$kmeans$`3`$cluster ) |> 
     mutate(country = as_factor(country)) |> 
-    mutate(country = fct_reorder2(country, magnitude, Gini)) |> 
-    pivot_longer(cols = sd_magnitude:gamma, names_to = "vars", values_to = "vals") |> 
+    mutate(country = fct_reorder2(country, magnitude_a, Gini)) |> 
+    pivot_longer(
+        cols = sd_magnitude:gamma_a, names_to = "vars", 
+        values_to = "vals") |> 
     ggplot(aes(vals, country)) +
     geom_col(aes(fill = as.factor(clus))) +
     facet_grid(clus~vars, scales = "free") +
     theme_light(base_size = 10)
 ```
 
-```{r}
+```{r message = FALSE, warning = FALSE, fig.width=5, fig.height=5}
 df_summary |>
     select(-starts_with("country")) |> 
     GGally::ggpairs()
@@ -495,17 +509,27 @@ df_summary <- df_summary |>
         dat |> select(country, country_code) |> 
             filter(!is.na(country_code)) |> unique())
 
-pc1 <- ggbiplot::ggbiplot(pc, groups = as.character(stab@clusterObjs$pam$`2`$clustering),
-         ellipse = TRUE, labels = df_summary$country_code, labels.size = 2.5,
-         varname.size = 4) +
-    scale_color_manual("Groups", values = c("orange", "purple")) +
-    theme_light(base_size = 18) +
-    theme(legend.position = c(0.2, 0.2), panel.grid = element_blank())
+pc1 <- ggbiplot::ggbiplot(
+    pc, groups = as.character(stab@clusterObjs$kmeans$`3`$cluster),
+    ellipse = TRUE, labels = df_summary$country_code, labels.size = 2.5,
+    varname.size = 3) +
+    scale_color_manual("Groups", values = c("#73B3A3","#FEA621","#5BA4CA")) +
+    theme_light(base_size = 6) +
+    theme(legend.position = c(0.2, 0.2), panel.grid = element_blank(),
+          legend.text = element_text(size = 6), legend.title = element_text(size = 6),
+          legend.key.width = unit(3,"mm"), legend.key.height = unit(2, "mm"))
 
 pc1
+
+ggsave(
+    filename = "pca_trilema.png", path = "figures/", device = "png",
+    width = 4, height = 4, dpi = 300, bg = "white", 
+    plot = pc1
+)
+
 ```
 
-Note to self: It does not make sense to plot the average distance traversed in the space per country. Take Luxemburg as example, it started and ended verly close by. The absolute distance is what I'm calculating with the euclidian distance on that plane, then the first-diff values are just increases or decreases with respect to initial conditions. Averages are then misleading, because on average Luxemburg moved a lot (in circles). 
+Note to self: It does not make sense to plot the average distance traversed in the space per country. Take Luxemburg as example, it started and ended very close by. The absolute distance is what I'm calculating with the euclidian distance on that plane, then the first-diff values are just increases or decreases with respect to initial conditions. Averages are then misleading, because on average Luxembourg moved a lot (in circles). 
 
 Averages are worth calculating for the parameter space, the vector field of the cube. But not for individual countries, or particules moving within the cube. Be aware of that when presenting and interpreting the results. 
 ```{r fig.height=3,fig.width=3}
@@ -517,31 +541,43 @@ a1 <- df_dat |>
         Gini = sum(d_gini, na.rm = TRUE),
         GNI = sum(d_gni, na.rm = TRUE)
     ) |> 
-    mutate(Group = as.character(stab@clusterObjs$pam$`2`$clustering)) |> 
+    mutate(Group = as.character(stab@clusterObjs$kmeans$`3`$cluster)) |> 
     left_join(
         dat |> select(country, country_code) |> 
             filter(!is.na(country_code)) |> unique()) |> 
     ggplot(aes(EF, Gini)) +
     geom_segment(
         aes(x = 0, y = 0, xend = EF, yend = Gini, color = as.factor(Group)),
-        arrow = arrow(length = unit(0.15, "cm")), size = 0.15) +
+        arrow = arrow(length = unit(0.1, "cm")), show.legend = FALSE, size = 0.15) +
     geom_text(
-        aes(x = EF *1.1, y = Gini * 1.1, label = country_code, colour = Group), size = 2) +
-    scale_color_manual("Groups", values = c("orange", "purple")) +
+        aes(x = EF *1.1, y = Gini * 1.1, label = country_code, colour = Group), 
+        size = 1, show.legend = FALSE) +
+    scale_color_manual("Groups", values = c("#73B3A3","#FEA621","#5BA4CA")) +
     labs(x = "Ecological Footprint", y = "Gini") +
     theme_light(base_size = 6) +
-    theme(panel.grid = element_blank(), legend.position = c(0.8,0.2))    
+    theme(panel.grid = element_blank(), legend.position = c(0.8,0.2), 
+          legend.text = element_text(size = 4), legend.title = element_text(size =4),
+          legend.key.width = unit(2,"mm"), legend.key.height = unit(2, "mm"))    
 
 
 a1
 
-c1 + annotation_custom(
+f1 <- c1 + annotation_custom(
         grob = ggplotGrob(a1),
         xmin = 10, xmax = 18, ymin = 40, ymax = 60
-    ) 
+    )  
+
+# ggsave(
+#     filename = "Gini_EF.png", path = "figures/", device = "png",
+#     width = 4, height = 4, dpi = 300, bg = "white", 
+#     plot = f1
+# )
+
+ ggplotly(c1, tooltip=c("country", "EFconsPerCap", "gini", "gni_log"))
+
 ```
 
-```{r fig.width=2, fig.height=2}
+```{r fig.width=3, fig.height=3}
 a2 <- df_dat |> 
     as_tibble() |> 
     group_by(country) |> 
@@ -550,28 +586,89 @@ a2 <- df_dat |>
         Gini = sum(d_gini, na.rm = TRUE),
         GNI = sum(d_gni, na.rm = TRUE)
     ) |> 
-    mutate(Group = as.character(stab@clusterObjs$pam$`2`$clustering)) |> 
+    mutate(Group = as.character(stab@clusterObjs$kmeans$`3`$cluster)) |> 
     left_join(
         dat |> select(country, country_code) |> 
             filter(!is.na(country_code)) |> unique()) |> 
     ggplot(aes(GNI, Gini)) +
     geom_segment(
         aes(x = 0, y = 0, xend = GNI, yend = Gini, 
-            color = as.factor(Group)), 
-        arrow = arrow(length = unit(0.15, "cm")), size = 0.15) +
+            color = as.factor(Group)), show.legend = FALSE,
+        arrow = arrow(length = unit(0.1, "cm")), size = 0.15) +
     geom_text(aes(x = GNI * 1.1, y = Gini *1.1, 
-                  label = country_code, colour = Group), size = 2) +
-    scale_color_manual("Groups", values = c("orange", "purple")) +
-    theme_light(base_size = 6) +
-    theme(panel.grid = element_blank(), legend.position = c(0.8,0.2)) 
+                  label = country_code, colour = Group), 
+              size = 1, show.legend = FALSE) +
+    scale_color_manual("Groups", values = c("#73B3A3","#FEA621","#5BA4CA")) +
+    theme_light(base_size = 6) + labs(x = "GNI [log]") +
+    theme(panel.grid = element_blank(), legend.position = c(0.8,0.2),
+          legend.text = element_text(size = 4), legend.title = element_text(size = 4),
+          legend.key.width = unit(2,"mm"), legend.key.height = unit(2, "mm")) 
 
-c2 + annotation_custom(
+f2 <- c2 + annotation_custom(
         grob = ggplotGrob(a2),
-        xmin = 1e+01, xmax = 1e+03, ymin = 40, ymax = 60
+        xmin = 0.8, xmax = 2.5, ymin = 40, ymax = 62
     ) 
 
-a2
+# ggsave(
+#     filename = "Gini_GNI.png", path = "figures/", device = "png",
+#     width = 4, height = 4, dpi = 300, bg = "white", 
+#     plot = f2
+# )
+
 ```
+
+
+```{r fig.height=3, fig.width=3}
+a3 <- df_dat |> 
+    as_tibble() |> 
+    group_by(country) |> 
+    dplyr::summarize(
+        EF = sum(d_EF, na.rm = TRUE),
+        Gini = sum(d_gini, na.rm = TRUE),
+        GNI = sum(d_gni, na.rm = TRUE)
+    ) |> 
+    mutate(Group = as.character(stab@clusterObjs$kmeans$`3`$cluster)) |> 
+    left_join(
+        dat |> select(country, country_code) |> 
+            filter(!is.na(country_code)) |> unique()) |> 
+    ggplot(aes(GNI, EF)) +
+    geom_segment(
+        aes(x = 0, y = 0, xend = GNI, yend = EF, 
+            color = as.factor(Group)), show.legend = FALSE, 
+        arrow = arrow(length = unit(0.1, "cm")), size = 0.15) +
+    geom_text(aes(x = GNI * 1.1, y = EF *1.1, 
+                  label = country_code, colour = Group), 
+              size = 1, show.legend = FALSE) +
+    scale_color_manual("Groups", values = c("#73B3A3","#FEA621","#5BA4CA")) +
+    theme_light(base_size = 6) + labs(y = "Ecological footprint") +
+    theme(panel.grid = element_blank(), legend.position = c(0.8,0.8),
+          legend.text = element_text(size = 4), legend.title = element_text(size = 4),
+          legend.key.width = unit(2,"mm"), legend.key.height = unit(2, "mm")) 
+
+
+f3 <- c3 + annotation_custom(
+        grob = ggplotGrob(a3),
+        xmin = 0.8, xmax = 2.8, ymin = 8, ymax = 18
+    ) 
+
+# ggsave(
+#     filename = "EF_GNI.png", path = "figures/", device = "png",
+#     width = 4, height = 4, dpi = 300, bg = "white", 
+#     plot = f3
+# )
+
+```
+
+```{r}
+
+
+# ggsave(
+#     filename = "trilema_ensamble.png", device = "png", path = "figures/",
+#     width = 7.5, height = 3, bg = "white", dpi = 300, 
+#     plot = f1 + labs(tag = "A") + f2 + labs(tag = "B") +  f3 + labs(tag = "C") 
+# )
+```
+
 
 ### Old stuff
 
