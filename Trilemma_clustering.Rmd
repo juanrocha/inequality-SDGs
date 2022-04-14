@@ -428,9 +428,9 @@ df_summary <- df_dat |>
               #magnitude_m = mean(magni, na.rm = TRUE),
               #theta_m = mean(theta, na.rm = TRUE),
               #gamma_m = mean(gamma, na.rm = TRUE),
-              magnitude_a = sum(magni, na.rm = TRUE),
-              theta_a = sum(theta, na.rm = TRUE),
-              gamma_a = sum(gamma, na.rm = TRUE)
+              magnitude = sum(magni, na.rm = TRUE),
+              theta = sum(theta, na.rm = TRUE),
+              gamma = sum(gamma, na.rm = TRUE)
               ) 
 
 
@@ -511,9 +511,10 @@ df_summary <- df_summary |>
 
 pc1 <- ggbiplot::ggbiplot(
     pc, groups = as.character(stab@clusterObjs$kmeans$`3`$cluster),
-    ellipse = TRUE, labels = df_summary$country_code, labels.size = 2.5,
-    varname.size = 3) +
+    ellipse = TRUE, labels = df_summary$country_code, labels.size = 1.5,
+    varname.size = 2) +
     scale_color_manual("Groups", values = c("#73B3A3","#FEA621","#5BA4CA")) +
+    labs(tag = "A") +
     theme_light(base_size = 6) +
     theme(legend.position = c(0.2, 0.2), panel.grid = element_blank(),
           legend.text = element_text(size = 6), legend.title = element_text(size = 6),
@@ -523,7 +524,7 @@ pc1
 
 ggsave(
     filename = "pca_trilema.png", path = "figures/", device = "png",
-    width = 4, height = 4, dpi = 300, bg = "white", 
+    width = 3, height = 3, dpi = 300, bg = "white",
     plot = pc1
 )
 
@@ -532,6 +533,8 @@ ggsave(
 Note to self: It does not make sense to plot the average distance traversed in the space per country. Take Luxemburg as example, it started and ended very close by. The absolute distance is what I'm calculating with the euclidian distance on that plane, then the first-diff values are just increases or decreases with respect to initial conditions. Averages are then misleading, because on average Luxembourg moved a lot (in circles). 
 
 Averages are worth calculating for the parameter space, the vector field of the cube. But not for individual countries, or particules moving within the cube. Be aware of that when presenting and interpreting the results. 
+
+
 ```{r fig.height=3,fig.width=3}
 a1 <- df_dat |> 
     as_tibble() |> 
@@ -573,8 +576,8 @@ f1 <- c1 + annotation_custom(
 #     plot = f1
 # )
 
- ggplotly(c1, tooltip=c("country", "EFconsPerCap", "gini", "gni_log"))
-
+# ggplotly(c1, tooltip=c("country", "EFconsPerCap", "gini", "gni_log"))
+f1
 ```
 
 ```{r fig.width=3, fig.height=3}
@@ -669,20 +672,191 @@ f3 <- c3 + annotation_custom(
 # )
 ```
 
-
-### Old stuff
-
-Here is an attempt with another package `kml` that take into consideration the fact that our data is longitudinal. However, looking into the documentation, it seems that it only handles a variable at the time. For the sake of testing:
+## Static
 
 ```{r}
-# library(kml)
+## ecological footprint
+ef <- ecofp %>%
+  filter(record == "EFConsPerCap") %>%
+  select(countryName, isoa2, year, value) %>% 
+  dplyr::rename(EFconsPerCap = value, country = countryName) |> 
+    group_by(country, isoa2) |> 
+    dplyr::summarize(
+        m_ef = mean(EFconsPerCap, na.rm = TRUE), 
+        sd_ef = sd(EFconsPerCap, na.rm = TRUE))
 
-test_dat <- df_dat %>% 
-  select(country, gini, year) %>% 
-  as_tibble() %>% 
-  pivot_wider(names_from = year, values_from = gini, names_prefix = "yr_") %>% 
-  as_data_frame() %>% 
-  kml::cld(idAll = "country", timeInData = 2:29)
+
+gini <- inq %>% 
+    filter(!is.na(gini_reported)) %>% 
+    select(country, isoa2 = c2, country_code = c3, year, gini_reported) %>% 
+    group_by(country, year, isoa2, country_code) %>% 
+    dplyr::summarize(gini_mean = mean(gini_reported, na.rm = TRUE)) |> 
+    ungroup() |> group_by(country, isoa2, country_code) |> 
+    dplyr::summarize(
+        m_gini = mean(gini_mean, na.rm = TRUE),
+        sd_gini = sd(gini_mean, na.rm = TRUE)
+    )
+
+
+
+gni <- dat1 %>% 
+      select(-last_col()) %>% 
+      filter(indicator_name == "GNI per capita (US$)") %>% 
+      pivot_longer(cols = x1990:x2019, names_to = "year", values_to = "value") %>%
+      mutate(year = str_remove(year, "x")) %>% 
+      mutate(year = as.numeric(year)) %>% 
+      mutate(ismissing = is.na(value)) %>% 
+      dplyr::rename(country = country_name, gni = value) |> 
+    group_by(country, country_code) |> 
+    dplyr::summarize(
+        m_gni = mean(gni, na.rm = TRUE),
+        sd_gni = sd(gni, na.rm = TRUE)
+    )
+
+df_all <- gini |> left_join(ef) |> left_join(gni)
+
+df_all <- df_all |> ungroup() |> 
+    filter(!is.na(sd_gini), !is.na(m_ef), !is.na(sd_ef), !is.na(m_gni), !is.na(sd_gni)) 
+```
+
+
+```{r}
+m <- "ward.D2" # minimize the total within-cluster variance
+
+clust_num <- NbClust::NbClust( 
+    data = (df_all %>% as.data.frame() %>% 
+        select(where(is.numeric)) ),
+    #distance = "maximum",
+    min.nc = 2, max.nc = 7, 
+    method = m, 
+    index = 'all')
+```
+
+```{r warning = FALSE, message=FALSE}
+
+library(clValid)
+library(mclust)
+## Stability & Internal validation
+stab <- clValid::clValid(
+    obj = df_all %>% as.data.frame() %>% 
+        select(where(is.numeric)) %>%
+        as.matrix(),
+    nClust = 2,
+    clMethods = c(
+        "hierarchical", "kmeans",  "som", 
+        "model", "diana", "sota", "pam", "clara", "agnes"),
+    validation = c('stability', "internal"),
+    #metric = "manhattan",
+    method = "ward",
+    verbose = FALSE
+) ## Hierarchical is the optimal method
+
+clValid::optimalScores(stab)
+```
+
+```{r}
+stab@clusterObjs$pam$`2`$clustering
 
 ```
-An error I don't understand.
+
+```{r}
+df_all |> 
+    mutate(clus = stab@clusterObjs$pam$`2`$clustering ) 
+```
+
+```{r}
+pc_all <- prcomp(df_all |> 
+                 select(where(is.numeric)) ,
+             center = TRUE, scale. = TRUE)
+
+
+pc2 <- ggbiplot::ggbiplot(
+    pc_all, groups = as.character(stab@clusterObjs$pam$`2`$clustering ),
+    ellipse = TRUE, labels = df_all$country_code, labels.size = 1.5,
+    varname.size = 2) +
+    scale_color_manual("Groups", values = c("#73B3A3","#FEA621")) +
+    labs(tag = "B") + 
+    theme_light(base_size = 6) +
+    theme(legend.position = c(0.2, 0.2), panel.grid = element_blank(),
+          legend.text = element_text(size = 6), legend.title = element_text(size = 6),
+          legend.key.width = unit(3,"mm"), legend.key.height = unit(2, "mm"))
+
+pc1 + pc2 + plot_layout(widths = 3, heights = 3)
+
+ggsave(
+    filename = "pca_trilemma.png", path = "figures/", device = "png",
+    width = 6, height = 3, dpi = 300, bg = "white",
+    plot = pc1+pc2
+)
+```
+
+
+
+### Maps
+
+```{r}
+library(sf)
+library(spData)
+```
+
+
+```{r}
+
+
+data(world)
+
+ef_map <-  world |>
+    filter(!is.na(pop)) |> 
+    left_join(ef, by = c("iso_a2" = "isoa2")) |> 
+    ggplot() +
+    geom_sf(aes(fill = m_ef), size = 0.05, color = "white") +
+    scico::scale_fill_scico(
+        "Mean Ecological Footprint",palette = "romaO",
+        guide = guide_colorbar(title.position = "top")) + 
+    labs(tag = "A") +
+    theme_void(base_size = 6) +
+    theme(legend.position = "bottom", legend.key.height = unit(2, "mm"), 
+          legend.key.width = unit(8, "mm"))
+
+
+gini_map <-  world |>
+    filter(!is.na(pop)) |> 
+    left_join(gini, by = c("iso_a2" = "isoa2")) |> 
+    ggplot() +
+    geom_sf(aes(fill = m_gini), size = 0.05, color = "white") +
+    scico::scale_fill_scico(
+        "Mean Gini",palette = "berlin",
+        guide = guide_colorbar(title.position = "top")) + 
+    labs(tag = "B") +
+    theme_void(base_size = 6) +
+    theme(legend.position = "bottom", legend.key.height = unit(2, "mm"), 
+          legend.key.width = unit(8, "mm"))
+
+gni_map <-  world |>
+    left_join(gini |> dplyr::select(isoa2, country_code),  
+              by = c("iso_a2" = "isoa2") ) |> 
+    left_join(gni |> ungroup() |> select(-country)) |> 
+    filter(!is.na(pop)) |>
+    ggplot() +
+    geom_sf(aes(fill = m_gni), size = 0.05, color = "white") +
+    scico::scale_fill_scico(
+        "Mean Gross National Income",palette = "batlowW",
+        guide = guide_colorbar(title.position = "top")) + 
+    labs(tag = "C") +
+    theme_void(base_size = 6) +
+    theme(legend.position = "bottom", legend.key.height = grid::unit(2, "mm"), 
+          legend.key.width = grid::unit(8, "mm"))
+
+
+
+ef_map + gini_map + gni_map
+
+ggsave(
+    filename = "maps_trilemma.png", path = "figures/", device = "png",
+    width = 6, height = 1.5, dpi = 400, bg = "white",
+    plot = ef_map + gini_map + gni_map
+)
+
+
+```
+
