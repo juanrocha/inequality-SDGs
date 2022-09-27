@@ -110,16 +110,91 @@ p0 <- ggplot() +
         xmin = -Inf, xmax = Inf, ymin = -Inf, ymax = Inf
     ) +
     labs(tag = "A")
+  
+p4 <- df_dat %>% 
+    ggplot(aes(EFconsPerCap, gini, group = country)) +
+    geom_point(size = 0.5) +
+    geom_path(size = 0.2, aes(color = year)) +
+    annotate(geom = "rect", xmin = 0, xmax = 1.68, ymin = 20, ymax = 30,
+             fill = "skyblue", alpha = 0.2) +
+    annotate(geom ="rect",xmin = 0, xmax = 1.68, ymin = 30, ymax = 62,
+             fill = "orange", alpha = 0.2) +
+    annotate(geom ="rect", xmin = 1.68, xmax = 18, ymin = 20, ymax = 30,
+             fill = "orange", alpha = 0.2) +
+    annotate(geom="rect", xmin = 1.68, xmax = 18, ymin = 30, ymax = 62,
+             fill = "red", alpha = 0.2) +
+    geom_hline(yintercept = 30, linetype = 2, color = "gray50") +
+    geom_vline(xintercept = 1.68, linetype = 2, color = "gray50") +
+    scico::scale_color_scico("Year", palette = "bilbao") +
+    labs(y = "Inequality (Gini)", x = "Ecological footprint", tag = "E") + theme_light() +
+    theme(legend.position = "top", panel.grid = element_blank(),
+          legend.key.width = unit(10, "mm"), legend.key.height = unit(3,"mm"))
 
-p0 + p3 + p2 + p1 + plot_layout(ncol = 2)
+p5<- df_dat %>% 
+    ggplot(aes(gni2, gini, group = country)) +
+    geom_point(size = 0.5, show.legend = FALSE) +
+    geom_path(size = 0.2, aes(color = year)) +
+    annotate(geom = "rect", xmin = 10, xmax = 12746, ymin = 20, ymax = 30,
+             fill = "orange", alpha = 0.2) +
+    annotate(geom ="rect",xmin = 10, xmax = 12746, ymin = 30, ymax = 62,
+             fill = "red", alpha = 0.2) +
+    annotate(geom ="rect", xmin = 12746, xmax = 105000, ymin = 20, ymax = 30,
+             fill = "skyblue", alpha = 0.2) +
+    annotate(geom="rect", xmin = 12746, xmax = 105000, ymin = 30, ymax = 62,
+             fill = "orange", alpha = 0.2) +
+    geom_hline(yintercept = 30, linetype = 2, color = "gray50") +
+    geom_vline(xintercept = 12746, linetype = 2, color = "gray50") +
+    scico::scale_color_scico("Year", palette = "bilbao") +
+    scale_x_log10() +
+    labs(y = "Inequality (Gini)", x = "Prosperity (GNI [log])", tag = "F") + theme_light() +
+    theme(legend.position = "top", panel.grid = element_blank(),
+          legend.key.width = unit(10, "mm"), legend.key.height = unit(3,"mm"))
+
+
+p6<- df_dat %>% 
+    ggplot(aes(gni2, EFconsPerCap, group = country)) +
+    geom_point(size = 0.5, show.legend = FALSE) +
+    geom_path(size = 0.2, aes(color = year))+
+    annotate(geom = "rect", xmin = 10, xmax = 12746, ymin = 0, ymax = 1.68,
+             fill = "orange", alpha = 0.2) +
+    annotate(geom ="rect",xmin = 10, xmax = 12746, ymin = 1.68, ymax = 18,
+             fill = "red", alpha = 0.2) +
+    annotate(geom ="rect", xmin = 12746, xmax = 105000, ymin = 0, ymax = 1.68,
+             fill = "skyblue", alpha = 0.2) +
+    annotate(geom="rect", xmin = 12746, xmax = 105000, ymin = 1.68, ymax = 18,
+             fill = "orange", alpha = 0.2) +
+    geom_hline(yintercept = 1.68, linetype = 2, color = "gray50") +
+    geom_vline(xintercept = 12746, linetype = 2, color = "gray50") +
+    scico::scale_color_scico("Year", palette = "bilbao") +
+    scale_x_log10() +
+    labs(y = "Ecological footprint", x = "Prosperity (GNI [log])", tag = "G") + theme_light() +
+    theme(legend.position = "top", panel.grid = element_blank(),
+          legend.key.width = unit(10, "mm"), legend.key.height = unit(3,"mm"))
+
+# ggsave(
+#     plot = p1 + p2 + p3 + plot_layout(guides = "collect") & 
+#         theme_light(base_size = 7) & 
+#         theme(legend.position = "bottom", panel.grid = element_blank(),
+#           legend.key.width = unit(10, "mm"), legend.key.height = unit(3,"mm")),
+#     path = "figures/", file = "cube_time.png", device = "png", dpi = 300,
+#     width = 7, height = 3, bg = "white"
+# )
+
+
+(p0 + p3 + p2 + p1 + plot_layout(ncol = 4)) /
+(p4 + p5 + p6 + plot_layout(guides = "collect") & theme_light(base_size = 7) & 
+    theme(legend.position = "bottom", panel.grid = element_blank(),
+          legend.key.width = unit(10, "mm"), legend.key.height = unit(2,"mm")))
+`
 
 ggsave(
-    filename = "conceptual_fig.png",
+    plot = ((p0 + p3 + p2 + p1 + plot_layout(ncol = 4)) /
+                (p4 + p5 + p6 + plot_layout(guides = "collect") & theme_light(base_size = 7) & 
+                     theme(legend.position = "bottom", panel.grid = element_blank(),
+                           legend.key.width = unit(10, "mm"), legend.key.height = unit(2,"mm")))),
+    filename = "fig1_trilemma_space.png",
     path = "figures/", device = "png", 
-    width = 4, height = 4, bg = "white", dpi = 400,
-    plot = p0 + p3 + p2 + p1 + plot_layout(ncol = 2)
+    width = 6, height = 4, bg = "white", dpi = 400
 )
-  
 
-
-
+## Clustering

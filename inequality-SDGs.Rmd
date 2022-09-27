@@ -54,10 +54,14 @@ dat <- read_csv(file = "~/Documents/Projects/DATA/WorldBank/SDG_csv/SDGData.csv"
 dat
 ```
 ```{r}
-key <- read_csv(
-    file = "~/Documents/Projects/DATA/WorldBank/SDG_csv/SDGSeries.csv"
-) |> janitor::clean_names()
+# key <- read_csv(
+#     file = "~/Documents/Projects/DATA/WorldBank/SDG_csv/SDGSeries.csv"
+# ) |> janitor::clean_names()
+key <- googlesheets4::read_sheet(
+    "https://docs.google.com/spreadsheets/d/1T6rZ5T1qL4BPDL5oatMf3y8lLzhnIDvxIvkbJeBkdUc/edit?usp=sharing", sheet = 1
+)
 
+key <- key |> janitor::clean_names()
 key |> pull(topic) |> unique()
 
 countries <- read_csv(
@@ -74,10 +78,14 @@ dat$indicator_name |> unique() |> length()
 Extract environmental variables only
 
 ```{r}
-env_topics <- key$topic |> str_subset("Environment")
-
-env_vars <- key |> 
-    filter(topic %in% env_topics) |> 
+# env_topics <- key$topic |> str_subset("Environment")
+# 
+# env_vars <- key |> 
+#     filter(topic %in% env_topics) |> 
+#     pull(indicator_name) |> 
+#     unique()
+maike_vars <- key |> 
+    filter(!is.na(maike_selection)) |> 
     pull(indicator_name) |> 
     unique()
 ```
@@ -87,7 +95,7 @@ n_countries <- dat |> filter(country_code %in% countries_list) |>
     pull(country_code) |> unique() |> length()
 
 p <- dat |>
-    filter(indicator_name %in% env_vars, country_code %in% countries_list) |> 
+    filter(indicator_name %in% maike_vars, country_code %in% countries_list) |> 
     select(-x35) |> 
     pivot_longer(cols = x1990:last_col(), values_to = "value", names_to = "year") |> 
     mutate(year = str_remove(year, "x"), year = as.numeric(year)) |> 
@@ -99,17 +107,41 @@ p <- dat |>
     scale_fill_viridis_c() +
     theme_light(base_size = 6)
 
-ggsave(
-    plot = p, filename = "WB_environment_SDGs.png", path = "figures/", device = "png",
-    width = 6, height = 4, dpi = 400, bg = "white"
-)
+# ggsave(
+#     plot = p, filename = "WB_environment_SDGs.png", path = "figures/", device = "png",
+#     width = 6, height = 4, dpi = 400, bg = "white"
+# )
 
 p + theme_light(base_size = 8)
 ```
+
+```{r}
+other_vars <- key |> 
+    filter(!is.na(include)) |> 
+    pull(indicator_name) |> 
+    unique()
+
+p <- dat |>
+    filter(indicator_name %in% other_vars, country_code %in% countries_list) |> 
+    select(-x35) |> 
+    pivot_longer(cols = x1990:last_col(), values_to = "value", names_to = "year") |> 
+    mutate(year = str_remove(year, "x"), year = as.numeric(year)) |> 
+    group_by(indicator_name, year) |> 
+    mutate(nas = is.na(value)) |> 
+    summarise(missing = sum(nas) / n_countries) |> 
+    ggplot(aes(year, indicator_name)) +
+    geom_tile(aes(fill = missing)) +
+    scale_fill_viridis_c() +
+    theme_light(base_size = 6)
+
+p + theme_light(base_size = 8)
+```
+
+
 And the inequality variables
 
 ```{r}
-ineq_topics <- c("Financial Sector: Access", ) 
+# ineq_topics <- c("Financial Sector: Access", ) 
 
 key$topic |> unique()
 ```
@@ -117,3 +149,218 @@ key$topic |> unique()
 ## To-dos
 
 Wait until Maike and Tong revise the selection of variables. Take the analysis from there. Alternatively, select a couple of topics as example, just to explore how to deal with missing values and what is doable. Once one take missing values into account, the number of variables and countries get reduced quickly.
+
+Combining both options:
+
+```{r}
+other_vars <- key |> 
+    filter(!is.na(include) | !is.na(maike_selection)) |> 
+    pull(indicator_name) |> 
+    unique()
+
+p <- dat |>
+    filter(indicator_name %in% other_vars, country_code %in% countries_list) |> 
+    select(-x35) |> 
+    pivot_longer(cols = x1990:last_col(), values_to = "value", names_to = "year") |> 
+    mutate(year = str_remove(year, "x"), year = as.numeric(year)) |> 
+    group_by(indicator_name, year) |> 
+    mutate(nas = is.na(value)) |> 
+    summarise(missing = sum(nas) / n_countries) |> 
+    ungroup() |> group_by(indicator_name) |> 
+    summarize(mean_missing = mean(missing)) |> 
+    filter(mean_missing < 0.3) |> 
+    ggplot(aes(mean_missing, indicator_name)) +
+    geom_point() +
+    #scale_fill_viridis_c() +
+    theme_light(base_size = 6)
+
+p + theme_light(base_size = 8)
+
+vars <- p$data$indicator_name
+
+```
+### Correlations
+
+Probably need to log-transform cereal yield and forest area. 
+
+```{r}
+dat |>
+    filter(indicator_name %in% vars, country_code %in% countries_list) |> 
+    select(-x35) |> 
+    pivot_longer(cols = x1990:last_col(), values_to = "value", names_to = "year") |> 
+    mutate(year = str_remove(year, "x"), year = as.numeric(year)) |> 
+    select(-indicator_code) |> 
+    pivot_wider(values_from = value, names_from = indicator_name) |> 
+    GGally::ggpairs(
+        columns = 4:12 ,
+    lower = list(continuous = GGally::wrap("points", alpha = 0.5, size = 0.5)),
+    diag = list(continuous = GGally::wrap("densityDiag", alpha = 0.2))
+    # upper = list(continuous = GGally::wrap("cor", size = 2))
+    ) + theme_light(base_size = 6)
+```
+Interpolate missing values
+
+```{r}
+df_dat <- dat |>
+    filter(indicator_name %in% vars, country_code %in% countries_list) |> 
+    select(-x35) |> 
+    pivot_longer(cols = x1990:last_col(), values_to = "value", names_to = "year") |> 
+    mutate(year = str_remove(year, "x"), year = as.numeric(year)) |> 
+    select(-indicator_code) |> 
+    pivot_wider(values_from = value, names_from = indicator_name) %>% 
+    group_by(country_code) %>% 
+    mutate(across(.cols = vars, .fns = na_interpolation, option = "spline")) 
+
+df_dat
+```
+
+
+
+## UN SDGs
+
+```{r}
+un_countries <- read_csv2(file = "~/Documents/Projects/DATA/SDGs_UNStats/UNSD — Methodology.csv")
+sdg <- read_csv(file = "~/Documents/Projects/DATA/SDGs_UNStats/20180817102044132_juan.rocha@su.se_data.csv") |> janitor::clean_names()
+
+sdg <- sdg |> 
+    left_join(
+        select(un_countries, country = `Country or Area`, starts_with("ISO")),
+        by = c("geo_area_name" = "country")) |> 
+    filter(value != "-")|> 
+    mutate(value = as.numeric(value))
+
+sdg 
+```
+
+Why are there more than one obs per country per year per indicator???
+```{r}
+sdg |> 
+    filter(`ISO-alpha3 Code` %in% countries_list) |> 
+    group_by(geo_area_code, indicator, time_period) |> 
+    summarize(n = n()) |> 
+    filter(n>19) |>  # 19 is the max number of years
+    arrange(desc(n))
+
+sdg |> 
+    filter(geo_area_code == 40, indicator == "5.4.1", time_period == 2009)
+
+```
+Answer: there are indicators that are calculated per age group, sex and rural / urban divide. They need to be processed to a single number per year. To discuss options:
+
+- What dimension to use?: gender, age, rural / urban / all
+- What summary statistic to use: mean, var, gini?
+
+```{r}
+n_countries2 <- sdg |> 
+    filter(`ISO-alpha3 Code` %in% countries_list) |>
+    pull(geo_area_name) |> unique() |> length() # number of countries, but here are also non-countries categories like continents, etc.
+
+sdg |> 
+    rename(indicator_name = series_description, year = time_period, iso3 =`ISO-alpha3 Code` ) |> 
+    filter(iso3 %in% countries_list, !is.na(value)) |> # use only countries
+    filter(goal == 10) |> 
+    group_by(indicator, indicator_name, year, iso3) |> 
+    summarize(mean_val = mean(value, na.rm = TRUE)) |> 
+    pivot_wider(names_from = year, values_from = mean_val) |> 
+    pivot_longer(cols = starts_with("2"), names_to = "year", values_to = "value",
+                 names_transform = list(year = as.numeric, value = as.numeric)) |> 
+    mutate(nas = is.na(value)) |> 
+    group_by(indicator_name, year) |> 
+    summarise(missing = sum(nas) / n_countries2) |> 
+    ggplot(aes(year, indicator_name)) +
+    geom_tile(aes(fill = missing)) +
+    scale_fill_viridis_c() +
+    labs(title = "SDG10: Inequality indicators") +
+    theme_light(base_size = 8)
+
+# sdg |> 
+#     filter(series_description == "Proportion of voting rights of developing countries in international organizations, by organization (%)")
+
+```
+
+```{r}
+sdg |> 
+    rename(indicator_name = series_description, year = time_period, iso3 =`ISO-alpha3 Code` ) |> 
+    filter(iso3 %in% countries_list, !is.na(value)) |> # use only countries
+    filter(goal == 14) |> 
+    group_by(indicator, indicator_name, year, iso3) |> 
+    summarize(mean_val = mean(value, na.rm = TRUE)) |> 
+    pivot_wider(names_from = year, values_from = mean_val) |> 
+    pivot_longer(cols = starts_with("2"), names_to = "year", values_to = "value",
+                 names_transform = list(year = as.numeric, value = as.numeric)) |> 
+    mutate(nas = is.na(value)) |> 
+    group_by(indicator_name, year) |> 
+    summarise(missing = sum(nas) / n_countries2) |> 
+    ggplot(aes(year, indicator_name)) +
+    geom_tile(aes(fill = missing)) +
+    scale_fill_viridis_c() +
+    labs(title = "SDG14: Life under water") +
+    theme_light(base_size = 8)
+```
+
+```{r}
+sdg |> 
+    rename(indicator_name = series_description, year = time_period, iso3 =`ISO-alpha3 Code` ) |> 
+    filter(iso3 %in% countries_list, !is.na(value)) |> # use only countries
+    filter(goal == 15) |> 
+    group_by(indicator, indicator_name, year, iso3) |>
+    summarize(mean_val = mean(value, na.rm = TRUE)) |>
+    pivot_wider(names_from = year, values_from = mean_val) |> 
+    pivot_longer(cols = starts_with("2"), names_to = "year", values_to = "value",
+                 names_transform = list(year = as.numeric, value = as.numeric)) |> 
+    mutate(nas = is.na(value)) |> 
+    group_by(indicator_name, year) |> 
+    summarise(missing = sum(nas) / n_countries2) |> 
+     mutate(indicator_name = str_trunc(indicator_name, width = 30, side = "right")) |> 
+    ggplot(aes(year, indicator_name)) +
+    geom_tile(aes(fill = missing)) +
+    scale_fill_viridis_c() +
+    labs(title = "SDG15: Life on land") +
+    theme_light(base_size = 8)
+
+sdg|> 
+    rename(indicator_name = series_description, year = time_period, iso3 =`ISO-alpha3 Code` ) |> 
+    filter(iso3 %in% countries_list, !is.na(value)) |> # use only countries
+    filter(goal == 15) |> 
+    pull(indicator_name) |> unique()
+    
+
+```
+
+## Notes:
+
+Select the variables for which you have time series. Repeat the trajectories analysis. 
+Do static analysis with all SDGs
+
+```{r}
+ctr <- sdg |> pull(geo_area_name) |> unique() |> length()
+sdg <- sdg |> select(-c(age:type_of_speed))
+
+sdg <- sdg |> 
+    mutate(value = as.numeric(value)) |> 
+    rename(year = time_period)
+yrs <- sdg$year |> range() |> diff()
+sdg <- sdg |> unique()
+
+dat2 <- sdg |> 
+    filter(goal == 10 | goal == 14 | goal == 15 ) |> 
+    group_by(indicator, geo_area_code, year, geo_area_name, goal, target, series_code, series_description) |> 
+    summarize(value = mean(value))
+
+## If I add series description it duplicate entries, possibly due to misspellings
+#test
+dat2 |>
+    unique() |>
+    add_count() |>
+    filter(n>1)
+
+dat2 |> 
+    add_count() |> 
+    ungroup() |> 
+    group_by(geo_area_name,  series_code) |> 
+    summarize(yrs_cov = sum(n)) |> 
+    filter(yrs_cov > 20)
+    
+sdg |> filter(series_code == "DC_ODA_BDVDL")
+```
+

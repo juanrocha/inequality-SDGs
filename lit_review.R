@@ -6,6 +6,7 @@ library(lda)
 library(tictoc)
 library(network)
 library(patchwork)
+library(fs)
 
 # not working, need manual download
 # dat <- read_csv(file = "https://stockholmuniversity.box.com/s/uoii9orvhkoijk1hzg4ahqwdydwhuxlb")
@@ -13,24 +14,41 @@ library(patchwork)
 # dat <- read_csv(file = "data/April27_1-2000.csv") %>% 
 #     janitor::clean_names()
 
-fls <- list.files(path = "data/lit_review/")
+fls <- dir_ls("data/lit_review_20220624/")
 
-dat_xls <- paste0("data/lit_review/", str_subset(fls, ".xlsx")) %>% 
-    map(readxl::read_excel) %>% 
+## working with a 2022 dataset. thre is a strange behaviour, reading the data 
+## results in more observations that hits reported in Scopus. Using read.csv I get 87k
+## observations, but using read_csv I get 74k (the expected amount). From now on, only use 
+## read_csv; the other is not reliable.
+
+# dat_xls <- paste0("data/lit_review/", str_subset(fls, ".xlsx")) %>% 
+#     map(readxl::read_excel) %>% 
+#     map(janitor::clean_names) %>% 
+#     map(function(x) x %>% select(abstract, title, year, doi) %>% as_tibble()) %>% 
+#     map(function(x) x %>% mutate(across(.cols = everything(), .fns = as.character))) %>% 
+#     bind_rows()
+
+dat  <- str_subset(fls, ".csv") %>% # head() %>% 
+    map(read_csv) %>% 
     map(janitor::clean_names) %>% 
     map(function(x) x %>% select(abstract, title, year, doi) %>% as_tibble()) %>% 
     map(function(x) x %>% mutate(across(.cols = everything(), .fns = as.character))) %>% 
     bind_rows()
 
-dat_csv  <- paste0("data/lit_review/", str_subset(fls, ".csv")) %>% # head() %>% 
-    map(read.csv) %>% 
-    map(janitor::clean_names) %>% 
-    map(function(x) x %>% select(abstract, title, year, doi) %>% as_tibble()) %>% 
-    map(function(x) x %>% mutate(across(.cols = everything(), .fns = as.character))) %>% 
-    bind_rows()
 
-dat <- bind_rows(dat_csv, dat_xls)
-rm(dat_csv, dat_xls)
+
+# dat <- bind_rows(dat_csv, dat_xls)
+# rm(dat_csv, dat_xls)
+
+fls |> 
+    str_remove_all(pattern = "data/lit_review_20220624/") |> 
+    str_remove_all(pattern = ".docx") |> 
+    str_split(pattern = "_") |> 
+    map(function(x) x[length(x)]) |> 
+    unlist() |> 
+    str_remove_all(pattern = "hits.csv|hits1-|.csv|hits 1-|.xlsx|hits") |> 
+    str_trim("both") |> 
+    as.numeric() |> sum()
 
 ## clean data: extra words
 too_words <- tibble(
@@ -38,8 +56,8 @@ too_words <- tibble(
 )
 
 dtm <- dat %>% 
+    filter(abstract != "[No abstract available]") |> # remove NAs
     select(abstract, title, year) %>%
-    filter(!is.na(abstract)) %>%
     unique() %>% #
     unnest_tokens(word, abstract) %>% 
     filter(!is.na(word)) %>% ## 
@@ -62,7 +80,7 @@ fls %>%
     str_remove_all(pattern = ".xlsx|.csv|1-") %>% 
     str_trim(side = "both") %>% 
     as.numeric() %>% 
-    sum() # 72234 records
+    sum() # documents: 69001, terms: 147981
 
 
 ## Choosing best algorithm
@@ -77,7 +95,7 @@ tset.TM <- list (
     Gibbs = LDA (dtm, k=k, method ="Gibbs", control = list (
         seed = SEED, burnin= 1000, thin = 100, iter= 1000)),
     CTM = CTM (dtm, k=k, control = list(seed = SEED, var= list (tol= 10^-4), em= list (tol = 10^-3))))
-toc() #4218s
+toc() #2909.626 sec elapsed
 
 sapply (tset.TM[1:3], slot, "alpha")
 
@@ -89,7 +107,7 @@ topicNumber.TM <- map(
     .f = function(x) {
         LDA(dtm, k = x, control= list (seed = SEED), method = "Gibbs")
     })
-toc() #43955.608 or 12.2hrs
+toc() #43876.676 sec elapsed or 12.2hrs
 #Finding number of topics
 # k <- c(5,10,25,50,100)
 # 
@@ -99,7 +117,7 @@ toc() #43955.608 or 12.2hrs
 #         LDA(dtm, k = x, control= list (seed = SEED), method = "Gibbs")
 #     })
 
-save(tset.TM, topicNumber.TM, dtm, file = "data/211020_topic_models_gibbs.RData")
+save(tset.TM, topicNumber.TM, dtm, file = "data/220625_topic_models_gibbs.RData")
 
 
 load("data/211020_topic_models_gibbs.RData")

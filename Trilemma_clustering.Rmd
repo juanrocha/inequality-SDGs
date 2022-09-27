@@ -49,7 +49,7 @@ library(slider)
 ```{r}
 ecofp <- list()
 fls <- list.files("data/ecofootprint/")
-ecofp <- map(fls, function(x) {
+ecofp <- purrr::map(fls, function(x) {
     jsonlite::read_json(
         path = paste0("data/ecofootprint/", x),
         simplifyVector = TRUE)
@@ -356,8 +356,8 @@ c1 <- df_dat |>
     geom_density2d(size = 0.25, color = "#446B9C") +
     geom_point(aes(color = gni_log), size = 0.5) +
     geom_path(aes(group = country), size = 0.1) +
-    scico::scale_color_scico("GNI [log]") +
-    labs(y = "Gini", x = "Ecological footprint") +
+    scico::scale_color_scico("Prosperity (GNI [log])") +
+    labs(y = "Inequality (Gini)", x = "Ecological footprint") +
     theme_light(base_size = 6) +
     theme(legend.position = "top", panel.grid = element_blank(),
           legend.key.width = unit(7, "mm"), legend.key.height = unit(2,"mm"))
@@ -373,7 +373,7 @@ c2 <- df_dat |>
     geom_hline(yintercept = 30, linetype = 2, color = "gray50") +
     geom_vline(xintercept = (12546), linetype = 2, color = "gray50") +
     scico::scale_color_scico("Ecological footprint",palette = "berlin") +
-    labs(x= "GNI [log]", y = "Gini") +
+    labs(x= "Prosperity (GNI [log])", y = "Inequality (Gini)") +
     scale_x_log10() +
     theme_light(base_size = 6) +
     theme(legend.position = "top", panel.grid = element_blank(),
@@ -387,8 +387,8 @@ c3 <- df_dat |>
     geom_density2d(size = 0.25, color = "#446B9C") +
     geom_point(aes(color = gini), size =0.5) +
     geom_path(aes(group = country), size = 0.1) +
-    scico::scale_color_scico("Gini") +
-    labs(x = "GNI", y = "Ecological footprint") +
+    scico::scale_color_scico("Inequality (Gini)") +
+    labs(x = "Prosperity (GNI)", y = "Ecological footprint") +
     scale_x_log10()+
     geom_hline(yintercept = 1.68, linetype = 2, color = "gray50") +
     geom_vline(xintercept = (12546), linetype = 2, color = "gray50") +
@@ -511,22 +511,22 @@ df_summary <- df_summary |>
 
 pc1 <- ggbiplot::ggbiplot(
     pc, groups = as.character(stab@clusterObjs$kmeans$`3`$cluster),
-    ellipse = TRUE, labels = df_summary$country_code, labels.size = 1.5,
-    varname.size = 2) +
+    ellipse = TRUE, labels = df_summary$country_code, labels.size = 1,
+    varname.size = 1.5) +
     scale_color_manual("Groups", values = c("#73B3A3","#FEA621","#5BA4CA")) +
     labs(tag = "A") +
-    theme_light(base_size = 6) +
+    theme_light(base_size = 5) +
     theme(legend.position = c(0.2, 0.2), panel.grid = element_blank(),
-          legend.text = element_text(size = 6), legend.title = element_text(size = 6),
+          legend.text = element_text(size = 5), legend.title = element_text(size = 5),
           legend.key.width = unit(3,"mm"), legend.key.height = unit(2, "mm"))
 
 pc1
 
-ggsave(
-    filename = "pca_trilema.png", path = "figures/", device = "png",
-    width = 3, height = 3, dpi = 300, bg = "white",
-    plot = pc1
-)
+# ggsave(
+#     filename = "pca_trilema.png", path = "figures/", device = "png",
+#     width = 3, height = 3, dpi = 300, bg = "white",
+#     plot = pc1
+# )
 
 ```
 
@@ -556,7 +556,7 @@ a1 <- df_dat |>
         aes(x = EF *1.1, y = Gini * 1.1, label = country_code, colour = Group), 
         size = 1, show.legend = FALSE) +
     scale_color_manual("Groups", values = c("#73B3A3","#FEA621","#5BA4CA")) +
-    labs(x = "Ecological Footprint", y = "Gini") +
+    labs(x = "Ecological Footprint", y = "Inequality (Gini)") +
     theme_light(base_size = 6) +
     theme(panel.grid = element_blank(), legend.position = c(0.8,0.2), 
           legend.text = element_text(size = 4), legend.title = element_text(size =4),
@@ -602,7 +602,7 @@ a2 <- df_dat |>
                   label = country_code, colour = Group), 
               size = 1, show.legend = FALSE) +
     scale_color_manual("Groups", values = c("#73B3A3","#FEA621","#5BA4CA")) +
-    theme_light(base_size = 6) + labs(x = "GNI [log]") +
+    theme_light(base_size = 6) + labs(x = "Prosperity (GNI [log])", y = "Inequality (Gini)") +
     theme(panel.grid = element_blank(), legend.position = c(0.8,0.2),
           legend.text = element_text(size = 4), legend.title = element_text(size = 4),
           legend.key.width = unit(2,"mm"), legend.key.height = unit(2, "mm")) 
@@ -643,7 +643,7 @@ a3 <- df_dat |>
                   label = country_code, colour = Group), 
               size = 1, show.legend = FALSE) +
     scale_color_manual("Groups", values = c("#73B3A3","#FEA621","#5BA4CA")) +
-    theme_light(base_size = 6) + labs(y = "Ecological footprint") +
+    theme_light(base_size = 6) + labs(y = "Ecological footprint", x = "Prosperity (GNI)") +
     theme(panel.grid = element_blank(), legend.position = c(0.8,0.8),
           legend.text = element_text(size = 4), legend.title = element_text(size = 4),
           legend.key.width = unit(2,"mm"), legend.key.height = unit(2, "mm")) 
@@ -667,8 +667,8 @@ f3 <- c3 + annotation_custom(
 
 # ggsave(
 #     filename = "trilema_ensamble.png", device = "png", path = "figures/",
-#     width = 7.5, height = 3, bg = "white", dpi = 300, 
-#     plot = f1 + labs(tag = "A") + f2 + labs(tag = "B") +  f3 + labs(tag = "C") 
+#     width = 7.5, height = 3, bg = "white", dpi = 300,
+#     plot = f1 + labs(tag = "A") + f2 + labs(tag = "B") +  f3 + labs(tag = "C")
 # )
 ```
 
@@ -713,9 +713,9 @@ gni <- dat1 %>%
         sd_gni = sd(gni, na.rm = TRUE)
     )
 
-df_all <- gini |> left_join(ef) |> left_join(gni)
+df_all2 <- gini |> left_join(ef) |> left_join(gni)
 
-df_all <- df_all |> ungroup() |> 
+df_all2 <- df_all |> ungroup() |> 
     filter(!is.na(sd_gini), !is.na(m_ef), !is.na(sd_ef), !is.na(m_gni), !is.na(sd_gni)) 
 ```
 
@@ -723,8 +723,8 @@ df_all <- df_all |> ungroup() |>
 ```{r}
 m <- "ward.D2" # minimize the total within-cluster variance
 
-clust_num <- NbClust::NbClust( 
-    data = (df_all %>% as.data.frame() %>% 
+clust_num2 <- NbClust::NbClust( 
+    data = (df_all2 %>% as.data.frame() %>% 
         select(where(is.numeric)) ),
     #distance = "maximum",
     min.nc = 2, max.nc = 7, 
@@ -737,8 +737,8 @@ clust_num <- NbClust::NbClust(
 library(clValid)
 library(mclust)
 ## Stability & Internal validation
-stab <- clValid::clValid(
-    obj = df_all %>% as.data.frame() %>% 
+stab2 <- clValid::clValid(
+    obj = df_all2 %>% as.data.frame() %>% 
         select(where(is.numeric)) %>%
         as.matrix(),
     nClust = 2,
@@ -755,39 +755,39 @@ clValid::optimalScores(stab)
 ```
 
 ```{r}
-stab@clusterObjs$pam$`2`$clustering
+stab2@clusterObjs$pam$`2`$clustering
 
 ```
 
 ```{r}
-df_all |> 
-    mutate(clus = stab@clusterObjs$pam$`2`$clustering ) 
+df_all2 |> 
+    mutate(clus = stab2@clusterObjs$pam$`2`$clustering ) 
 ```
 
 ```{r}
-pc_all <- prcomp(df_all |> 
+pc_all <- prcomp(df_all2 |> 
                  select(where(is.numeric)) ,
              center = TRUE, scale. = TRUE)
 
 
 pc2 <- ggbiplot::ggbiplot(
-    pc_all, groups = as.character(stab@clusterObjs$pam$`2`$clustering ),
-    ellipse = TRUE, labels = df_all$country_code, labels.size = 1.5,
-    varname.size = 2) +
+    pc_all, groups = as.character(stab2@clusterObjs$pam$`2`$clustering ),
+    ellipse = TRUE, labels = df_all2$country_code, labels.size = 1,
+    varname.size = 1.5) +
     scale_color_manual("Groups", values = c("#73B3A3","#FEA621")) +
     labs(tag = "B") + 
-    theme_light(base_size = 6) +
+    theme_light(base_size = 5) +
     theme(legend.position = c(0.2, 0.2), panel.grid = element_blank(),
-          legend.text = element_text(size = 6), legend.title = element_text(size = 6),
+          legend.text = element_text(size = 5), legend.title = element_text(size = 5),
           legend.key.width = unit(3,"mm"), legend.key.height = unit(2, "mm"))
 
 pc1 + pc2 + plot_layout(widths = 3, heights = 3)
 
-ggsave(
-    filename = "pca_trilemma.png", path = "figures/", device = "png",
-    width = 6, height = 3, dpi = 300, bg = "white",
-    plot = pc1+pc2
-)
+# ggsave(
+#     filename = "pca_trilemma.png", path = "figures/", device = "png",
+#     width = 6, height = 3, dpi = 300, bg = "white",
+#     plot = pc1+pc2
+# )
 ```
 
 
@@ -813,10 +813,10 @@ ef_map <-  world |>
     scico::scale_fill_scico(
         "Mean Ecological Footprint",palette = "romaO",
         guide = guide_colorbar(title.position = "top")) + 
-    labs(tag = "A") +
-    theme_void(base_size = 6) +
-    theme(legend.position = "bottom", legend.key.height = unit(2, "mm"), 
-          legend.key.width = unit(8, "mm"))
+    labs(tag = "C") +
+    theme_void(base_size = 5) +
+    theme(legend.position = "bottom", legend.key.height = unit(1, "mm"), 
+          legend.key.width = unit(5, "mm"))
 
 
 gini_map <-  world |>
@@ -827,10 +827,10 @@ gini_map <-  world |>
     scico::scale_fill_scico(
         "Mean Gini",palette = "berlin",
         guide = guide_colorbar(title.position = "top")) + 
-    labs(tag = "B") +
-    theme_void(base_size = 6) +
-    theme(legend.position = "bottom", legend.key.height = unit(2, "mm"), 
-          legend.key.width = unit(8, "mm"))
+    labs(tag = "D") +
+    theme_void(base_size = 5) +
+    theme(legend.position = "bottom", legend.key.height = unit(1, "mm"), 
+          legend.key.width = unit(5, "mm"))
 
 gni_map <-  world |>
     left_join(gini |> dplyr::select(isoa2, country_code),  
@@ -842,21 +842,33 @@ gni_map <-  world |>
     scico::scale_fill_scico(
         "Mean Gross National Income",palette = "batlowW",
         guide = guide_colorbar(title.position = "top")) + 
-    labs(tag = "C") +
-    theme_void(base_size = 6) +
-    theme(legend.position = "bottom", legend.key.height = grid::unit(2, "mm"), 
-          legend.key.width = grid::unit(8, "mm"))
+    labs(tag = "E") +
+    theme_void(base_size = 5) +
+    theme(legend.position = "bottom", legend.key.height = grid::unit(1, "mm"), 
+          legend.key.width = grid::unit(5, "mm"))
 
 
 
 ef_map + gini_map + gni_map
+# 
+# ggsave(
+#     filename = "maps_trilemma.png", path = "figures/", device = "png",
+#     width = 6, height = 1.5, dpi = 400, bg = "white",
+#     plot = ef_map + gini_map + gni_map
+# )
+
+
+```
+
+```{r}
 
 ggsave(
-    filename = "maps_trilemma.png", path = "figures/", device = "png",
-    width = 6, height = 1.5, dpi = 400, bg = "white",
-    plot = ef_map + gini_map + gni_map
+    filename = "pca_maps.png", path = "figures/", device = "png",
+    width = 5, height = 4, dpi = 400, bg = "white",
+    plot = (pc1 / pc2 ) | (ef_map / gini_map / gni_map) + 
+    plot_annotation(tag_levels = "A") + 
+    plot_layout(widths = c(1,4), tag_level = "new")
 )
-
 
 ```
 
