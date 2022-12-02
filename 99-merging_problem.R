@@ -59,10 +59,10 @@ prob$Document_OLD_INCL[!prob$Document_OLD_INCL %in% new_fit$docs] |> length() # 
 
 ## Extract the 1912 problematic titles
 probs <- prob[!prob$Document_OLD_INCL %in% new_fit$docs,] |> 
-    select(Document_OLD_INCL, Topic_OLD_INCL) |> 
+    #select(Document_OLD_INCL, Topic_OLD_INCL) |> 
     filter(!is.na(Topic_OLD_INCL)) |> 
-    rename(docs = Document_OLD_INCL) |> 
-    select(-Topic_OLD_INCL)
+    rename(docs = Document_OLD_INCL) #|> 
+    #select(-Topic_OLD_INCL)
 
 ## The problems are reduced to 1852, I removed all documents that do not have old topic
 ## since they are not matched by name, they do not have new topic either. There are a lot of 
@@ -101,4 +101,17 @@ fuzzy_match |>
     arrange(desc(n))
 
 
-save(fuzzy_match, file = "data/fuzzy_match.RData")
+# save(fuzzy_match, file = "data/fuzzy_match.RData")
+
+
+### Reconstruct the file with the non-problematic cases
+
+result <- prob[prob$Document_OLD_INCL %in% new_fit$docs,] |> 
+    left_join(new_fit, by = c("Document_OLD_INCL" = "docs"))
+
+
+result <- fuzzy_match |> 
+    rename(Document_OLD_INCL = docs.x) |> 
+    bind_rows(result)
+
+write_csv(result, file = "data/matching_problem.csv")
