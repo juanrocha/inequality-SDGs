@@ -120,7 +120,7 @@ toc() #43876.676 sec elapsed or 12.2hrs
 save(tset.TM, topicNumber.TM, dtm, file = "data/220625_topic_models_gibbs.RData")
 
 
-load("data/211020_topic_models_gibbs.RData")
+load("data/220625_topic_models_gibbs.RData")
 
 
 #### visualizations ####
@@ -315,3 +315,50 @@ networkD3::simpleNetwork(
 
 ## free memory
 rm(mat, authors)
+
+
+new_fit <- topicNumber.TM[[3]] |> 
+    slot("gamma") |> # take the gamma matrix
+    as_tibble() |> # convert to data frame
+    # add a column with paper titles
+    add_column(docs = topicNumber.TM[[3]] |> slot("documents")) |> 
+    # make all gamma values into one column for filtering later
+    pivot_longer(cols = starts_with("V"), names_to = "topic", values_to = "gamma" ) |> 
+    # select only topic 1
+    # filter(topic == "V1") |> 
+    group_by(docs) |> 
+    filter(gamma == max(gamma))
+    # arrange by descending gamma value (the prob of a document belonging to a topic)
+    # arrange(desc(gamma)) |> 
+    # # print only the top 10
+    # top_n(10)
+
+
+#old fit: 
+load("data/211020_topic_models_gibbs.RData")
+
+old_fit <- topicNumber.TM[[3]] |> 
+    slot("gamma") |> # take the gamma matrix
+    as_tibble() |> # convert to data frame
+    # add a column with paper titles
+    add_column(docs = topicNumber.TM[[3]] |> slot("documents")) |> 
+    # make all gamma values into one column for filtering later
+    pivot_longer(cols = starts_with("V"), names_to = "topic", values_to = "gamma" ) |> 
+    # select only topic 1
+    # filter(topic == "V1") |> 
+    group_by(docs) |> 
+    filter(gamma == max(gamma))
+
+
+new_fit |> ungroup() |> 
+    left_join(old_fit |> ungroup() |> 
+                  rename(topic_old = topic, gamma_old = gamma)) |> 
+    filter(is.na(old))
+
+new_fit$docs[!new_fit$docs %in% old_fit$docs] |> length() #112 docs
+old_fit$docs[!old_fit$docs %in% new_fit$docs] |> length() #11
+
+    #write_csv(file = "data/old_and_new_max_gammas.csv")
+
+
+

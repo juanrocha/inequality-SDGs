@@ -47,6 +47,8 @@ library(slider)
 
 This notebooks explores synergies and trade-offs between inequality and other SDGs with the World Bank dataset on sustainable development goals at the national scale.
 
+## World Bank SDGs
+
 ```{r}
 dat <- read_csv(file = "~/Documents/Projects/DATA/WorldBank/SDG_csv/SDGData.csv") |> 
     janitor::clean_names()
@@ -178,17 +180,77 @@ p + theme_light(base_size = 8)
 
 vars <- p$data$indicator_name
 
+q <- dat |>
+    filter(indicator_name %in%  vars) |>
+    select(-x35) |>
+    pivot_longer(cols = x1990:last_col(), values_to = "value", names_to = "year") |>
+    mutate(year = str_remove(year, "x"), year = as.numeric(year)) |>
+    mutate(nas = is.na(value)) |>
+    filter(year >= 2000, year < 2019) |>  # restricting time improves
+    group_by(country_code, indicator_name) |>
+    summarise(missing = sum(nas) / diff(range(year))) |>
+    #filter(country_code %in% complete_countries) |> # this line only if next cell already run
+    # ungroup() |> group_by(country_code) |>
+    # summarize(mean_missing = mean(missing)) |>
+    #filter(mean_missing < 0.3) |>
+    ggplot(aes(country_code, indicator_name)) +
+    geom_tile(aes(fill = missing)) +
+    scale_fill_viridis_c() +
+    theme_light(base_size = 6) +
+    theme(axis.text.x = element_text(angle = 90))
+
+q
+
 ```
+
+```{r}
+complete_countries <-  dat |>
+    filter(indicator_name %in%  vars) |>
+    select(-x35) |>
+    pivot_longer(cols = x1990:last_col(), values_to = "value", names_to = "year") |>
+    mutate(year = str_remove(year, "x"), year = as.numeric(year)) |>
+    mutate(nas = is.na(value)) |>
+    filter(year >= 2000, year < 2019) |>  # restricting time improves
+    group_by(country_code, indicator_name) |>
+    summarise(missing = sum(nas) / diff(range(year))) |> 
+    # filter out any country with missing values higher than 70%
+    filter(!any(missing > 0.3)) |> 
+    pull(country_code) |> unique()
+
+complete_countries
+```
+
+
+Using `tsibble`:
+
+```{r}
+
+dat |>
+    filter(indicator_name %in% vars, country_code %in% complete_countries) |> 
+    select(-x35) |> 
+    pivot_longer(cols = x1990:last_col(), values_to = "value", names_to = "year") |> 
+    mutate(year = str_remove(year, "x")) |>  ## Formating for year-month-day
+    #mutate(year = lubridate::parse_date_time(year, orders = "Y", select_formats = "%Y"))  |> 
+    #mutate(year = strptime(year, format = "%Y")) |>
+    mutate(year = lubridate::make_date(year = year)) |> 
+    as_tsibble(key = c(country_code, indicator_name), index=year, regular = TRUE) 
+    # count_gaps()
+
+```
+
+
+
 ### Correlations
 
 Probably need to log-transform cereal yield and forest area. 
 
 ```{r}
 dat |>
-    filter(indicator_name %in% vars, country_code %in% countries_list) |> 
+    filter(indicator_name %in% vars, country_code %in% complete_countries) |> 
     select(-x35) |> 
     pivot_longer(cols = x1990:last_col(), values_to = "value", names_to = "year") |> 
     mutate(year = str_remove(year, "x"), year = as.numeric(year)) |> 
+    filter(year >= 2000, year < 2019) |>  # restricting time improves
     select(-indicator_code) |> 
     pivot_wider(values_from = value, names_from = indicator_name) |> 
     GGally::ggpairs(
@@ -202,16 +264,17 @@ Interpolate missing values
 
 ```{r}
 df_dat <- dat |>
-    filter(indicator_name %in% vars, country_code %in% countries_list) |> 
+    filter(indicator_name %in% vars, country_code %in% complete_countries) |> 
     select(-x35) |> 
     pivot_longer(cols = x1990:last_col(), values_to = "value", names_to = "year") |> 
     mutate(year = str_remove(year, "x"), year = as.numeric(year)) |> 
+    filter(year >= 2000, year < 2019) |>  # restricting time improves
     select(-indicator_code) |> 
     pivot_wider(values_from = value, names_from = indicator_name) %>% 
     group_by(country_code) %>% 
     mutate(across(.cols = vars, .fns = na_interpolation, option = "spline")) 
 
-df_dat
+df_dat |> ungroup() |> skimr::skim() # no missing values
 ```
 
 
@@ -239,7 +302,7 @@ sdg |>
     group_by(geo_area_code, indicator, time_period) |> 
     summarize(n = n()) |> 
     filter(n>19) |>  # 19 is the max number of years
-    arrange(desc(n))
+    arrange(desc(n)) #|> pull(geo_area_code) |> unique() # 191 countries (all of them)
 
 sdg |> 
     filter(geo_area_code == 40, indicator == "5.4.1", time_period == 2009)
@@ -309,58 +372,332 @@ sdg |>
     pivot_longer(cols = starts_with("2"), names_to = "year", values_to = "value",
                  names_transform = list(year = as.numeric, value = as.numeric)) |> 
     mutate(nas = is.na(value)) |> 
-    group_by(indicator_name, year) |> 
+    group_by(indicator, indicator_name, year) |> 
     summarise(missing = sum(nas) / n_countries2) |> 
-     mutate(indicator_name = str_trunc(indicator_name, width = 30, side = "right")) |> 
-    ggplot(aes(year, indicator_name)) +
+    mutate(indicator_name = str_trunc(indicator_name, width = 30, side = "right")) |>
+    ggplot(aes(year, indicator)) +
     geom_tile(aes(fill = missing)) +
     scale_fill_viridis_c() +
     labs(title = "SDG15: Life on land") +
     theme_light(base_size = 8)
 
+
+## Very long names:
 sdg|> 
     rename(indicator_name = series_description, year = time_period, iso3 =`ISO-alpha3 Code` ) |> 
     filter(iso3 %in% countries_list, !is.na(value)) |> # use only countries
     filter(goal == 15) |> 
-    pull(indicator_name) |> unique()
+    select(indicator, indicator_name) |> 
+    unique()
     
 
 ```
+
+Usable variables from UN Dataset:
+
+```{r}
+p2 <- sdg |> 
+    rename(series_name = series_description, year = time_period, iso3 =`ISO-alpha3 Code` ) |> 
+    filter(iso3 %in% complete_countries) |> # use only countries
+    filter(goal %in% c(10, 14, 15)) |> 
+    group_by(series_code, year, iso3) |>
+    # this gets rid of multiple values per year
+    summarize(mean_val = mean(value, na.rm = TRUE)) |> 
+    # add_count() |> 
+    pivot_wider(names_from = year, values_from = mean_val) |> 
+    pivot_longer(cols = starts_with("2"), names_to = "year", values_to = "value",
+                 names_transform = list(year = as.numeric, value = as.numeric)) |> 
+    mutate(nas = is.na(value)) |> 
+    ungroup() |> group_by(series_code, iso3) |> 
+   # group_by(indicator, indicator_name, iso3) |> 
+    summarise(missing = sum(nas) / diff(range(year)) ) |>  ## dividing by number of years (per country)
+    #pull(missing) |> range() # should be between 0-1
+    # summarize(mean_missing = mean(missing)) |> 
+    filter(missing < 0.3) |> 
+    ungroup() |> 
+    pivot_wider(names_from = series_code, values_from = missing) |> 
+    pivot_longer(cols = AG_LND_FRSTCERT:last_col(), names_to = "series_code",
+                 values_to = "missing") |> 
+    group_by(series_code) |> 
+    #filter(!any(is.na(missing))) |> 
+    # ggplot(aes(iso3, series_code)) +
+    # geom_tile(aes(fill = missing)) +
+    # theme_light()
+    summarize(missing_countries = sum(is.na(missing))) |> 
+    filter(missing_countries < 45) |> 
+    ggplot(aes(missing_countries, series_code))+
+    geom_point()
+
+p2 + theme_light(base_size = 12)
+
+vars2 <- p2$data$series_code
+```
+
+```{r}
+q2 <- sdg |> 
+    rename(series_name = series_description, year = time_period, iso3 =`ISO-alpha3 Code` ) |> 
+    filter(iso3 %in% complete_countries) |> # use only countries
+    filter(series_code %in% vars2) |> 
+    ## this line is to get rid of multiple values per year
+    group_by(series_code, year, iso3) |>
+    summarize(mean_val = mean(value, na.rm = TRUE)) |> 
+    ungroup() |> #group_by(indicator_name, year, iso3) |> 
+    # add_count() |> 
+    pivot_wider(names_from = year, values_from = mean_val) |> 
+    pivot_longer(cols = starts_with("2"), names_to = "year", values_to = "value",
+                 names_transform = list(year = as.numeric, value = as.numeric)) |> 
+    mutate(nas = is.na(value)) |> 
+    group_by(series_code, iso3) |> 
+    summarise(missing = sum(nas) / diff(range(year))) |>  ## dividing by number of years (per country)
+    # summarize(mean_missing = mean(missing)) |> 
+    ungroup() |> 
+    filter(missing < 0.3) |> 
+    ## add missing values again for combination of indicator country:
+    ungroup() |> group_by(series_code) |>
+    pivot_wider(names_from = iso3, values_from = missing) |> 
+    pivot_longer(cols = AFG:last_col(), names_to = "iso3", values_to = "missing") |>
+    ## completely empty time series
+    #summarize(absent_countries = sum(is.na(missing))) |> 
+    ungroup() |> group_by(iso3 ) |> 
+    #filter(sum(is.na(missing)) < 45) |> # remove absent_countries > 45
+    filter(!any(is.na(missing))) |> 
+    ggplot(aes(iso3, series_code)) +
+    #geom_point()
+    geom_tile(aes(fill = missing)) +
+    scale_fill_viridis_c() +
+    theme_light() +
+    theme(axis.text.x = element_text(angle = 90))
+
+q2
+
+complete_countries_sdg <- q2$data$iso3 |> unique()
+```
+
+Reduce the dataset to variables and countries with almost complete data. Then impute missing values.
+
+```{r}
+df_un_reduced <- sdg |> 
+    rename(series_name = series_description, year = time_period, iso3 =`ISO-alpha3 Code` ) |> 
+    filter(iso3 %in% complete_countries_sdg) |> # use only countries
+    filter(series_code %in% vars2) |> 
+    group_by(series_code, year, iso3) |>
+    summarize(mean_val = mean(value, na.rm = TRUE)) |> 
+    ungroup() |> 
+    pivot_wider(names_from = year, values_from = mean_val) |> 
+    pivot_longer(cols = starts_with("2"), names_to = "year", values_to = "value",
+                 names_transform = list(year = as.numeric, value = as.numeric)) |> 
+    group_by(iso3, series_code) |> 
+    mutate(value = na_interpolation(value, option = "spline"))
+
+df_un_reduced |> ungroup() |> skimr::skim() # zero missing values
+```
+
+Now there is two working datasets cleaned and complete: `df_dat` is the data from World Bank, and `df_un_reduced` is the data from UN SDGs.
 
 ## Notes:
 
-Select the variables for which you have time series. Repeat the trajectories analysis. 
-Do static analysis with all SDGs
+1. Select the variables for which you have time series. Repeat the trajectories analysis. 
+2. Do static analysis with all SDGs
+
+Clean up a bit:
 
 ```{r}
-ctr <- sdg |> pull(geo_area_name) |> unique() |> length()
-sdg <- sdg |> select(-c(age:type_of_speed))
-
-sdg <- sdg |> 
-    mutate(value = as.numeric(value)) |> 
-    rename(year = time_period)
-yrs <- sdg$year |> range() |> diff()
-sdg <- sdg |> unique()
-
-dat2 <- sdg |> 
-    filter(goal == 10 | goal == 14 | goal == 15 ) |> 
-    group_by(indicator, geo_area_code, year, geo_area_name, goal, target, series_code, series_description) |> 
-    summarize(value = mean(value))
-
-## If I add series description it duplicate entries, possibly due to misspellings
-#test
-dat2 |>
-    unique() |>
-    add_count() |>
-    filter(n>1)
-
-dat2 |> 
-    add_count() |> 
-    ungroup() |> 
-    group_by(geo_area_name,  series_code) |> 
-    summarize(yrs_cov = sum(n)) |> 
-    filter(yrs_cov > 20)
-    
-sdg |> filter(series_code == "DC_ODA_BDVDL")
+rm(df_sdg, df_un, df_wb, maike_vars, other_vars)
+# key files
+# sdg raw data from UN SDG
+# dat raw data from WorldBank
 ```
 
+
+## Ordination
+
+```{r}
+pca1 <- df_dat |> 
+    select(-country_name) |> 
+    pivot_longer(cols = `Access to electricity (% of population)`:last_col(),
+                 values_to = "value", names_to = "variable") |> 
+    unite(col = "var", year, variable, sep = "_") |> 
+    pivot_wider(names_from = var, values_from = value) |> 
+    ungroup() |> 
+    select(-country_code) |> 
+    prcomp(center = TRUE, scale. = TRUE)
+```
+
+
+
+PCA
+```{r}
+plot(pca1)
+```
+
+```{r}
+biplot(pca1)
+```
+
+```{r}
+summary(pca1)
+```
+
+```{r}
+pca2 <- df_un_reduced |> 
+    unite(col = "var", series_code, year, sep = "_") |> 
+    pivot_wider(values_from = value, names_from = var) |> 
+    ungroup() |> 
+    select(-iso3) |> 
+    as.matrix(dimnames = list(df_un_reduced |> pull(iso3) |> unique())) |> 
+    prcomp(center = TRUE, scale. = TRUE)
+```
+
+
+```{r}
+biplot(pca2)
+```
+### Multiple factor analysis
+
+```{r}
+mfa1 <- df_un_reduced |> 
+    unite(col = "var", series_code, year, sep = "_") |> 
+    pivot_wider(values_from = value, names_from = var) |> 
+    ungroup() |> 
+    select(-iso3) |> 
+    as.matrix(dimnames = list(df_un_reduced |> pull(iso3) |> unique())) |> 
+    FactoMineR::MFA(group = rep(19, 6), type = rep("s", 6)) # 18 years times 6 variables
+```
+
+```{r}
+mfa1
+```
+
+```{r}
+mfa1$eig[1:10,2] |> barplot(names = 1:10)
+
+```
+```{r}
+mfa1
+```
+
+
+## To dos:
+
+- one PCA per year, see how PCA1 change over time. 
+
+## Leftovers
+
+Old code, most of the steps outlined are already implemented
+
+```{r}
+### World Bank dataset:
+# vars is the list of variables with <30% missing values over time and space
+# vars2 is the same list for UN dataset
+# yrs <- sdg$time_period|> range(na.rm = TRUE) 
+# 
+# df_wb <- dat |>
+#     filter(indicator_name %in% vars, country_code %in% complete_countries) |> 
+#     select(-x35) |> 
+#     pivot_longer(cols = x1990:last_col(), values_to = "value", names_to = "year") |> 
+#     mutate(year = str_remove(year, "x"), year = as.numeric(year)) |> 
+#     filter(year >= yrs[1], year <= yrs[2]) |> # use only years available in both datsets
+#     rename(iso3 = country_code) |> select(-indicator_code) |> 
+#     left_join(
+#         select(un_countries, iso3 = `ISO-alpha3 Code`, country_name = `Country or Area`)
+#     )
+# 
+# df_un <- sdg |> 
+#     rename(indicator_name = series_description, year = time_period, iso3 =`ISO-alpha3 Code` ) |> 
+#     filter(iso3 %in% countries_list, !is.na(value), indicator_name %in% vars2) |>
+#     filter(goal %in% c(10, 14, 15)) |> 
+#     group_by(indicator_name, year, iso3) |>
+#     summarize(mean_val = mean(value, na.rm = TRUE)) |> 
+#     ungroup() |> #group_by(indicator_name, year, iso3) |> 
+#     # add_count() |> 
+#     pivot_wider(names_from = year, values_from = mean_val) |> 
+#     pivot_longer(cols = starts_with("2"), names_to = "year", values_to = "value",
+#                  names_transform = list(year = as.numeric, value = as.numeric))|> 
+#     left_join(
+#         select(un_countries, iso3 = `ISO-alpha3 Code`, country_name = `Country or Area`)
+#     )
+#     
+# df_sdg <- full_join(df_un, df_wb) |> 
+#     rename(indicator = indicator_name)
+# 
+# df_sdg |> skimr::skim()
+```
+
+```{r}
+# df_sdg |> 
+#     ggplot(aes(year, value)) +
+#     geom_line(aes(group = iso3), show.legend = FALSE) +
+#     facet_wrap(~indicator, scales = "free_y")
+```
+remove countries with too few observations:
+
+```{r}
+# tot_vars <- df_sdg |> pull(indicator) |> unique() |> length()
+# tot_yrs <- df_sdg |> pull(year) |> unique() |> length()
+# tot_cnt <- df_sdg |> pull(iso3) |> unique() |> length()
+# 
+# df_sdg |> 
+#     pivot_wider(names_from = indicator, values_from = value) |> 
+#     pivot_longer(cols = 4:last_col(),names_to = "indicator", values_to = "value") |> 
+#     mutate(nas = is.na(value)) |>
+#     group_by(iso3, indicator) |> 
+#     dplyr::summarize(missing = sum(nas)/ (tot_yrs)) |> 
+#     summarize(suitable = missing > 0.3) |> 
+#     ungroup() |> group_by(iso3) |> 
+#     summarize(varsok = sum(suitable)) |> 
+#     filter(varsok == tot_vars)
+# 
+# key_cntrs
+```
+
+
+Impute missing values:
+
+```{r}
+# df_sdg <- df_sdg |> 
+#     filter(iso3 %in% key_cntrs) |> 
+#     pivot_wider(names_from = indicator, values_from = value) |> 
+#     pivot_longer(cols = 4:last_col(),names_to = "indicator", values_to = "value") |> 
+#     group_by(indicator, iso3) |> 
+#     mutate(value = na_interpolation(value, option = "stine"))
+```
+
+```{r}
+# df_sdg |> 
+#     ggplot(aes(year, value)) +
+#     geom_line(aes(group = iso3), alpha = 0.5, show.legend = FALSE) +
+#     facet_wrap(~indicator, scales = "free_y")
+```
+Check for correlations:
+
+```{r}
+# df_sdg |> 
+#     pivot_wider(names_from = indicator, values_from = value) |> 
+#     GGally::ggpairs(
+#         columns = 4:21 ,
+#     lower = list(continuous = GGally::wrap("points", alpha = 0.5, size = 0.5)),
+#     diag = list(continuous = GGally::wrap("densityDiag", alpha = 0.2))
+#     # upper = list(continuous = GGally::wrap("cor", size = 2))
+#     ) + theme_light(base_size = 6)
+```
+
+
+```{r}
+# df_sdg <- df_sdg |> 
+#     ungroup() |> 
+#     pivot_wider(names_from = indicator, values_from = value) |> 
+#     mutate(
+#         across(.cols = c("Cereal yield (kg per hectare)" ,"Forest area (sq. km)" ,
+#             "Forest area certified under an independently verified certification scheme (thousands of hectares)" , "Total assistance for development, by donor countries (millions of current United States dollars)"  , "Total assistance for development, by recipient countries (millions of current United States dollars)"
+#         ), .fns = log1p)
+#     ) 
+```
+
+
+Paper title: the blind spots of sustainable development
+
+- underscore the fact that a lot of variables are not available
+- the kind of variables available are not appropriate in many cases
+- sub-national conversation: countries interpret and collect data differently [carla and emmy work]
+- what can be done to address the gaps? use of other datasets
+- open questions for other SDGs dimensions...
