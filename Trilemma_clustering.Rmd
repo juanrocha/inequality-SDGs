@@ -403,6 +403,8 @@ Who is the weird trajectory out there, world? No it's Luxemburg
 ```{r}
 df_dat |> 
     arrange(desc(EFconsPerCap))
+
+#save(df_dat, file = "data/cleaned_trilemma.RData")
 ```
 
 
@@ -483,9 +485,9 @@ stab@clusterObjs$diana |> plot()
 df_summary |> 
     mutate(clus = stab@clusterObjs$kmeans$`3`$cluster ) |> 
     mutate(country = as_factor(country)) |> 
-    mutate(country = fct_reorder2(country, magnitude_a, Gini)) |> 
+    mutate(country = fct_reorder2(country, magnitude, Gini)) |> 
     pivot_longer(
-        cols = sd_magnitude:gamma_a, names_to = "vars", 
+        cols = sd_magnitude:gamma, names_to = "vars", 
         values_to = "vals") |> 
     ggplot(aes(vals, country)) +
     geom_col(aes(fill = as.factor(clus))) +

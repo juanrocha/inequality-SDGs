@@ -1,0 +1,154 @@
+---
+title: "Trade-offs between biosphere goals and inequality at the national scale"
+output:
+  pdf_document:
+    dev: pdf
+    keep_tex: yes
+    toc: no
+    latex_engine: xelatex
+  rtf_document:
+    toc: no
+  word_document:
+csl: /Users/juanrocha/Documents/styles/nature.csl
+bibliography: refs.bib
+citecolor: blue
+documentclass: article
+font: Arial
+fontsize: 10pt
+linkcolor: blue
+urlcolor: blue
+header-includes:
+- \usepackage{dcolumn, rotating, longtable, lineno, float, array, tabularx, inputenc}
+- \setmainfont{Arial}
+- \renewcommand{\abstractname}{}
+- \graphicspath{{figures/}}
+- \usepackage[margin=2.5cm]{geometry}
+- \linenumbers
+- \usepackage{setspace}
+---
+
+# Outline
+
+Target: EcolEcon?
+/ People and Nature?
+/ PNAS / ERL [4000w]
+
+Authors:
+
+Introduction {800w}
+
+-   Previous studies proposed the hypothesis of the trilemma
+
+-   Do the trade-offs hold at national scale with SDG data?
+
+Methods {800w}:
+
+-   SDG datasets at national scale collected by World Bank and United Nations
+-   Selection of variables
+-   Multiple Factor Analysis (PCA over time)
+-   Clustering
+
+Results {1000w}:
+
+-   
+
+Discussion {1000w}
+
+Conclusion {400w}
+
+SM
+
+-   Figure with missing values from WB dataset
+
+-   Figure with missing alues from UN dataset
+
+-   Correlograms
+
+-   
+
+# Introduction
+
+Countries around the world have committed to achieve 17 sustainable development goals.
+The ambitious agenda is materialized in 169 targets and indicators, yet not all targets are monitored and not all countries report them.
+An open question in sustainability science is if these targets are achievable simultaneously?
+Previous work on synergies and trade-offs between sustainable development goals (SDGs) suggest that both options are possible, yet this work is limited to expert elicitation and correlational studies.
+It is unclear if there are structural constraints that limits a country capacity to achieve particular SDGs, or if there are milestones that need to be unlocked before it can achieve the desired performance in a particular dimension of sustainability.
+In other words, these correlations do not account for the path dependency inherent of the process of development.
+
+Here we address the question of synergies and trade-offs by focusing on goals related to biosphere and inequality (SDGs 10, 14 and 15).
+The motivation is twofold.
+First, the Convention for Biological Diversity is currently negotiating and agreeing on the next set of goals and ambitions to bend the curve of biodiversity loss.
+Understanding which countries are well positioned to achieve biodiversity goals or not will be necessary to design strategies that support countries with low capabilities, that address the dimensions of justice, and design targets with plausibility in mind.
+Second, within country inequality has been rising in the last decades even in high income countries, and as consequence of the Covid pandemic, in between country inequality raised for first time in a generation.
+These statistics set back progress on the inequality SDG by at least a decade, and undermines the mantra of leaving no one behind.
+
+Recent work shows that a trilemma exist where countries struggle to achieve high prosperity, high environmental standards while reducing inequality.
+Using data from environmental footprint, the gross national product, and the Gini coefficient time series, 53 countries were clustered and a typology of trajectories identified.
+No country achieved the three goals simultenously, and Latin American countries seem to have dynamics characterized by an inequality trap.
+Countries trajectories on the trilemma space, however, suggest the hypothesis that social progress can be achieved without compromising the biosphere.
+It remains an open questions if these patterns hold across different datasets and scales.
+Here we address such gap by studying synergies and trade-offs between SDGs related to inequality and the biosphere.
+
+# Methods
+
+```{r echo = FALSE}
+dat <- read_csv(file = "~/Documents/Projects/DATA/WorldBank/SDG_csv/SDGData.csv") |> 
+    janitor::clean_names()
+
+un_countries <- read_csv2(file = "~/Documents/Projects/DATA/SDGs_UNStats/UNSD — Methodology.csv")
+sdg <- read_csv(file = "~/Documents/Projects/DATA/SDGs_UNStats/20180817102044132_juan.rocha@su.se_data.csv") |> janitor::clean_names()
+
+sdg <- sdg |> 
+    left_join(
+        select(un_countries, country = `Country or Area`, starts_with("ISO")),
+        by = c("geo_area_name" = "country")) |> 
+    filter(value != "-")|> 
+    mutate(value = as.numeric(value))
+
+
+```
+
+*Datasets:* To that end, we used the SDGs datasets made openly available by the World Bank (WB) and United Nations (UN).
+The WB dataset offers `r dat$indicator_name |> unique() |> length()` indicators, with time series from 1990 to 2019 for `r dat$country_name |> unique() |> length()` countries or administrative areas (N = 2'013.791 observations).
+The UN dataset offers time series from 2000 to 2019 for 17 SDGs, 112 targets, and 356 indicators, in 310 administrative areas (N = 1'072.731 observations).
+Despite their coverage, both datasets contain high proportion of missing values and the sample is unbalanced across countries and time, meaning some countries have better temporal coverage than others.
+We focused subsequent analysis only on country level indicators for SDGs 10, 14 and 15, related to inequality and the biosphere respectively.
+
+```{r echo = FALSE}
+load(file = "data/cleaned_sdg.RData")
+# `df_dat` is the data from World Bank, and `df_un_reduced` is the data from UN SDGs
+df_dat <- df_dat |> ungroup()
+df_un_reduced <- df_un_reduced |> ungroup()
+```
+
+*Variable selection:* We computed the proportion of missing values for all time series related to our initial selection of indicators (Figs S1, S2, S3).
+We discarded indicators for which time series contained more than 30% of missing values, or less than 45 countries.
+Missing values were then imputed using a cubic spline, leaving us with `r df_dat |> pull(country_code) |> unique() |> length()` countries, `r df_dat |> pull(year) |> unique() |> length()` years of data across 9 indicators for the WB dataset; and `r df_un_reduced |> pull(series_code) |> unique() |> length()` indicators, `r df_un_reduced |> pull(iso3) |> unique() |> length()` countries over `r df_un_reduced |> pull(year) |> unique() |> length()` years for the UN dataset.
+Table X summarizes our variable selection, their units and available ranges.
+
+*Ordination:* We used multiple factor analysis and principal component analysis over time to ...
+
+Notes:
+
+-   Add Gini to the datasets!
+    repeat the analysis
+
+-   Add the SM figures, they are ready
+
+-   Paper figures:
+
+    -   Ordination plot for each dataset (nicer arrows) using iso codes instead of numbers.
+        Show clustering groups in colors.
+
+    -   Plot with PCA selection (2-3 components?) and then change over time of the components.
+        Do clustering on trayectories as well?
+        -- and then add a map with the clusters for each dataset.
+
+\# References {.unnumbered}
+
+::: {#refs}
+:::
+
+\\pagebreak
+
+# Supplementary Material {#sec:SM}

@@ -115,3 +115,5 @@ result <- fuzzy_match |>
     bind_rows(result)
 
 write_csv(result, file = "data/matching_problem.csv")
+
+result <- read_csv(file = "data/matching_problem.csv")

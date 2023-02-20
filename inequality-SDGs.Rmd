@@ -137,6 +137,11 @@ p <- dat |>
     theme_light(base_size = 6)
 
 p + theme_light(base_size = 8)
+
+# ggsave(
+#     plot = p, filename = "WB_environment_SDGs_othervars.png", path = "figures/", device = "png",
+#     width = 6, height = 4, dpi = 400, bg = "white"
+# )
 ```
 
 
@@ -244,7 +249,7 @@ dat |>
 
 Probably need to log-transform cereal yield and forest area. 
 
-```{r}
+```{r warnings=FALSE, message=FALSE}
 dat |>
     filter(indicator_name %in% vars, country_code %in% complete_countries) |> 
     select(-x35) |> 
@@ -494,6 +499,11 @@ df_un_reduced |> ungroup() |> skimr::skim() # zero missing values
 
 Now there is two working datasets cleaned and complete: `df_dat` is the data from World Bank, and `df_un_reduced` is the data from UN SDGs.
 
+```{r}
+#save(df_dat, df_un_reduced, file = "data/cleaned_sdg.RData")
+```
+
+
 ## Notes:
 
 1. Select the variables for which you have time series. Repeat the trajectories analysis. 
@@ -535,7 +545,7 @@ biplot(pca1)
 ```
 
 ```{r}
-summary(pca1)
+# summary(pca1)
 ```
 
 ```{r}
@@ -573,13 +583,60 @@ mfa1$eig[1:10,2] |> barplot(names = 1:10)
 
 ```
 ```{r}
-mfa1
+mfa1$group
 ```
+
+```{r}
+mfa1 |> summary()
+```
+
+
+```{r}
+ggbiplot::ggbiplot(
+    pca1,
+    labels = df_dat$country_code |> unique(),
+    circle = TRUE,
+    varname.abbrev = TRUE)
+```
+
 
 
 ## To dos:
 
 - one PCA per year, see how PCA1 change over time. 
+
+```{r}
+pca3 <- df_dat |> 
+    ungroup() |> 
+    mutate(year = as_factor(year)) |> 
+    split(~year) |>
+    map(function(x) select(x, where(is.numeric))) |> 
+    map(function(x) princomp(x, center = TRUE, scale. = TRUE))
+```
+
+```{r}
+pca3 |> map(biplot)
+```
+
+## Paper outline
+
+Title: Trade-offs between biosphere goals and inequality at the national scale
+
+Introduction
+
+- Previous studies proposed the hypothesis of the trilemma
+- Do the trade-offs hold at national scale with SDG data?
+
+Methods:
+
+- SDG datasets at national scale collected by World Bank and United Nations
+- Selection of variables
+- Multiple Factor Analysis (PCA over time)
+- Clustering
+
+Results:
+
+- 
 
 ## Leftovers
 
