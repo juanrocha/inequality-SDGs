@@ -106,9 +106,11 @@ p <- dat |>
     summarise(missing = sum(nas) / n_countries) |> 
     ggplot(aes(year, indicator_name)) +
     geom_tile(aes(fill = missing)) +
-    scale_fill_viridis_c() +
+    scale_fill_viridis_c(
+        guide = guide_colorbar(barwidth = unit(2,"mm"), barheight = unit(20, "mm"))) + 
+    labs(x = "Year", y = "Indicator name") +
     theme_light(base_size = 6)
-
+# 
 # ggsave(
 #     plot = p, filename = "WB_environment_SDGs.png", path = "figures/", device = "png",
 #     width = 6, height = 4, dpi = 400, bg = "white"
@@ -133,7 +135,9 @@ p <- dat |>
     summarise(missing = sum(nas) / n_countries) |> 
     ggplot(aes(year, indicator_name)) +
     geom_tile(aes(fill = missing)) +
-    scale_fill_viridis_c() +
+    scale_fill_viridis_c(
+        guide = guide_colorbar(barwidth = unit(2,"mm"), barheight = unit(20, "mm"))) + 
+    labs(x = "Year", y = "Indicator name")
     theme_light(base_size = 6)
 
 p + theme_light(base_size = 8)
@@ -155,7 +159,7 @@ key$topic |> unique()
 
 ## To-dos
 
-Wait until Maike and Tong revise the selection of variables. Take the analysis from there. Alternatively, select a couple of topics as example, just to explore how to deal with missing values and what is doable. Once one take missing values into account, the number of variables and countries get reduced quickly.
+**Wait until Maike and Tong revise the selection of variables.** Take the analysis from there. Alternatively, select a couple of topics as example, just to explore how to deal with missing values and what is doable. Once one take missing values into account, the number of variables and countries get reduced quickly.
 
 Combining both options:
 
@@ -178,10 +182,12 @@ p <- dat |>
     filter(mean_missing < 0.3) |> 
     ggplot(aes(mean_missing, indicator_name)) +
     geom_point() +
-    #scale_fill_viridis_c() +
+    #scale_fill_viridis_c(
+    #    guide = guide_colorbar(barwidth = unit(2,"mm"), barheight = unit(20, "mm"))) + 
+    labs(x = "Mean proportion of missing values across countries", y = "Indicator name", tag = "A")+
     theme_light(base_size = 6)
 
-p + theme_light(base_size = 8)
+#p + theme_light(base_size = 8)
 
 vars <- p$data$indicator_name
 
@@ -200,14 +206,22 @@ q <- dat |>
     #filter(mean_missing < 0.3) |>
     ggplot(aes(country_code, indicator_name)) +
     geom_tile(aes(fill = missing)) +
-    scale_fill_viridis_c() +
+    scale_fill_viridis_c(
+        "Proportion of missing values",
+        guide = guide_colorbar(barwidth = unit(2,"cm"), barheight = unit(2,"mm"))) + 
+    labs(x = "Country code", y = "Indicator name", tag = "B") +
     theme_light(base_size = 6) +
-    theme(axis.text.x = element_text(angle = 90))
+    theme(axis.text.x = element_text(angle = 90, size = 3), 
+          legend.position = "bottom")
 
-q
+p/q
+# ggsave(
+#     plot = p/q, filename = "WB_selected_vars.png", path = "figures/", device = "png",
+#     width = 7, height = 7, dpi = 400, bg = "white"
+# )
 
 ```
-
+ 
 ```{r}
 complete_countries <-  dat |>
     filter(indicator_name %in%  vars) |>
@@ -243,14 +257,14 @@ dat |>
 
 ```
 
-
+**J230226:** If I add Gini for inequality from the inequality database, our available countries will drop down to 50+, which is what we did in the trilemma paper. It is risky talking about inequality wihtout Gini because the variables selected are not necessarily interpretable as inequality, but let's see what the group supports.
 
 ### Correlations
 
 Probably need to log-transform cereal yield and forest area. 
 
 ```{r warnings=FALSE, message=FALSE}
-dat |>
+crg <- dat |>
     filter(indicator_name %in% vars, country_code %in% complete_countries) |> 
     select(-x35) |> 
     pivot_longer(cols = x1990:last_col(), values_to = "value", names_to = "year") |> 
@@ -263,7 +277,14 @@ dat |>
     lower = list(continuous = GGally::wrap("points", alpha = 0.5, size = 0.5)),
     diag = list(continuous = GGally::wrap("densityDiag", alpha = 0.2))
     # upper = list(continuous = GGally::wrap("cor", size = 2))
-    ) + theme_light(base_size = 6)
+    ) + theme_light(base_size = 4)
+
+crg
+
+# ggsave(
+#     plot = crg, filename = "WB_correlogram.png", path = "figures/", device = "png",
+#     width = 7, height = 7, dpi = 400, bg = "white"
+# )
 ```
 Interpolate missing values
 
@@ -323,7 +344,7 @@ n_countries2 <- sdg |>
     filter(`ISO-alpha3 Code` %in% countries_list) |>
     pull(geo_area_name) |> unique() |> length() # number of countries, but here are also non-countries categories like continents, etc.
 
-sdg |> 
+a <- sdg |> 
     rename(indicator_name = series_description, year = time_period, iso3 =`ISO-alpha3 Code` ) |> 
     filter(iso3 %in% countries_list, !is.na(value)) |> # use only countries
     filter(goal == 10) |> 
@@ -337,17 +358,20 @@ sdg |>
     summarise(missing = sum(nas) / n_countries2) |> 
     ggplot(aes(year, indicator_name)) +
     geom_tile(aes(fill = missing)) +
-    scale_fill_viridis_c() +
-    labs(title = "SDG10: Inequality indicators") +
-    theme_light(base_size = 8)
-
+    scale_fill_viridis_c(
+        "Missing",
+        guide = guide_colorbar(barheight = unit(2,"cm"), barwidth = unit(2,"mm"))) + 
+    labs(title = "SDG10: Inequality indicators", 
+         x = "Year", y = "Indicator name", tag = "A") +
+    theme_light(base_size = 6)
+a
 # sdg |> 
 #     filter(series_description == "Proportion of voting rights of developing countries in international organizations, by organization (%)")
 
 ```
 
 ```{r}
-sdg |> 
+b <- sdg |> 
     rename(indicator_name = series_description, year = time_period, iso3 =`ISO-alpha3 Code` ) |> 
     filter(iso3 %in% countries_list, !is.na(value)) |> # use only countries
     filter(goal == 14) |> 
@@ -361,13 +385,15 @@ sdg |>
     summarise(missing = sum(nas) / n_countries2) |> 
     ggplot(aes(year, indicator_name)) +
     geom_tile(aes(fill = missing)) +
-    scale_fill_viridis_c() +
-    labs(title = "SDG14: Life under water") +
-    theme_light(base_size = 8)
+     scale_fill_viridis_c(
+        "Missing",
+        guide = guide_colorbar(barheight = unit(2,"cm"), barwidth = unit(2,"mm"))) +
+    labs(title = "SDG14: Life under water", x = "Year", y = "Indicator name", tag = "B") +
+    theme_light(base_size = 6)
 ```
 
 ```{r}
-sdg |> 
+c <- sdg |> 
     rename(indicator_name = series_description, year = time_period, iso3 =`ISO-alpha3 Code` ) |> 
     filter(iso3 %in% countries_list, !is.na(value)) |> # use only countries
     filter(goal == 15) |> 
@@ -379,13 +405,14 @@ sdg |>
     mutate(nas = is.na(value)) |> 
     group_by(indicator, indicator_name, year) |> 
     summarise(missing = sum(nas) / n_countries2) |> 
-    mutate(indicator_name = str_trunc(indicator_name, width = 30, side = "right")) |>
-    ggplot(aes(year, indicator)) +
+    mutate(indicator_name = str_trunc(indicator_name, width = 100, side = "right")) |>
+    ggplot(aes(year, indicator_name)) +
     geom_tile(aes(fill = missing)) +
-    scale_fill_viridis_c() +
-    labs(title = "SDG15: Life on land") +
-    theme_light(base_size = 8)
-
+    scale_fill_viridis_c("Missing",
+        guide = guide_colorbar(barheight = unit(2,"cm"), barwidth = unit(2,"mm"))) +
+    labs(title = "SDG15: Life on land", x = "Year", y = "Indicator name", tag = "C") +
+    theme_light(base_size = 6)
+c
 
 ## Very long names:
 sdg|> 
@@ -394,7 +421,11 @@ sdg|>
     filter(goal == 15) |> 
     select(indicator, indicator_name) |> 
     unique()
-    
+
+# ggsave(
+#     plot = a/b/c, filename = "UN_selected_vars.png", path = "figures/", device = "png",
+#     width = 7, height = 7, dpi = 400, bg = "white"
+# )
 
 ```
 
@@ -405,7 +436,7 @@ p2 <- sdg |>
     rename(series_name = series_description, year = time_period, iso3 =`ISO-alpha3 Code` ) |> 
     filter(iso3 %in% complete_countries) |> # use only countries
     filter(goal %in% c(10, 14, 15)) |> 
-    group_by(series_code, year, iso3) |>
+    group_by(series_name, year, iso3) |>
     # this gets rid of multiple values per year
     summarize(mean_val = mean(value, na.rm = TRUE)) |> 
     # add_count() |> 
@@ -413,38 +444,38 @@ p2 <- sdg |>
     pivot_longer(cols = starts_with("2"), names_to = "year", values_to = "value",
                  names_transform = list(year = as.numeric, value = as.numeric)) |> 
     mutate(nas = is.na(value)) |> 
-    ungroup() |> group_by(series_code, iso3) |> 
+    ungroup() |> group_by(series_name, iso3) |> 
    # group_by(indicator, indicator_name, iso3) |> 
     summarise(missing = sum(nas) / diff(range(year)) ) |>  ## dividing by number of years (per country)
     #pull(missing) |> range() # should be between 0-1
     # summarize(mean_missing = mean(missing)) |> 
     filter(missing < 0.3) |> 
     ungroup() |> 
-    pivot_wider(names_from = series_code, values_from = missing) |> 
-    pivot_longer(cols = AG_LND_FRSTCERT:last_col(), names_to = "series_code",
+    pivot_wider(names_from = series_name, values_from = missing) |> 
+    pivot_longer(cols = `Average proportion of Freshwater Key Biodiversity Areas (KBAs) covered by protected areas (%)`:last_col(), names_to = "series_name",
                  values_to = "missing") |> 
-    group_by(series_code) |> 
+    group_by(series_name) |> 
     #filter(!any(is.na(missing))) |> 
-    # ggplot(aes(iso3, series_code)) +
+    # ggplot(aes(iso3, series_name)) +
     # geom_tile(aes(fill = missing)) +
     # theme_light()
     summarize(missing_countries = sum(is.na(missing))) |> 
     filter(missing_countries < 45) |> 
-    ggplot(aes(missing_countries, series_code))+
-    geom_point()
-
-p2 + theme_light(base_size = 12)
-
-vars2 <- p2$data$series_code
+    ggplot(aes(missing_countries, series_name))+
+    geom_point() +
+    labs(tag = "A", y = "Series name", x = "Proportion of missing countries") +
+    theme_light(base_size = 6)
+p2
+vars2 <- p2$data$series_name
 ```
 
 ```{r}
 q2 <- sdg |> 
     rename(series_name = series_description, year = time_period, iso3 =`ISO-alpha3 Code` ) |> 
     filter(iso3 %in% complete_countries) |> # use only countries
-    filter(series_code %in% vars2) |> 
+    filter(series_name %in% vars2) |> 
     ## this line is to get rid of multiple values per year
-    group_by(series_code, year, iso3) |>
+    group_by(series_name, year, iso3) |>
     summarize(mean_val = mean(value, na.rm = TRUE)) |> 
     ungroup() |> #group_by(indicator_name, year, iso3) |> 
     # add_count() |> 
@@ -452,13 +483,13 @@ q2 <- sdg |>
     pivot_longer(cols = starts_with("2"), names_to = "year", values_to = "value",
                  names_transform = list(year = as.numeric, value = as.numeric)) |> 
     mutate(nas = is.na(value)) |> 
-    group_by(series_code, iso3) |> 
+    group_by(series_name, iso3) |> 
     summarise(missing = sum(nas) / diff(range(year))) |>  ## dividing by number of years (per country)
     # summarize(mean_missing = mean(missing)) |> 
     ungroup() |> 
     filter(missing < 0.3) |> 
     ## add missing values again for combination of indicator country:
-    ungroup() |> group_by(series_code) |>
+    ungroup() |> group_by(series_name) |>
     pivot_wider(names_from = iso3, values_from = missing) |> 
     pivot_longer(cols = AFG:last_col(), names_to = "iso3", values_to = "missing") |>
     ## completely empty time series
@@ -466,16 +497,24 @@ q2 <- sdg |>
     ungroup() |> group_by(iso3 ) |> 
     #filter(sum(is.na(missing)) < 45) |> # remove absent_countries > 45
     filter(!any(is.na(missing))) |> 
-    ggplot(aes(iso3, series_code)) +
+    ggplot(aes(iso3, series_name)) +
     #geom_point()
     geom_tile(aes(fill = missing)) +
-    scale_fill_viridis_c() +
-    theme_light() +
+    scale_fill_viridis_c("Missing",
+        guide = guide_colorbar(barwidth = unit(2,"mm"), barheight = unit(2,"cm"))) +
+    labs(tag = "B", y = "Series name", x = "Countries") +
+    theme_light(base_size = 6) +
     theme(axis.text.x = element_text(angle = 90))
 
 q2
 
 complete_countries_sdg <- q2$data$iso3 |> unique()
+
+# ggsave(
+#     plot = p2/q2, filename = "UN_reduced_vars.png", path = "figures/", device = "png",
+#     width = 7, height = 7, dpi = 400, bg = "white"
+# )
+
 ```
 
 Reduce the dataset to variables and countries with almost complete data. Then impute missing values.
@@ -484,18 +523,40 @@ Reduce the dataset to variables and countries with almost complete data. Then im
 df_un_reduced <- sdg |> 
     rename(series_name = series_description, year = time_period, iso3 =`ISO-alpha3 Code` ) |> 
     filter(iso3 %in% complete_countries_sdg) |> # use only countries
-    filter(series_code %in% vars2) |> 
-    group_by(series_code, year, iso3) |>
+    filter(series_name %in% vars2) |> 
+    group_by(series_name, year, iso3) |>
     summarize(mean_val = mean(value, na.rm = TRUE)) |> 
     ungroup() |> 
     pivot_wider(names_from = year, values_from = mean_val) |> 
     pivot_longer(cols = starts_with("2"), names_to = "year", values_to = "value",
                  names_transform = list(year = as.numeric, value = as.numeric)) |> 
-    group_by(iso3, series_code) |> 
+    group_by(iso3, series_name) |> 
     mutate(value = na_interpolation(value, option = "spline"))
 
 df_un_reduced |> ungroup() |> skimr::skim() # zero missing values
 ```
+
+```{r}
+crg <- df_un_reduced |> 
+    mutate(series_name = str_replace(series_name, "Biodiversity", "Biodiversity\n"),
+           series_name = str_replace(series_name, "verified", "verified\n")) |> 
+    pivot_wider(values_from = value, names_from = series_name) |> 
+    GGally::ggpairs(
+        columns = 3:8,
+    lower = list(continuous = GGally::wrap("points", alpha = 0.5, size = 0.5)),
+    diag = list(continuous = GGally::wrap("densityDiag", alpha = 0.2))
+    # upper = list(continuous = GGally::wrap("cor", size = 2))
+    ) + theme_light(base_size = 4)
+
+crg
+
+# ggsave(
+#     plot = crg, filename = "UN_correlogram.png", path = "figures/", device = "png",
+#     width = 7, height = 7, dpi = 400, bg = "white"
+# )
+```
+
+
 
 Now there is two working datasets cleaned and complete: `df_dat` is the data from World Bank, and `df_un_reduced` is the data from UN SDGs.
 
@@ -516,10 +577,13 @@ rm(df_sdg, df_un, df_wb, maike_vars, other_vars)
 # key files
 # sdg raw data from UN SDG
 # dat raw data from WorldBank
+
 ```
 
 
 ## Ordination
+
+Following Ingo's advise, here I run a PCA with each variable_year as variable.
 
 ```{r}
 pca1 <- df_dat |> 
@@ -541,16 +605,68 @@ plot(pca1)
 ```
 
 ```{r}
-biplot(pca1)
+# some notes on the pca object
+pca1$rotation |> dim() # 171 variables*years, 160 PCs because there was 160 countries to start with.
+pca1$x |> dim() # The loadings of 160 countries in each of the 160 components.
+pca1$center |> length() # 171 variable centers
+pca1$scale |> length() # 171 variable scales.
+```
+
+
+```{r}
+pca1$rotation |> 
+    as_tibble(rownames = "vars") |> 
+    separate(vars, sep = "_", into = c("year", "variable")) |> 
+    mutate(year = as.numeric(year)) |> 
+    pivot_longer(cols = starts_with("PC"), names_to = "PC", values_to = "load") |> 
+    mutate(PC = str_remove(PC, "PC"), PC = as.numeric(PC)) |> 
+    filter(PC < 4) |> 
+    ggplot(aes(year, load)) +
+    geom_line(aes(color = variable)) +
+    facet_wrap(~PC) +
+    theme_light(base_size = 12)
+    
+```
+
+
+
+```{r}
+biplot(pca1, var.axes = FALSE)
 ```
 
 ```{r}
-# summary(pca1)
+x <- summary(pca1, loadings = F, cutoff = 0.1)
+x <- x$importance |> as_tibble(rownames = "var") |> 
+    pivot_longer(cols = starts_with("PC"), names_to = "comp") |> 
+    mutate(comp = str_remove(comp, "PC") |> as.numeric()) |> 
+    dplyr::filter( comp <= 10 , var != "Standard deviation")
+    
+ggplot(data = x |> filter(var == "Proportion of Variance"), aes(comp, value)) +
+    geom_col(color = "grey25") +
+    # geom_point(data = x |> filter(var == "Cumulative Proportion"), aes(comp, value)) +
+    # geom_line(data = x |> filter(var == "Cumulative Proportion"), aes(comp, value)) +
+    labs(x = "Principal components", y = "Explained variance") +
+    scale_x_continuous(n.breaks = 10) +
+    scale_y_continuous(labels = scales::label_percent()) +
+    theme_light(base_size = 6)
+
+pca1$x |> as_tibble() |> 
+    select(PC1:PC2) |> 
+    mutate(iso = df_dat$country_code |> unique()) |> 
+    ggplot(aes(PC1, PC2)) +
+    geom_text(aes(label = iso), size = 2) +
+    geom_segment(
+        data = pca1$rotation |>
+            as_tibble(rownames = "factor") |>
+            separate(factor, into = c("year", "factor")),
+        aes(xend = PC1, yend = PC2, x= 0, y = 0, color = factor, alpha = year)) +
+    coord_equal()
+
 ```
 
 ```{r}
 pca2 <- df_un_reduced |> 
-    unite(col = "var", series_code, year, sep = "_") |> 
+    unite(col = "var", series_name, year, sep = "_") |> 
     pivot_wider(values_from = value, names_from = var) |> 
     ungroup() |> 
     select(-iso3) |> 
