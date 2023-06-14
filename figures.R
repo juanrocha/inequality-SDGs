@@ -4,7 +4,7 @@ library(plot3D)
 library(magrittr)
 
 
-load("data/cleaned_trilemma.RData")
+load("data/cleaned_trilemma-20230614.RData")
 
 #### Conceptual figure ####
 old_par <- par()
@@ -117,7 +117,7 @@ p0 <- ggplot() +
     labs(tag = "A")
   
 p6 <- df_dat %>% 
-    ggplot(aes( gini,EFconsPerCap , group = country)) +
+    ggplot(aes( gini,EFconsPerCap , group = iso3)) +
     geom_point(size = 0.15,aes(color = year), show.legend = FALSE) +
     geom_path(size = 0.1, aes(color = year)) +
     annotate(geom = "rect", ymin = 0, ymax = 1.68, xmin = 20, xmax = 30,
@@ -137,7 +137,7 @@ p6 <- df_dat %>%
           legend.key.width = unit(10, "mm"), legend.key.height = unit(3,"mm"))
 
 p5 <- df_dat %>% 
-    ggplot(aes( gini, gni2, group = country)) +
+    ggplot(aes( gini, gni2, group = iso3)) +
     geom_point(size = 0.15, show.legend = FALSE, aes(color = year)) +
     geom_path(size = 0.1, aes(color = year)) +
     annotate(geom = "rect", ymin = 10, ymax = 12746, xmin = 20, xmax = 30,
@@ -159,7 +159,7 @@ p5 <- df_dat %>%
 
 
 p4 <- df_dat %>% 
-    ggplot(aes( EFconsPerCap, gni2, group = country)) +
+    ggplot(aes( EFconsPerCap, gni2, group = iso3)) +
     geom_point(size = 0.15, show.legend = FALSE, aes(color = year)) +
     geom_path(size = 0.1, aes(color = year))+
     annotate(geom = "rect", ymin = 10, ymax = 12746, xmin = 0, xmax = 1.68,
@@ -193,7 +193,7 @@ p4 <- df_dat %>%
 (p4 + p5 + p6 + plot_layout(guides = "collect") & theme_light(base_size = 7) & 
     theme(legend.position = "bottom", panel.grid = element_blank(),
           legend.key.width = unit(10, "mm"), legend.key.height = unit(2,"mm")))
-`
+
 
 ggsave(
     plot = ((p0 + p3 + p2 + p1 + plot_layout(ncol = 4)) /
@@ -202,7 +202,7 @@ ggsave(
                            legend.key.width = unit(10, "mm"), legend.key.height = unit(2,"mm")))),
     filename = "fig1_trilemma_space.png",
     path = "figures/", device = "png", 
-    width = 6, height = 4, bg = "white", dpi = 400
+    width = 7, height = 5, bg = "white", dpi = 600
 )
 
 #### Ensamble ####
@@ -214,15 +214,15 @@ c3 <- df_dat |>
     # scale_fill_viridis_c() + 
     #geom_density_2d(color = "white", size = 0.2) +
     geom_density_2d_filled(alpha = 0.95, show.legend = FALSE) +
-    geom_point(aes(color = gni_log), size = 0.01, alpha = 0.25) +
-    geom_path(aes(group = country, color = gni_log), size = 0.05, alpha = 0.75) +
+    geom_point(aes(color = gni_log), size = 0.05, alpha = 0.25) +
+    geom_path(aes(group = iso3, color = gni_log), size = 0.05, alpha = 0.75) +
     scico::scale_color_scico(
         "Prosperity (GNI [log])", palette = "grayC", direction = -1,
         guide = guide_colorbar(title.position = "top")) +
     geom_hline(yintercept = 1.68, linetype = 2, color = "gray90", size = 0.2) +
     geom_vline(xintercept = 30, linetype = 2, color = "gray90", size = 0.2) +
     labs(x = "Inequality (Gini)", y = "Ecological footprint") +
-    theme_light(base_size = 6) +
+    theme_light(base_size = 7) +
     theme(legend.position = "top", panel.grid = element_blank(),
           legend.key.width = unit(7, "mm"), legend.key.height = unit(2,"mm"))
 
@@ -230,7 +230,7 @@ c2 <- df_dat |>
     ggplot(aes(gini,gni2)) +
     geom_density_2d_filled(alpha = 0.95, show.legend = FALSE) +
     geom_point(aes(color = EFconsPerCap), size = 0.01, alpha = 0.25) +
-    geom_path(aes(group = country, color = EFconsPerCap), size = 0.05, alpha = 0.75) +
+    geom_path(aes(group = iso3, color = EFconsPerCap), size = 0.05, alpha = 0.75) +
     geom_hline(yintercept = (12546), linetype = 2, color = "gray90", size = 0.2) +
     geom_vline(xintercept = 30, linetype = 2, color = "gray90", size = 0.2) +
     scico::scale_color_scico(
@@ -238,7 +238,7 @@ c2 <- df_dat |>
         guide = guide_colorbar(title.position = "top")) +
     labs(y= "Prosperity (GNI [log])", x = "Inequality (Gini)") +
     scale_y_log10() +
-    theme_light(base_size = 6) +
+    theme_light(base_size = 7) +
     theme(legend.position = "top", panel.grid = element_blank(),
           legend.key.width = unit(7, "mm"), legend.key.height = unit(2,"mm"))
 
@@ -246,15 +246,15 @@ c1 <- df_dat |>
     ggplot(aes(y = gni2, x = EFconsPerCap)) +
     geom_density_2d_filled(alpha = 0.95, show.legend = FALSE) +
     geom_point(aes(color = gini), size = 0.01, alpha = 0.25) +
-    geom_path(aes(group = country, color = gini), size = 0.05, alpha = 0.75) +
+    geom_path(aes(group = iso3, color = gini), size = 0.05, alpha = 0.75) +
     scico::scale_color_scico(
         "Inequality (Gini)",palette = "grayC", direction = 1,
         guide = guide_colorbar(title.position = "top")) +
     labs(y = "Prosperity (GNI)", x = "Ecological footprint") +
-    #scale_y_log10()+
+    scale_y_log10()+
     geom_hline(yintercept = (12546), linetype = 2, color = "gray90", size = 0.2) +
     geom_vline(xintercept = 1.68, linetype = 2, color = "gray90", size = 0.2) +
-    theme_light(base_size = 6) +
+    theme_light(base_size = 7) +
     theme(legend.position = "top", panel.grid = element_blank(),
           legend.key.width = unit(7, "mm"), legend.key.height = unit(2,"mm"))
 
@@ -264,22 +264,19 @@ c1 <- df_dat |>
 ## 
 a1 <- df_dat |> 
     as_tibble() |> 
-    group_by(country) |> 
+    group_by(iso3) |> 
     dplyr::summarize(
         EF = sum(d_EF, na.rm = TRUE),
         Gini = sum(d_gini, na.rm = TRUE),
         GNI = sum(d_gni, na.rm = TRUE)
     ) |> 
     mutate(Group = as.character(stab@clusterObjs$kmeans$`3`$cluster)) |> 
-    left_join(
-        dat |> select(country, country_code) |> 
-            filter(!is.na(country_code)) |> unique()) |> 
     ggplot(aes(y = EF,x= Gini)) +
     geom_segment(
         aes(x = 0, y = 0, yend = EF, xend = Gini, color = as.factor(Group)),
         arrow = arrow(length = unit(0.1, "cm")), show.legend = FALSE, size = 0.15) +
     geom_text(
-        aes(y = EF *1.1, x = Gini * 1.1, label = country_code, colour = Group), 
+        aes(y = EF *1.1, x = Gini * 1.1, label = iso3, colour = Group), 
         size = 1, show.legend = FALSE) +
     scale_color_manual("Groups", values = c("#73B3A3","#FEA621","#5BA4CA")) +
     labs(y = "Ecological Footprint", x = "Inequality (Gini)") +
@@ -293,7 +290,7 @@ a1
 
 f3 <- c3 + annotation_custom(
     grob = ggplotGrob(a1),
-    ymin = 9, ymax = 17, xmin = 40, xmax = 60
+    ymin = 10, ymax = 17.8, xmin = 42, xmax = 62
 )  
 
 # ggsave(
@@ -305,23 +302,20 @@ f3 <- c3 + annotation_custom(
 
 a2 <- df_dat |> 
     as_tibble() |> 
-    group_by(country) |> 
+    group_by(iso3) |> 
     dplyr::summarize(
         EF = sum(d_EF, na.rm = TRUE),
         Gini = sum(d_gini, na.rm = TRUE),
         GNI = sum(d_gni, na.rm = TRUE)
     ) |> 
     mutate(Group = as.character(stab@clusterObjs$kmeans$`3`$cluster)) |> 
-    left_join(
-        dat |> select(country, country_code) |> 
-            filter(!is.na(country_code)) |> unique()) |> 
     ggplot(aes(y = GNI, x = Gini)) +
     geom_segment(
         aes(x = 0, y = 0, yend = GNI, xend = Gini, 
             color = as.factor(Group)), show.legend = FALSE,
         arrow = arrow(length = unit(0.1, "cm")), size = 0.15) +
     geom_text(aes(y = GNI * 1.1, x = Gini *1.1, 
-                  label = country_code, colour = Group), 
+                  label = iso3, colour = Group), 
               size = 1, show.legend = FALSE) +
     scale_color_manual("Groups", values = c("#73B3A3","#FEA621","#5BA4CA")) +
     theme_light(base_size = 5) + labs(y = "Prosperity (GNI [log])", x = "Inequality (Gini)") +
@@ -331,7 +325,7 @@ a2 <- df_dat |>
 
 f2 <- c2 + annotation_custom(
     grob = ggplotGrob(a2),
-    ymin = 0.85, ymax = 2.6, xmin = 40, xmax = 60
+    ymin = 0.85, ymax = 2.6, xmin = 42, xmax = 62
 ) 
 # ggsave(
 #     filename = "Gini_GNI.png", path = "figures/", device = "png",
@@ -342,23 +336,20 @@ f2 <- c2 + annotation_custom(
 
 a3 <- df_dat |> 
     as_tibble() |> 
-    group_by(country) |> 
+    group_by(iso3) |> 
     dplyr::summarize(
         EF = sum(d_EF, na.rm = TRUE),
         Gini = sum(d_gini, na.rm = TRUE),
         GNI = sum(d_gni, na.rm = TRUE)
     ) |> 
     mutate(Group = as.character(stab@clusterObjs$kmeans$`3`$cluster)) |> 
-    left_join(
-        dat |> select(country, country_code) |> 
-            filter(!is.na(country_code)) |> unique()) |> 
     ggplot(aes(y = GNI,x = EF)) +
     geom_segment(
         aes(x = 0, y = 0, yend = GNI, xend = EF, 
             color = as.factor(Group)), show.legend = FALSE, 
         arrow = arrow(length = unit(0.1, "cm")), size = 0.15) +
     geom_text(aes(y = GNI * 1.1, x = EF *1.1, 
-                  label = country_code, colour = Group), 
+                  label = iso3, colour = Group), 
               size = 1, show.legend = FALSE) +
     scale_color_manual("Groups", values = c("#73B3A3","#FEA621","#5BA4CA")) +
     theme_light(base_size = 5) + labs(x = "Ecological footprint", y = "Prosperity (GNI)") +
@@ -383,14 +374,14 @@ f1 <- c1 + annotation_custom(
 
 ggsave(
     filename = "trilema_ensamble.png", device = "png", path = "figures/",
-    width = 7.5, height = 3, bg = "white", dpi = 300,
+    width = 7.5, height = 3.5, bg = "white", dpi = 600,
     plot = f1 + labs(tag = "A") + f2 + labs(tag = "B") +  f3 + labs(tag = "C")
 )
 
 #### surface ####
 
 
-with(df_dat |> filter(country != "Luxembourg"), {
+with(df_dat, {
     
     #linear regression:
     fit <- glm(EFconsPerCap  ~ gni2 + gini + I(gni2^2) + I(gini^2), 
@@ -413,14 +404,68 @@ with(df_dat |> filter(country != "Luxembourg"), {
     )
 })
 
-with(df_dat |> filter(country != "Luxembourg"), {
+with(df_dat, {
     scatter3D(
         z = EFconsPerCap, y = gini, x = gni2, pch = 1, theta = -50, phi = 20, 
         ticktype = "detailed", zlab = "Ecological footprint", ylab = "Inequality (Gini)",
         xlab = "Prosperity (GNI[log])")
 })
 
-
+#### Kuznets curves ####
+#### by request of reviewers
 fit <- lm(EFconsPerCap  ~ gni2 + gini + I(gni2^4) + I(gini^4) + gni2*gini, 
             data = df_dat)
 summary(fit)
+
+kc1 <- lm(gini ~ gni2 + I(gni2^2) + EFconsPerCap + gni2*EFconsPerCap,
+          data = df_dat)
+null1 <- lm(gini ~ gni2  + EFconsPerCap + gni2*EFconsPerCap,
+            data = df_dat)
+
+summary(kc1)
+summary(null1)
+
+extractAIC(kc1)
+extractAIC(null1)
+
+## if using glm, the stat below calculates how 
+min(kc1$aic, null1$aic)
+exp((null1$aic - kc1$aic)/2)
+
+ekc <- glm(EFconsPerCap ~ gni2 + I(gni2^2) ,
+          data = df_dat) 
+null2 <- glm(EFconsPerCap ~ gni2  ,
+            data = df_dat) 
+
+summary(ekc)
+summary(null2)
+
+nokc <- glm(EFconsPerCap ~ gini ,
+           data = df_dat)
+null3 <- glm(EFconsPerCap ~ gini + I(gini^2) ,
+           data = df_dat)
+
+summary(nokc)
+summary(null3)
+#### concpetual figures SI ####
+
+ggplot(data = tibble(x = seq(-10,10,0.1)), aes(x)) +
+    geom_function(fun = function(x) -x^2 )
+
+df_dat |> 
+    ggplot(aes(gni2, EFconsPerCap)) +
+    geom_point() +
+    geom_smooth() + scale_x_log10()
+
+p <- df_dat |> 
+    ggplot(aes(gni2, gini)) +
+    geom_point() +
+    geom_line(aes(group = iso3, color = iso3), show.legend = FALSE) +
+    geom_smooth() + scale_x_log10()
+    
+plotly::ggplotly(p)
+
+df_dat |> 
+    ggplot(aes(gini, EFconsPerCap)) +
+    geom_point() +
+    geom_smooth() 

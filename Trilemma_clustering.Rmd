@@ -93,21 +93,38 @@ missingness%>%
 The bottle neck is certaintly our proxies of inequality, no matter what we use. Based on the missing data explorations, inequality data improves from 1995 onward.
 
 ```{r}
+## there are different country name spellings, so work only with iso codes and recover names later if you need them.
+countries <- read_csv(
+    file = "~/Documents/Projects/DATA/WorldBank/SDG_csv/SDGCountry.csv") |> 
+    janitor::clean_names()
 
 dat <- ecofp %>%
   filter(record == "EFConsPerCap") %>%
   select(countryName, isoa2, year, value) %>% 
   rename(EFconsPerCap = value, country = countryName) %>% 
+    filter(!is.na(isoa2)) |> 
   filter(year >= 1995)
+
+## correct Sudan:
+dat$isoa2[dat$country == "Sudan (former)"] <- "SD"
+## get rid of country names
+dat <- dat |> select(-country)
+
+## add iso3 code
+dat <- dat |> 
+    left_join(countries |> select(iso3 = country_code, isoa2 = x2_alpha_code))
+
+dat$iso3[dat$isoa2 == "NA"] <- "NAM" # correct Namibia
 
 dat <- dat %>% 
   left_join(
     .,
     inq %>% 
       filter(!is.na(gini_reported), year >= 1995) %>% 
-      select(country, isoa2 = c2, country_code = c3, year, gini_reported) %>% 
-      group_by(country, year, isoa2, country_code) %>% 
-      summarize(gini_mean = mean(gini_reported, na.rm = TRUE)) 
+      select(country, isoa2 = c2, iso3 = c3, year, gini_reported) %>% 
+      group_by(country, year, isoa2, iso3) %>% 
+      summarize(gini_mean = mean(gini_reported, na.rm = TRUE)) |> 
+        ungroup() |> select(-country) # remove country names
       
   )
 
@@ -122,7 +139,8 @@ dat <- dat %>%
       mutate(year = as.numeric(year)) %>% 
       mutate(ismissing = is.na(value)) %>% 
       filter(year >= 1995) %>% 
-      rename(country = country_name, gni = value)
+      rename(country = country_name, gni = value, iso3 = country_code) |> 
+        ungroup() |> select(-country)
   )
 
 dat
@@ -133,26 +151,26 @@ Compute missing values for inequality:
 ```{r}
 missingness <- dat %>% 
     mutate(ismissing = is.na(gini_mean)) %>% 
-    group_by(country) %>% 
+    group_by(iso3) %>% 
     summarize(missingness = sum(ismissing)/n()) %>% 
     arrange(missingness)
 
 
 key_countries <- missingness %>% 
     filter(missingness <= 0.3) %>% 
-    pull(country)
+    pull(iso3)
 
 droped_countries <- missingness %>% 
     filter(missingness > 0.3) %>% 
-    pull(country)
+    pull(iso3)
 ```
 
 ```{r}
 #library(tsibbledata)
 df_dat <- dat %>% 
     select(-starts_with("indicator")) %>% 
-    filter(country %in% key_countries) %>% 
-    as_tsibble(key = country, index = year) 
+    filter(iso3 %in% key_countries) %>% 
+    as_tsibble(key = iso3, index = year) 
     
 df_dat <- df_dat %>% 
     fill_gaps(.full = TRUE)
@@ -162,7 +180,7 @@ df_dat <- df_dat %>%
 ```{r}
 
 df_dat <- df_dat %>% 
-    group_by(country) %>% 
+    group_by(iso3) %>% 
     mutate(
         gini = na_interpolation(gini_mean),
         gni2 = na_interpolation(gni),
@@ -198,20 +216,22 @@ df_dat <- df_dat %>%
     
 ```
 
+Use this graph for trajectories of all countries later
+
 ```{r}
 df_dat %>% 
     pivot_longer(cols = c("EFconsPerCap", "gini", "gni2"),
                  names_to = "variable", values_to = "value") %>% 
     ggplot(aes(year, value)) +
-    geom_line(aes(group = country)) +
+    geom_line(aes(group = iso3)) +
     facet_wrap(~variable, ncol = 1, scales = "free") +
     theme_light(base_size = 15)
 ```
 
 ```{r}
 p1 <- df_dat %>% 
-    ggplot(aes(EFconsPerCap, gini, group = country)) +
-    geom_point(size = 0.5) +
+    ggplot(aes(EFconsPerCap, gini, group = iso3)) +
+    geom_point(size = 0.5, aes(color = year)) +
     geom_path(size = 0.2, aes(color = year)) +
     annotate(geom = "rect", xmin = 0, xmax = 1.68, ymin = 20, ymax = 30,
              fill = "skyblue", alpha = 0.2) +
@@ -229,8 +249,8 @@ p1 <- df_dat %>%
           legend.key.width = unit(10, "mm"), legend.key.height = unit(3,"mm"))
 
 p2<- df_dat %>% 
-  ggplot(aes(gni2, gini, group = country)) +
-  geom_point(size = 0.5, show.legend = FALSE) +
+  ggplot(aes(gni2, gini, group = iso3)) +
+  geom_point(size = 0.5, show.legend = FALSE, aes(color = year)) +
   geom_path(size = 0.2, aes(color = year)) +
     annotate(geom = "rect", xmin = 10, xmax = 12746, ymin = 20, ymax = 30,
              fill = "orange", alpha = 0.2) +
@@ -250,8 +270,8 @@ p2<- df_dat %>%
 
 
 p3<- df_dat %>% 
-  ggplot(aes(gni2, EFconsPerCap, group = country)) +
-  geom_point(size = 0.5, show.legend = FALSE) +
+  ggplot(aes(gni2, EFconsPerCap, group = iso3)) +
+  geom_point(size = 0.5, show.legend = FALSE, aes(color = year)) +
   geom_path(size = 0.2, aes(color = year))+
     annotate(geom = "rect", xmin = 10, xmax = 12746, ymin = 0, ymax = 1.68,
              fill = "orange", alpha = 0.2) +
@@ -279,7 +299,7 @@ p3<- df_dat %>%
 # )
 
 p1 + p2 + p3 + 
-    plot_layout(guides = "collect") & theme_light(base_size = 18) & 
+    plot_layout(guides = "collect") & theme_light(base_size = 12) & 
     theme(legend.position = "bottom", panel.grid = element_blank(),
           legend.key.width = unit(20, "mm"), legend.key.height = unit(3,"mm"))
 ```
@@ -287,7 +307,7 @@ p1 + p2 + p3 +
 ```{r}
 df_dat %>% 
     as_tibble() %>% 
-    group_by(country) %>% 
+    group_by(iso3) %>% 
     summarize(
         mean_ef = mean(EFconsPerCap),
         mean_gni = mean(gni2),
@@ -320,7 +340,7 @@ df_dat <- df_dat |>
 df_dat |> 
     as_tibble() |> 
     ungroup() |> 
-    group_by(country) |> 
+    group_by(iso3) |> 
     summarize(mgt = sum(magni, na.rm = TRUE), 
               theta = sum(theta, na.rm = TRUE),
               gamma = sum(gamma, na.rm = TRUE)) |> 
@@ -329,7 +349,7 @@ df_dat |>
 ```{r fig.width=6, fig.height=3}
 p <- df_dat |> 
     as_tibble() |> 
-    select(country, year, d_EF, d_gini, d_gni) |> 
+    select(iso3, year, d_EF, d_gini, d_gni) |> 
     pivot_longer(cols = starts_with("d_"), names_to = "vars", values_to = "vals") |> 
     filter(!is.na(vals)) |> 
     mutate(vars = case_when(
@@ -337,7 +357,7 @@ p <- df_dat |>
         vars == "d_gni" ~ "GNI [log]",
         vars == "d_gini" ~ "Gini"
     )) |> 
-    ggplot(aes(year, vals, group = country)) +
+    ggplot(aes(year, vals, group = iso3)) +
     geom_path(size = 0.2, alpha = 0.5) +
     facet_wrap(~vars, scales = "free") +
     labs(x = "Year", y = "First difference") +
@@ -355,21 +375,21 @@ c1 <- df_dat |>
     geom_vline(xintercept = 1.68, linetype = 2, color = "gray50") +
     geom_density2d(size = 0.25, color = "#446B9C") +
     geom_point(aes(color = gni_log), size = 0.5) +
-    geom_path(aes(group = country), size = 0.1) +
+    geom_path(aes(group = iso3), size = 0.1) +
     scico::scale_color_scico("Prosperity (GNI [log])") +
     labs(y = "Inequality (Gini)", x = "Ecological footprint") +
     theme_light(base_size = 6) +
     theme(legend.position = "top", panel.grid = element_blank(),
           legend.key.width = unit(7, "mm"), legend.key.height = unit(2,"mm"))
 
-c1 + theme_light(base_size = 18)
+c1 
 ```
 ```{r fig.width=3, fig.height=3}
 c2 <- df_dat |> 
     ggplot(aes(gni2, gini)) +
     geom_density2d(size = 0.25, color = "#446B9C") +
     geom_point(aes(color = EFconsPerCap), size = 0.5) +
-    geom_path(aes(group = country), size = 0.1) +
+    geom_path(aes(group = iso3), size = 0.1) +
     geom_hline(yintercept = 30, linetype = 2, color = "gray50") +
     geom_vline(xintercept = (12546), linetype = 2, color = "gray50") +
     scico::scale_color_scico("Ecological footprint",palette = "berlin") +
@@ -386,7 +406,7 @@ c3 <- df_dat |>
     ggplot(aes(gni2, EFconsPerCap)) +
     geom_density2d(size = 0.25, color = "#446B9C") +
     geom_point(aes(color = gini), size =0.5) +
-    geom_path(aes(group = country), size = 0.1) +
+    geom_path(aes(group = iso3), size = 0.1) +
     scico::scale_color_scico("Inequality (Gini)") +
     labs(x = "Prosperity (GNI)", y = "Ecological footprint") +
     scale_x_log10()+
@@ -396,7 +416,7 @@ c3 <- df_dat |>
     theme(legend.position = "top", panel.grid = element_blank(),
           legend.key.width = unit(7, "mm"), legend.key.height = unit(3,"mm"))
 
-c3 + theme_light(base_size = 18)
+c3 
 ```
 Who is the weird trajectory out there, world? No it's Luxemburg
 
@@ -404,7 +424,7 @@ Who is the weird trajectory out there, world? No it's Luxemburg
 df_dat |> 
     arrange(desc(EFconsPerCap))
 
-#save(df_dat, file = "data/cleaned_trilemma.RData")
+# save(df_dat, file = "data/cleaned_trilemma-20230614.RData")
 ```
 
 
@@ -413,11 +433,11 @@ df_dat |>
 
 I'm not sure if the clustering requires one column per variable * year. Since really the unit of observation is country. Need to read upon it.
 
-```{r fig.width=6, fig.height=2}
+```{r fig.width=6, fig.height=4}
 df_summary <- df_dat |> 
     as_tibble() |> 
     ungroup() |> 
-    group_by(country) |> 
+    group_by(iso3) |> 
     dplyr::summarize(sd_magnitude = sd(magni, na.rm = TRUE),
               sd_theta = sd(theta, na.rm = TRUE),
               sd_gamma = sd(gamma, na.rm = TRUE), 
@@ -458,7 +478,7 @@ stab <- clValid::clValid(
     obj = df_summary %>% as.data.frame() %>% 
         select(where(is.numeric)) %>%
         as.matrix(),
-    nClust = 3,
+    nClust = 2:9,
     clMethods = c(
         "hierarchical", "kmeans",  "som", 
         "model", "diana", "sota", "pam", "clara", "agnes"),
@@ -484,12 +504,12 @@ stab@clusterObjs$diana |> plot()
 ```{r fig.width=7, fig.height=8}
 df_summary |> 
     mutate(clus = stab@clusterObjs$kmeans$`3`$cluster ) |> 
-    mutate(country = as_factor(country)) |> 
-    mutate(country = fct_reorder2(country, magnitude, Gini)) |> 
+    mutate(iso3 = as_factor(iso3)) |> 
+    mutate(iso3 = fct_reorder2(iso3, magnitude, Gini)) |> 
     pivot_longer(
         cols = sd_magnitude:gamma, names_to = "vars", 
         values_to = "vals") |> 
-    ggplot(aes(vals, country)) +
+    ggplot(aes(vals, iso3)) +
     geom_col(aes(fill = as.factor(clus))) +
     facet_grid(clus~vars, scales = "free") +
     theme_light(base_size = 10)
@@ -497,7 +517,7 @@ df_summary |>
 
 ```{r message = FALSE, warning = FALSE, fig.width=5, fig.height=5}
 df_summary |>
-    select(-starts_with("country")) |> 
+    select(-starts_with("iso3")) |> 
     GGally::ggpairs()
 ```
 
