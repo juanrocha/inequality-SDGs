@@ -71,6 +71,9 @@ countries <- read_csv(
     janitor::clean_names()
 
 countries_list <- countries |> filter(!is.na(currency_unit)) |> pull(country_code)
+## correct Namibia, it is not an NA in x2_alpha_code
+
+countries$x2_alpha_code[countries$country_code == "NAM"] <- "NA"
 
 ```
 
@@ -137,7 +140,7 @@ p <- dat |>
     geom_tile(aes(fill = missing)) +
     scale_fill_viridis_c(
         guide = guide_colorbar(barwidth = unit(2,"mm"), barheight = unit(20, "mm"))) + 
-    labs(x = "Year", y = "Indicator name")
+    labs(x = "Year", y = "Indicator name") +
     theme_light(base_size = 6)
 
 p + theme_light(base_size = 8)
@@ -259,6 +262,17 @@ dat |>
 
 **J230226:** If I add Gini for inequality from the inequality database, our available countries will drop down to 50+, which is what we did in the trilemma paper. It is risky talking about inequality wihtout Gini because the variables selected are not necessarily interpretable as inequality, but let's see what the group supports.
 
+**J230323** Team recommended only to use inequality on UN Data which is available for ~50+ countries. Check newer dataset from WIID
+
+```{r}
+load("data/wii_small-data.RData")
+```
+
+```{r}
+ineq_dat
+```
+`m` is total, `a` is average. All other codes are documented here: [https://wid.world/codes-dictionary/#packages](https://wid.world/codes-dictionary/#packages). 
+
 ### Correlations
 
 Probably need to log-transform cereal yield and forest area. 
@@ -303,6 +317,16 @@ df_dat <- dat |>
 df_dat |> ungroup() |> skimr::skim() # no missing values
 ```
 
+```{r}
+## both datasets are wider format, so makes sense to merge as is
+df_dat <- df_dat |>
+    left_join(countries |> select(country_code, country = x2_alpha_code)) |> 
+    left_join(ineq_dat |> 
+                  select(-age, -pop) |> 
+                  unite(col = "var", c("variable", "percentile")) |> 
+                  pivot_wider(names_from = var, values_from = value)
+              )
+```
 
 
 ## UN SDGs
@@ -390,6 +414,7 @@ b <- sdg |>
         guide = guide_colorbar(barheight = unit(2,"cm"), barwidth = unit(2,"mm"))) +
     labs(title = "SDG14: Life under water", x = "Year", y = "Indicator name", tag = "B") +
     theme_light(base_size = 6)
+b
 ```
 
 ```{r}
@@ -415,7 +440,7 @@ c <- sdg |>
 c
 
 ## Very long names:
-sdg|> 
+sdg |> 
     rename(indicator_name = series_description, year = time_period, iso3 =`ISO-alpha3 Code` ) |> 
     filter(iso3 %in% countries_list, !is.na(value)) |> # use only countries
     filter(goal == 15) |> 
@@ -556,6 +581,31 @@ crg
 # )
 ```
 
+Merge with WID inequality data:
+
+```{r}
+
+df_un_reduced <- df_un_reduced |> ungroup() |> #group_by(iso3)
+    left_join(
+        countries |> select(iso3 = country_code, country = x2_alpha_code) ) |> 
+    # filter(is.na(country)) |> pull(iso3) |> unique()
+    unite(col = "var", year, series_name, sep = "_") |> 
+    pivot_wider(values_from = value, names_from = var) |> 
+    left_join(
+        ineq_dat |> 
+            select(-age, -pop) |> 
+            filter(year >=  2000, year < 2019) |> # max year 2018 in UN dataset
+            unite(col = "series_name", c("variable", "percentile")) |> 
+            right_join(
+                countries |> 
+                    select(iso3 = country_code, country = x2_alpha_code) |> 
+                    filter(iso3 != "CHI") # filter out channel islands
+            ) |> 
+            unite(col = "var", year, series_name, sep = "_") |> 
+            pivot_wider(values_from = value, names_from = var) 
+        )
+```
+
 
 
 Now there is two working datasets cleaned and complete: `df_dat` is the data from World Bank, and `df_un_reduced` is the data from UN SDGs.
@@ -573,11 +623,11 @@ Now there is two working datasets cleaned and complete: `df_dat` is the data fro
 Clean up a bit:
 
 ```{r}
-rm(df_sdg, df_un, df_wb, maike_vars, other_vars)
+rm(df_sdg, df_un, df_wb, maike_vars, other_vars, ineq_dat)
 # key files
 # sdg raw data from UN SDG
 # dat raw data from WorldBank
-
+load("data/cleaned_sdg.RData")
 ```
 
 
@@ -587,7 +637,8 @@ Following Ingo's advise, here I run a PCA with each variable_year as variable.
 
 ```{r}
 pca1 <- df_dat |> 
-    select(-country_name) |> 
+    select(-country_name, -country, -sptinc992j_p0p100) |> 
+    filter(!is.na(rptinc992j_p0p100)) |> 
     pivot_longer(cols = `Access to electricity (% of population)`:last_col(),
                  values_to = "value", names_to = "variable") |> 
     unite(col = "var", year, variable, sep = "_") |> 
@@ -614,18 +665,23 @@ pca1$scale |> length() # 171 variable scales.
 
 
 ```{r}
-pca1$rotation |> 
+p <- pca1$rotation |> 
     as_tibble(rownames = "vars") |> 
     separate(vars, sep = "_", into = c("year", "variable")) |> 
     mutate(year = as.numeric(year)) |> 
     pivot_longer(cols = starts_with("PC"), names_to = "PC", values_to = "load") |> 
     mutate(PC = str_remove(PC, "PC"), PC = as.numeric(PC)) |> 
-    filter(PC < 4) |> 
+    filter(PC < 5) |> 
     ggplot(aes(year, load)) +
     geom_line(aes(color = variable)) +
     facet_wrap(~PC) +
-    theme_light(base_size = 12)
-    
+    theme_light(base_size = 8)
+
+# ggsave(
+#     plot = p, file = "pca-wb-time.png", path = "figures/", device = "png",
+#     width = 7, height = 4, bg = "white", dpi = 400
+# )
+p + scale_color_brewer(palette = "Set3")
 ```
 
 
@@ -643,37 +699,81 @@ x <- x$importance |> as_tibble(rownames = "var") |>
     
 ggplot(data = x |> filter(var == "Proportion of Variance"), aes(comp, value)) +
     geom_col(color = "grey25") +
-    # geom_point(data = x |> filter(var == "Cumulative Proportion"), aes(comp, value)) +
-    # geom_line(data = x |> filter(var == "Cumulative Proportion"), aes(comp, value)) +
+    geom_point(data = x |> filter(var == "Cumulative Proportion"), aes(comp, value)) +
+    geom_line(data = x |> filter(var == "Cumulative Proportion"), aes(comp, value)) +
     labs(x = "Principal components", y = "Explained variance") +
     scale_x_continuous(n.breaks = 10) +
     scale_y_continuous(labels = scales::label_percent()) +
     theme_light(base_size = 6)
 
-pca1$x |> as_tibble() |> 
+a <- pca1$x |> as_tibble() |> 
     select(PC1:PC2) |> 
-    mutate(iso = df_dat$country_code |> unique()) |> 
+    mutate(iso = df_dat |> 
+               filter(!is.na(rptinc992j_p0p100)) |>
+               pull(country_code) |> unique()) |> 
     ggplot(aes(PC1, PC2)) +
     geom_text(aes(label = iso), size = 2) +
+    coord_equal() +
+    theme_light(base_size = 6)
+
+b <- ggplot() +
     geom_segment(
         data = pca1$rotation |>
-            as_tibble(rownames = "factor") |>
-            separate(factor, into = c("year", "factor")),
-        aes(xend = PC1, yend = PC2, x= 0, y = 0, color = factor, alpha = year)) +
-    coord_equal()
+            as_tibble(rownames = "factor") |> 
+            mutate(year = str_sub(factor, start = 1L, end = 4L),
+                   factor = str_remove(factor, pattern = "\\d{4}_"))  |> 
+            select(year, factor, PC1:PC2),
+        aes(xend = PC1, yend = PC2, color = factor, alpha = as.numeric(year)),
+        x = 0, y = 0,
+        arrow = arrow(length = unit(0.1,"cm")), linewidth = 0.3) +
+    scale_color_brewer("Variable",palette = "Set3",
+        guide = guide_legend(ncol = 2, title.position = "top")) +
+    scale_alpha("Year", guide = guide_legend(ncol = 1, title.position = "top")) +
+    coord_equal()+
+    theme_light(base_size = 6)
+
+a + b + plot_layout(guides = "collect") & 
+    theme_light(base_size = 10) &
+    theme(legend.position = "bottom") 
+
+# ggsave(
+#     filename = "pca_wb-data.png", path = "figures/", dpi = 400, bg = "white",
+#     device = "png", width = 7, height = 4,
+#     plot = (a + b + plot_layout(guides = "collect") & 
+#     theme_light(base_size = 6) &
+#     theme(legend.position = "bottom") )
+# )
 
 ```
+
+
+- 95% of the variability is explained by the first 10 PCs
+
+For the UN dataset, the area based nature proxies have zero variance (SD), which means that despite completness, it is not informative.
+
 
 ```{r}
-pca2 <- df_un_reduced |> 
-    unite(col = "var", series_name, year, sep = "_") |> 
-    pivot_wider(values_from = value, names_from = var) |> 
-    ungroup() |> 
-    select(-iso3) |> 
-    as.matrix(dimnames = list(df_un_reduced |> pull(iso3) |> unique())) |> 
-    prcomp(center = TRUE, scale. = TRUE)
-```
+##
+zero_variance_vars <- df_un_reduced |>
+    pivot_longer(3:last_col(), names_to = "variable", values_to = "value") |> 
+    mutate(
+        year = str_sub(variable, 1L, 4L),
+        variable = str_sub(variable, 6L, -1L)
+    ) |> # pull(variable) |> unique()
+    filter(variable != "sptinc992j_p0p100") |>
+    group_by(iso3, variable) |> 
+    mutate(variance = var(value)) |>
+    filter(variance == 0) |>
+    pull(variable) |> unique()
 
+pca2 <- df_un_reduced |>
+    ungroup() |> 
+    select(-country, -iso3, -NA_NA) |> #skimr::skim()
+    select(-contains("sptinc"), -contains("gptinc"), -contains("rptinc")) |> 
+    prcomp(center = TRUE, scale. = TRUE)
+
+```
+**J230529:** It doesn't work, there is no enough variability in the data. It seems I have several variables / countries with zero variance or constants despite no missing values. However, it only screws up when adding the inequality variables. Without it does still run, why? Check with Maike. It might have to do with number of observations (countries) vs number of variables. Most likely too wide of a dataset can be problematic.
 
 ```{r}
 biplot(pca2)
@@ -682,12 +782,9 @@ biplot(pca2)
 
 ```{r}
 mfa1 <- df_un_reduced |> 
-    unite(col = "var", series_code, year, sep = "_") |> 
-    pivot_wider(values_from = value, names_from = var) |> 
-    ungroup() |> 
-    select(-iso3) |> 
+    select(-iso3, -country, -NA_NA) |> 
     as.matrix(dimnames = list(df_un_reduced |> pull(iso3) |> unique())) |> 
-    FactoMineR::MFA(group = rep(19, 6), type = rep("s", 6)) # 18 years times 6 variables
+    FactoMineR::MFA(group = rep(19, 10), type = rep("s", 10)) # 18 years times 6 variables
 ```
 
 ```{r}
@@ -710,7 +807,8 @@ mfa1 |> summary()
 ```{r}
 ggbiplot::ggbiplot(
     pca1,
-    labels = df_dat$country_code |> unique(),
+    labels = df_dat |>  select(-country_name, -country, -sptinc992j_p0p100) |> 
+    filter(!is.na(rptinc992j_p0p100)) |> pull(country_code) |> unique(),
     circle = TRUE,
     varname.abbrev = TRUE)
 ```

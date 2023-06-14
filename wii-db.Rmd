@@ -1,0 +1,153 @@
+---
+title: "WIID database"
+author: "Juan Rocha"
+date: "Updated `r Sys.Date()`"
+output:
+  html_notebook:
+    toc: yes
+    toc_float: yes
+    highlight: tango
+    code_folding: hide
+    df_print: paged
+    theme: 
+      bootswatch: cosmo
+      code_font:
+        google: Fira Code
+editor_options: 
+  chunk_output_type: inline
+---
+
+The World Income Inequality database has recently released new data for their
+calculations of wealth and income inequality. Two resources are important:
+
+- The [Code Dictionary](https://wid.world/codes-dictionary/): describes the 
+rationale for new variables and how they are constructed. Currently there is over
+1000 variables in the database
+- The DINA guidelines is a more technical report (pdf) that explains the history
+and legacy of the database, and describes the technical rationale for calculating
+the different indicators. It is a good resource to understand limitations and 
+caveats of each variable.
+
+Both of these documents advise against using single number indicators (such as 
+Gini) to describe inequality, and provide examples of when it fails. That is why
+one needs the micro data, and why they make it available.
+
+If we convert to PPP we need to use the last year of their convertion factors
+
+> The WID contains two types of currency conversion factors (PPPs and market exchange rates) for three currencies (US dollars, euros and yuans). We provide long-term series for both of these indicators, but note that to convert between currencies in our benchmark approach, you only need to use the last value of each series: see Thomas Blanchet, Prices and currency conversions in WID.world, WID.world Technical Note Series n¬∞2017/3 for details.
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  cache = TRUE, warning = FALSE, message = FALSE, echo = TRUE,
+  fig.width = 8, fig.height = 5
+)
+
+library(fs)
+library(tidyverse)
+library(naniar)
+library(plotly)
+library(patchwork)
+
+# time series
+library(tsibble)
+library(fable)
+library(imputeTS)
+library(slider)
+library(tictoc)
+# # clustering
+# library(vegan)
+# library(NbClust)
+# library(clValid)
+# library(mclust)
+
+#theme_set(theme_light(base_size = 12))
+```
+
+Import data:
+
+```{r}
+
+fls <- dir_ls("~/Documents/Projects/DATA/WIID_World_Income_Inequality_DB/wid_all_data-20230323/")
+# subseting countries only but there is subnational info for some nations (e.g. US)
+fls <- fls |> str_subset(pattern = "WID_data_[:upper:]{2}\\.csv")
+
+inq <- read_csv2(fls[44]) # 250 = US, the country with most data, 1093vas, 500k obs
+inq                        # 44 Colombia, 215 Sweden, 211 South Africa
+
+indicators <- map(fls, read_csv2) |> 
+    map(function(x) x |> select(country,variable) |> unique()) |> 
+    bind_rows()
+
+indicators |> group_by(country) |> summarize(n=n()) |> arrange(desc(n)) # 277 countries
+indicators |> group_by(variable) |> summarize(n = n() / 277) |> arrange(desc(n)) # 1377 variables
+
+indicators |> 
+    filter(str_detect(variable, "^g")) # g = gini, ptnic = pre-tax national income
+```
+
+Key variables:
+- `ptninc` = pre-tax national income. It can be `g` for gini, `a` average, `b` inverted pareto-lorenz coefficient, `s` share, `r` ratio top 10 / bottom 50.
+- `hweal` = net wealth, with same options as above.
+
+```{r}
+key_vars <- inq |> 
+    pull(variable) |> 
+    unique() |> 
+    str_subset("(r|g|s)ptinc")
+
+inq |> 
+    filter(variable %in% key_vars) |># pull(percentile) |> unique()
+    filter(percentile %in% c("p0p100", "p99p100")) |> 
+    mutate(value = as.numeric(value)) |> 
+    ggplot(aes(x = year, y = value)) +
+    geom_line(aes(color = percentile), show.legend = FALSE) + 
+    facet_wrap(~variable, scales = "free_y")
+```
+
+The ratio and gini are almost the same, at least for Colombia. Extract these variables for all files, all countries, all years:
+
+```{r}
+tic()
+ineq_dat <- map(fls, read_csv2) |> 
+    map(function(x) {
+        x |> 
+            filter(variable %in% key_vars) |># pull(percentile) |> unique()
+            filter(percentile %in% c("p0p100", "p99p100")) |> 
+            mutate(value = as.numeric(value), age = as.numeric(age))
+        }) |> 
+    bind_rows()
+toc()
+
+ineq_dat |> 
+    filter(variable != "sptinc992j") |> 
+    ggplot(aes(x = year, y = value)) +
+    geom_line(aes(color = country), show.legend = FALSE) + 
+    facet_wrap(~variable, scales = "free_y")
+```
+
+```{r}
+ineq_dat |> 
+    filter(variable != "sptinc992j") |> 
+    pivot_wider(names_from = variable, values_from = value) |> 
+    ggplot(aes(gptinc992j, rptinc992j)) +
+    geom_point(aes(color = country), show.legend = FALSE, alpha = 0.5) 
+
+```
+
+```{r}
+library(naniar)
+ineq_dat |> 
+    filter(year >= 1980) |> 
+    filter(variable != "sptinc992j") |> 
+    ggplot(aes(year, value)) +
+    geom_miss_point(aes(color = country), show.legend = FALSE, size = 0.1, alpha = 0.3) +
+    geom_line(aes(color = country), show.legend = FALSE, linewidth = 0.1) +
+    facet_wrap(~variable, scales = "free_y")
+```
+
+Ha! no missing values!!Add wealth variables and export for analysis. 
+
+```{r}
+save(ineq_dat, file = "data/wii_small-data.RData")
+```
+
