@@ -1,10 +1,11 @@
-library(ggplot2)
+library(tidyverse)
 library(patchwork)
 library(plot3D)
 library(magrittr)
 
 
 load("data/cleaned_trilemma-20230614.RData")
+load("data/trilemma_static.Rda")
 
 #### Conceptual figure ####
 old_par <- par()
@@ -379,12 +380,15 @@ ggsave(
 )
 
 #### surface ####
+old_par <- par()
 
+quartz(width = 3.5, height = 3.5, pointsize = 7)
+#par(mar = c(0,0,0,0))
 
 with(df_dat, {
     
     #linear regression:
-    fit <- glm(EFconsPerCap  ~ gni2 + gini + I(gni2^2) + I(gini^2), 
+    fit <- glm(EFconsPerCap  ~ gni2 * gini + I(gni2^2) + I(gini^2), 
                family = "gaussian", data = df_dat)
     
     ## predict values
@@ -397,12 +401,20 @@ with(df_dat, {
     
     ## plot
     scatter3D(
-        z = EFconsPerCap, y = gini, x = gni2, pch = 1, theta = 0, phi = 20, 
+        z = EFconsPerCap, y = gini, x = gni2, pch = 1, theta = -30, phi = 20, 
         ticktype = "detailed", zlab = "Ecological footprint", ylab = "Inequality (Gini)",
         xlab = "Prosperity (GNI[log])",
         surf = list(z = EF_pred, y = gini_pred, x = gni_pred, alpha = 0.5, col = "grey40")
     )
 })
+
+quartz.save(
+    file="figures/sm_cube.png", type = "png", dpi = 500,
+    width = 3.5, height = 3.5, pointsize = 7, bg = "white"
+)
+dev.off()
+par(old_par)
+
 
 with(df_dat, {
     scatter3D(
@@ -447,25 +459,159 @@ null3 <- glm(EFconsPerCap ~ gini + I(gini^2) ,
 
 summary(nokc)
 summary(null3)
+
+
 #### concpetual figures SI ####
 
-ggplot(data = tibble(x = seq(-10,10,0.1)), aes(x)) +
-    geom_function(fun = function(x) -x^2 )
+a <- ggplot(data = tibble(x = seq(-10,10,0.1)), aes(x)) +
+    geom_function(fun = function(x) -x^2 ) +
+    annotate(geom = "segment", x = -10, xend = 0, y =0, yend = 0, color = "orange", linetype = 2) +
+    labs(x = "Income per capita", y = "Inequality", tag = "A") +
+    theme_classic(base_size = 9) +
+    theme(axis.text = element_blank(), axis.ticks = element_blank())
 
-df_dat |> 
-    ggplot(aes(gni2, EFconsPerCap)) +
-    geom_point() +
-    geom_smooth() + scale_x_log10()
+b <- ggplot(data = tibble(x = seq(-10,10,0.1)), aes(x)) +
+    geom_function(fun = function(x) -x^2 ) +
+    annotate(geom = "segment", x = -10, xend = 0, y =0, yend = 0, color = "purple", linetype = 2) +
+    labs(x = "Income per capita", y = "Environmental degradation", tag = "B") +
+    theme_classic(base_size = 9) +
+    theme(axis.text = element_blank(), axis.ticks = element_blank())
 
-p <- df_dat |> 
+c <- ggplot(data = tibble(x = seq(-10,10,0.1)), aes(x)) +
+    geom_function(fun = function(x) x ) + 
+    geom_hline(yintercept = 10, linetype = 2, color = "orange") +
+    geom_vline(xintercept = 10, linetype = 2, color = "purple") +
+    labs(x = "Environmental degradation", y = "Inequality", tag = "C") +
+    theme_classic(base_size = 9) +
+    theme(axis.text = element_blank(), axis.ticks = element_blank())
+
+a+b+c
+
+d <-  df_dat |> 
     ggplot(aes(gni2, gini)) +
-    geom_point() +
-    geom_line(aes(group = iso3, color = iso3), show.legend = FALSE) +
-    geom_smooth() + scale_x_log10()
-    
-plotly::ggplotly(p)
+    geom_point(size = 0.1, alpha = 0.5) +
+    geom_path(aes(group = iso3), size = 0.05) +
+    geom_smooth() + scale_x_log10() +
+    labs(y = "Inequality (Gini)", x= "Prosperity (GNI [log])", tag = "D") +
+    theme_classic(base_size = 9)
 
-df_dat |> 
+e <- df_dat |> 
+    ggplot(aes(gni2, EFconsPerCap)) +
+    geom_point(size = 0.1, alpha = 0.5) +
+    geom_path(aes(group = iso3), size = 0.05) +
+    geom_smooth() + scale_x_log10() +
+    labs(y = "Ecological Footprint", x= "Prosperity (GNI [log])", tag = "E") +
+    theme_classic(base_size = 9)
+
+# p <- df_dat |> 
+#     ggplot(aes(gni2, gini)) +
+#     geom_point() +
+#     geom_line(aes(group = iso3, color = iso3), show.legend = FALSE) +
+#     geom_smooth() + scale_x_log10()
+#     
+# plotly::ggplotly(p)
+
+
+f <- df_dat |> 
     ggplot(aes(gini, EFconsPerCap)) +
-    geom_point() +
-    geom_smooth() 
+    geom_point(size = 0.1, alpha = 0.5) +
+    geom_path(aes(group = iso3), size= 0.05) +
+    geom_smooth() +
+    labs(y = "Ecological Footprint", x= "Inequality (Gini)", tag = "F") +
+    theme_classic(base_size = 9)
+
+
+g <- df_all2 |> 
+    ggplot(aes(m_gni, m_gini)) +
+    geom_point(size = 0.1, alpha = 0.5) +
+    geom_smooth() + scale_x_log10() +
+    labs(y = "Inequality (Gini)", x= "Prosperity (GNI [log])", tag = "G") +
+    theme_classic(base_size = 9)
+
+h <- df_all2 |> 
+    ggplot(aes(m_gni, m_ef)) +
+    geom_point(size = 0.1, alpha = 0.5) +
+    geom_smooth() + scale_x_log10() +
+    labs(y = "Ecological footprint", x= "Prosperity (GNI [log])", tag = "H") +
+    theme_classic(base_size = 9)
+
+i <- df_all2 |> 
+    ggplot(aes(m_gini, m_ef)) +
+    geom_point(size = 0.1, alpha = 0.5) +
+    geom_smooth() + 
+    labs(x = "Inequality (Gini)", y= "Ecological footprint", tag = "I") +
+    theme_classic(base_size = 9)
+
+(a+b+c)/(d+e+f)/(g+h+i) 
+
+ggsave(
+    filename = "sm_kuznets.png", device = "png", path = "figures/",
+    width = 7, height = 6, bg = "white", dpi = 600,
+    plot = (a+b+c)/(d+e+f)/(g+h+i) 
+)
+
+# used to remove years or countries
+# j <-  df_dat |> 
+#     #filter(year > 1998) |> 
+#     filter(!iso3 %in% c("ITA", "PRT", "SPA")) |> 
+#     ggplot(aes(gni2, gini)) +
+#     geom_point(size = 0.1, alpha = 0.5) +
+#     geom_path(aes(group = iso3), size = 0.05) +
+#     geom_smooth() + scale_x_log10() +
+#     labs(y = "Inequality (Gini)", x= "Prosperity (GNI [log])", tag = "D") +
+#     theme_classic(base_size = 9)
+
+
+### Trajectories
+countries <- read_csv(
+    file = "~/Documents/Projects/DATA/WorldBank/SDG_csv/SDGCountry.csv") |> 
+    janitor::clean_names()
+
+library(ggrepel)
+
+sa <- df_dat |> 
+    left_join(countries, by = c("iso3" = 'country_code')) |> 
+    left_join(as_tibble(world), by = c("x2_alpha_code" = "iso_a2")) |> 
+    ggplot(aes(year, EFconsPerCap, group = iso3)) +
+    geom_line(aes(color = continent), linewidth = 0.5, alpha = 0.7) +
+    geom_text_repel(
+        data = df_dat |> filter(year == 2017),
+        aes(label = iso3), hjust = 0.5, size = 1.5, nudge_x = 1, segment.size = 0.1
+    ) + labs(y = "Ecological footprint", x = "Year", tag = "A") +
+    scale_color_brewer(palette = "Set2") +
+    #facet_wrap(~ continent, ncol = 5)
+    theme_light(base_size = 8)
+
+sb <- df_dat |> 
+    left_join(countries, by = c("iso3" = 'country_code')) |> 
+    left_join(as_tibble(world), by = c("x2_alpha_code" = "iso_a2")) |> 
+    ggplot(aes(year, gini, group = iso3)) +
+    geom_line(aes(color = continent), linewidth = 0.5, alpha = 0.7) +
+    geom_text_repel(
+        data = df_dat |> filter(year == 2017),
+        aes(label = iso3), hjust = 0.5, size = 1.5, nudge_x = 1, segment.size = 0.1
+    ) + labs(y = "Inequality [Gini]", x = "Year", tag = "B") +
+    scale_color_brewer(palette = "Set2") +
+    #facet_wrap(~ continent, ncol = 5)
+    theme_light(base_size = 8)
+
+sc <- df_dat |> 
+    left_join(countries, by = c("iso3" = 'country_code')) |> 
+    left_join(as_tibble(world), by = c("x2_alpha_code" = "iso_a2")) |> 
+    ggplot(aes(year, gni2, group = iso3)) +
+    geom_line(aes(color = continent),linewidth = 0.5, alpha = 0.7) +
+    geom_text_repel(
+        data = df_dat |> filter(year == 2017),
+        aes(label = iso3), hjust = 0.5, size = 1.5, nudge_x = 1, segment.size = 0.1
+    ) + labs(y = "Prosperity [GNI]", x = "Year", tag = "C") +
+    scale_color_brewer(palette = "Set2") +
+    #facet_wrap(~ continent, ncol = 5)
+    theme_light(base_size = 8)
+
+sa +sb +sc + plot_layout(guides = "collect") & theme(legend.position = "bottom")
+
+ggsave(
+    filename = "sm_trajectories.png", device = "png", path = "figures/",
+    width = 6, height = 3.5, bg = "white", dpi = 600,
+    plot = sa +sb +sc + plot_layout(guides = "collect") & theme(legend.position = "bottom")
+)

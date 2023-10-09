@@ -270,6 +270,10 @@ load("data/wii_small-data.RData")
 
 ```{r}
 ineq_dat
+
+## correct Namibia is not a NA, but the country code is NA
+ineq_dat <- ineq_dat |> 
+    mutate(country = case_when(is.na(country) ~ "NA", TRUE ~ country)) #|> filter(country == "NA")
 ```
 `m` is total, `a` is average. All other codes are documented here: [https://wid.world/codes-dictionary/#packages](https://wid.world/codes-dictionary/#packages). 
 
@@ -326,6 +330,8 @@ df_dat <- df_dat |>
                   unite(col = "var", c("variable", "percentile")) |> 
                   pivot_wider(names_from = var, values_from = value)
               )
+
+df_dat
 ```
 
 
@@ -586,24 +592,37 @@ Merge with WID inequality data:
 ```{r}
 
 df_un_reduced <- df_un_reduced |> ungroup() |> #group_by(iso3)
-    left_join(
+    left_join( 
         countries |> select(iso3 = country_code, country = x2_alpha_code) ) |> 
-    # filter(is.na(country)) |> pull(iso3) |> unique()
+    filter(iso3 != "FJI") |> # drop out Fiji, it does not exist in ineq data and creates NAs
+    #filter(is.na(country)) |> pull(iso3) |> unique()
     unite(col = "var", year, series_name, sep = "_") |> 
     pivot_wider(values_from = value, names_from = var) |> 
     left_join(
         ineq_dat |> 
             select(-age, -pop) |> 
             filter(year >=  2000, year < 2019) |> # max year 2018 in UN dataset
-            unite(col = "series_name", c("variable", "percentile")) |> 
+            unite(col = "series_name", c("variable", "percentile")) |>
+            filter(series_name != "sptinc992j_p0p100") |> # all ones, no variability
             right_join(
                 countries |> 
                     select(iso3 = country_code, country = x2_alpha_code) |> 
                     filter(iso3 != "CHI") # filter out channel islands
             ) |> 
             unite(col = "var", year, series_name, sep = "_") |> 
-            pivot_wider(values_from = value, names_from = var) 
+            pivot_wider(values_from = value, names_from = var) |> 
+            select(-NA_NA)
         )
+
+### No missing value in any variable!
+df_un_reduced |>
+    pivot_longer(3:last_col(), names_to = "variable", values_to = "value") |> 
+    mutate(
+        year = str_sub(variable, 1L, 4L),
+        variable = str_sub(variable, 6L, -1L)
+    ) |> 
+    filter(is.na(value))
+
 ```
 
 
@@ -611,7 +630,7 @@ df_un_reduced <- df_un_reduced |> ungroup() |> #group_by(iso3)
 Now there is two working datasets cleaned and complete: `df_dat` is the data from World Bank, and `df_un_reduced` is the data from UN SDGs.
 
 ```{r}
-#save(df_dat, df_un_reduced, file = "data/cleaned_sdg.RData")
+# save(df_dat, df_un_reduced, file = "data/cleaned_sdg.RData")
 ```
 
 
@@ -657,10 +676,10 @@ plot(pca1)
 
 ```{r}
 # some notes on the pca object
-pca1$rotation |> dim() # 171 variables*years, 160 PCs because there was 160 countries to start with.
-pca1$x |> dim() # The loadings of 160 countries in each of the 160 components.
-pca1$center |> length() # 171 variable centers
-pca1$scale |> length() # 171 variable scales.
+pca1$rotation |> dim() # 228 variables*years, 150 PCs because there was 150 countries after filtering missing values in rptinc992j_p0p100.
+pca1$x |> dim() # The loadings of 150 countries in each of the 150 components.
+pca1$center |> length() # 228 variable centers
+pca1$scale |> length() # 228 variable scales.
 ```
 
 
@@ -767,24 +786,86 @@ zero_variance_vars <- df_un_reduced |>
     pull(variable) |> unique()
 
 pca2 <- df_un_reduced |>
-    ungroup() |> 
-    select(-country, -iso3, -NA_NA) |> #skimr::skim()
-    select(-contains("sptinc"), -contains("gptinc"), -contains("rptinc")) |> 
+    select(-country, -iso3) |>
     prcomp(center = TRUE, scale. = TRUE)
-
 ```
 **J230529:** It doesn't work, there is no enough variability in the data. It seems I have several variables / countries with zero variance or constants despite no missing values. However, it only screws up when adding the inequality variables. Without it does still run, why? Check with Maike. It might have to do with number of observations (countries) vs number of variables. Most likely too wide of a dataset can be problematic.
+
+**J231009** Now it's working, the problem was not the zero or low variance, the problem was NA induced by two countries that didn't match on the joints, Namibia whose iso2 is NA and got interpreted as missing value, and Fiji that does not exist on the WII database. So only 50 countries at the end.
 
 ```{r}
 biplot(pca2)
 ```
+
+```{r}
+x <- summary(pca2, loadings = F, cutoff = 0.1)
+x <- x$importance |> as_tibble(rownames = "var") |> 
+    pivot_longer(cols = starts_with("PC"), names_to = "comp") |> 
+    mutate(comp = str_remove(comp, "PC") |> as.numeric()) |> 
+    dplyr::filter( comp <= 10 , var != "Standard deviation")
+    
+ggplot(data = x |> filter(var == "Proportion of Variance"), aes(comp, value)) +
+    geom_col(color = "grey25") +
+    geom_point(data = x |> filter(var == "Cumulative Proportion"), aes(comp, value)) +
+    geom_line(data = x |> filter(var == "Cumulative Proportion"), aes(comp, value)) +
+    labs(x = "Principal components", y = "Explained variance") +
+    scale_x_continuous(n.breaks = 10) +
+    scale_y_continuous(labels = scales::label_percent()) +
+    theme_light(base_size = 6)
+
+a <- pca2$x |> as_tibble() |> 
+    select(PC1:PC2) |> 
+    mutate(iso = df_un_reduced |> pull(iso3) |> unique() ) |> 
+    ggplot(aes(PC1, PC2)) +
+    geom_text(aes(label = iso), size = 2) +
+    coord_equal() +
+    theme_light(base_size = 6)
+
+b <- ggplot() +
+    geom_segment(
+        data = pca2$rotation |>
+            as_tibble(rownames = "factor") |> 
+            mutate(year = str_sub(factor, start = 1L, end = 4L),
+                   factor = str_remove(factor, pattern = "\\d{4}_"))  |> 
+            select(year, factor, PC1:PC2),
+        aes(xend = PC1, yend = PC2, color = factor, alpha = as.numeric(year)),
+        x = 0, y = 0,
+        arrow = arrow(length = unit(0.1,"cm")), linewidth = 0.3) +
+    scale_color_brewer("Variable",palette = "Set3",
+        guide = guide_legend(ncol = 2, title.position = "top")) +
+    scale_alpha("Year", guide = guide_legend(ncol = 1, title.position = "top")) +
+    xlim(c(-0.1, 0.15)) +
+    theme_light(base_size = 6)
+
+a + b + plot_layout(guides = "collect") & 
+    theme_light(base_size = 10) &
+    theme(legend.position = "bottom") 
+
+# ggsave(
+#     filename = "pca_wb-data.png", path = "figures/", dpi = 400, bg = "white",
+#     device = "png", width = 7, height = 4,
+#     plot = (a + b + plot_layout(guides = "collect") & 
+#     theme_light(base_size = 6) &
+#     theme(legend.position = "bottom") )
+# )
+
+```
+
+
+
 ### Multiple factor analysis
 
 ```{r}
+df_un_reduced |> 
+    pivot_longer(3:last_col(), names_to = "variable", values_to = "value") |> 
+    separate(variable, into = c("year", "indicator"), sep = "_") |> 
+    skimr::skim() # 19 years, 9 variables
+
+
 mfa1 <- df_un_reduced |> 
-    select(-iso3, -country, -NA_NA) |> 
+    select(-iso3, -country) |> 
     as.matrix(dimnames = list(df_un_reduced |> pull(iso3) |> unique())) |> 
-    FactoMineR::MFA(group = rep(19, 10), type = rep("s", 10)) # 18 years times 6 variables
+    FactoMineR::MFA(group = rep(19, 9), type = rep("s", 9)) # 19 years times 9 variables
 ```
 
 ```{r}
@@ -800,7 +881,19 @@ mfa1$group
 ```
 
 ```{r}
-mfa1 |> summary()
+# df_dat$year |> unique() |> length() # 19yrs
+
+mfa2 <- df_dat |> 
+    select(-country_name, -country, -sptinc992j_p0p100) |> 
+    filter(!is.na(rptinc992j_p0p100)) |> 
+    pivot_longer(cols = `Access to electricity (% of population)`:last_col(),
+                 values_to = "value", names_to = "variable") |> #pull(variable) |> unique() 12 vars
+    unite(col = "var", year, variable, sep = "_") |> 
+    pivot_wider(names_from = var, values_from = value) |> 
+    ungroup() |> 
+    select(-country_code) |> 
+    as.matrix(dimnames = list(df_dat |> pull(country_code) |> unique())) |> 
+    FactoMineR::MFA(group = rep(19, 12), type = rep("s", 12)) # 19 years times 9 variables
 ```
 
 
@@ -814,22 +907,42 @@ ggbiplot::ggbiplot(
 ```
 
 
+```{r}
+ggbiplot::ggbiplot(
+    pca2,
+    labels = df_un_reduced |> pull(iso3) |> unique(),
+    circle = TRUE,
+    varname.abbrev = TRUE)
+```
+
+Extract the weight per country on the relevant components to see how they move on PCA or MFA space.
+
+```{r}
+mfa1 |> summary()
+mfa2$summary.quanti
+```
+
+
+
+
+
+
 
 ## To dos:
 
 - one PCA per year, see how PCA1 change over time. 
 
 ```{r}
-pca3 <- df_dat |> 
-    ungroup() |> 
-    mutate(year = as_factor(year)) |> 
-    split(~year) |>
-    map(function(x) select(x, where(is.numeric))) |> 
-    map(function(x) princomp(x, center = TRUE, scale. = TRUE))
+# pca3 <- df_dat |> 
+#     ungroup() |> 
+#     mutate(year = as_factor(year)) |> 
+#     split(~year) |>
+#     map(function(x) select(x, where(is.numeric))) |> 
+#     map(function(x) princomp(x, center = TRUE, scale. = TRUE))
 ```
 
 ```{r}
-pca3 |> map(biplot)
+# pca3 |> map(biplot)
 ```
 
 ## Paper outline

@@ -523,17 +523,17 @@ df_summary |>
 
 ```{r fig.width=3, fig.height=3}
 pc <- prcomp(df_summary |> 
-                 select(-starts_with("country")),
+                 select(-starts_with("iso3")),
              center = TRUE, scale. = TRUE)
 ## Fix short names for plotting
-df_summary <- df_summary |> 
-    left_join(
-        dat |> select(country, country_code) |> 
-            filter(!is.na(country_code)) |> unique())
+# df_summary <- df_summary |> 
+#     left_join(
+#         dat |> select(country, country_code) |> 
+#             filter(!is.na(country_code)) |> unique())
 
 pc1 <- ggbiplot::ggbiplot(
     pc, groups = as.character(stab@clusterObjs$kmeans$`3`$cluster),
-    ellipse = TRUE, labels = df_summary$country_code, labels.size = 1,
+    ellipse = TRUE, labels = df_summary$iso3, labels.size = 1,
     varname.size = 1.5) +
     scale_color_manual("Groups", values = c("#73B3A3","#FEA621","#5BA4CA")) +
     labs(tag = "A") +
@@ -560,22 +560,22 @@ Averages are worth calculating for the parameter space, the vector field of the 
 ```{r fig.height=3,fig.width=3}
 a1 <- df_dat |> 
     as_tibble() |> 
-    group_by(country) |> 
+    group_by(iso3) |> 
     dplyr::summarize(
         EF = sum(d_EF, na.rm = TRUE),
         Gini = sum(d_gini, na.rm = TRUE),
         GNI = sum(d_gni, na.rm = TRUE)
     ) |> 
     mutate(Group = as.character(stab@clusterObjs$kmeans$`3`$cluster)) |> 
-    left_join(
-        dat |> select(country, country_code) |> 
-            filter(!is.na(country_code)) |> unique()) |> 
+    # left_join(
+    #     dat |> select(country, country_code) |> 
+    #         filter(!is.na(country_code)) |> unique()) |> 
     ggplot(aes(EF, Gini)) +
     geom_segment(
         aes(x = 0, y = 0, xend = EF, yend = Gini, color = as.factor(Group)),
         arrow = arrow(length = unit(0.1, "cm")), show.legend = FALSE, size = 0.15) +
     geom_text(
-        aes(x = EF *1.1, y = Gini * 1.1, label = country_code, colour = Group), 
+        aes(x = EF *1.1, y = Gini * 1.1, label = iso3, colour = Group), 
         size = 1, show.legend = FALSE) +
     scale_color_manual("Groups", values = c("#73B3A3","#FEA621","#5BA4CA")) +
     labs(x = "Ecological Footprint", y = "Inequality (Gini)") +
@@ -605,23 +605,23 @@ f1
 ```{r fig.width=3, fig.height=3}
 a2 <- df_dat |> 
     as_tibble() |> 
-    group_by(country) |> 
+    group_by(iso3) |> 
     dplyr::summarize(
         EF = sum(d_EF, na.rm = TRUE),
         Gini = sum(d_gini, na.rm = TRUE),
         GNI = sum(d_gni, na.rm = TRUE)
     ) |> 
     mutate(Group = as.character(stab@clusterObjs$kmeans$`3`$cluster)) |> 
-    left_join(
-        dat |> select(country, country_code) |> 
-            filter(!is.na(country_code)) |> unique()) |> 
+    # left_join(
+    #     dat |> select(country, country_code) |> 
+    #         filter(!is.na(country_code)) |> unique()) |> 
     ggplot(aes(GNI, Gini)) +
     geom_segment(
         aes(x = 0, y = 0, xend = GNI, yend = Gini, 
             color = as.factor(Group)), show.legend = FALSE,
         arrow = arrow(length = unit(0.1, "cm")), size = 0.15) +
     geom_text(aes(x = GNI * 1.1, y = Gini *1.1, 
-                  label = country_code, colour = Group), 
+                  label = iso3, colour = Group), 
               size = 1, show.legend = FALSE) +
     scale_color_manual("Groups", values = c("#73B3A3","#FEA621","#5BA4CA")) +
     theme_light(base_size = 6) + labs(x = "Prosperity (GNI [log])", y = "Inequality (Gini)") +
@@ -737,8 +737,10 @@ gni <- dat1 %>%
 
 df_all2 <- gini |> left_join(ef) |> left_join(gni)
 
-df_all2 <- df_all |> ungroup() |> 
-    filter(!is.na(sd_gini), !is.na(m_ef), !is.na(sd_ef), !is.na(m_gni), !is.na(sd_gni)) 
+df_all2 <- df_all2 |> ungroup() |> 
+    filter(!is.na(sd_gini), !is.na(m_ef), !is.na(sd_ef), !is.na(m_gni), !is.na(sd_gni))
+
+save(df_all2, file = "data/trilemma_static.Rda")
 ```
 
 
@@ -833,7 +835,7 @@ ef_map <-  world |>
     ggplot() +
     geom_sf(aes(fill = m_ef), size = 0.05, color = "white") +
     scico::scale_fill_scico(
-        "Mean Ecological Footprint",palette = "romaO",
+        "Mean Ecological Footprint",palette = "romaO", direction = -1,
         guide = guide_colorbar(title.position = "top")) + 
     labs(tag = "C") +
     theme_void(base_size = 5) +
@@ -886,7 +888,7 @@ ef_map + gini_map + gni_map
 
 ggsave(
     filename = "pca_maps.png", path = "figures/", device = "png",
-    width = 5, height = 4, dpi = 400, bg = "white",
+    width = 5, height = 4, dpi = 600, bg = "white",
     plot = (pc1 / pc2 ) | (ef_map / gini_map / gni_map) + 
     plot_annotation(tag_levels = "A") + 
     plot_layout(widths = c(1,4), tag_level = "new")
