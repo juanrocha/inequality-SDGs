@@ -887,7 +887,8 @@ mfa2 <- df_dat |>
     select(-country_name, -country, -sptinc992j_p0p100) |> 
     filter(!is.na(rptinc992j_p0p100)) |> 
     pivot_longer(cols = `Access to electricity (% of population)`:last_col(),
-                 values_to = "value", names_to = "variable") |> #pull(variable) |> unique() 12 vars
+                 values_to = "value", names_to = "variable") |> 
+    arrange(variable, year) |> 
     unite(col = "var", year, variable, sep = "_") |> 
     pivot_wider(names_from = var, values_from = value) |> 
     ungroup() |> 
@@ -925,12 +926,15 @@ mfa2$summary.quanti
 
 
 
+```{r}
+# save(pca1, pca2, mfa1, mfa2, file = "data/ordination_results.Rda")
+```
 
 
 
 ## To dos:
 
-- one PCA per year, see how PCA1 change over time. 
+- one PCA per year, see how PCA1 change over time? 
 
 ```{r}
 # pca3 <- df_dat |> 
@@ -944,6 +948,10 @@ mfa2$summary.quanti
 ```{r}
 # pca3 |> map(biplot)
 ```
+
+- Clustering analysis on the reduced dimensions (PCA, MFA)
+- Plot ineq against biodiv proxies, does the path foward differ from the path backwards = hysteresis?
+
 
 ## Paper outline
 

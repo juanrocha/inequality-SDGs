@@ -27,11 +27,34 @@ header-includes:
 - \usepackage{setspace}
 ---
 
+```{r data, include=FALSE}
+library(tidyverse)
+library(here)
+
+## word counts
+## Abstract 150
+## Intro 697
+## Method 957
+## Results 621
+## Discussion 1434
+## Conclusion 267
+## Total main 3976 + 150 abstract
+## 
+## Targets: 
+# 
+# - NatComms: 5000w | 150w abstract | 4 figs or tables | Methods end 3000w | Refs
+# 70max
+# 
+# - WorldDev: | 4500-10k words including all (refs, captions, tables, etc) | 300w
+# abstract
+```
+
 # Outline
 
 Target: EcolEcon?
 / People and Nature?
-/ PNAS / ERL [4000w]
+/ PNAS / ERL / NatSust?
+[4000w]
 
 Authors:
 
@@ -50,7 +73,7 @@ Methods {800w}:
 
 Results {1000w}:
 
--   
+-   download and check world inequality db again
 
 Discussion {1000w}
 
@@ -91,7 +114,7 @@ Here we address such gap by studying synergies and trade-offs between SDGs relat
 
 # Methods
 
-```{r echo = FALSE}
+```{r echo = FALSE, message=FALSE, warning=FALSE}
 dat <- read_csv(file = "~/Documents/Projects/DATA/WorldBank/SDG_csv/SDGData.csv") |> 
     janitor::clean_names()
 
@@ -112,10 +135,10 @@ sdg <- sdg |>
 The WB dataset offers `r dat$indicator_name |> unique() |> length()` indicators, with time series from 1990 to 2019 for `r dat$country_name |> unique() |> length()` countries or administrative areas (N = 2'013.791 observations).
 The UN dataset offers time series from 2000 to 2019 for 17 SDGs, 112 targets, and 356 indicators, in 310 administrative areas (N = 1'072.731 observations).
 Despite their coverage, both datasets contain high proportion of missing values and the sample is unbalanced across countries and time, meaning some countries have better temporal coverage than others.
-We focused subsequent analysis only on country level indicators for SDGs 10, 14 and 15, related to inequality and the biosphere respectively.
+We focused subsequent analysis only on country level indicators for SDGs 10, 14 and 15, related to inequality and the biosphere respectively. We complemented the SDGs datasets with inequality data from the World Inequality database (WID), using their estimates of the pre-tax national income computed as ratio or Gini.
 
 ```{r echo = FALSE}
-load(file = "data/cleaned_sdg.RData")
+load(file = paste0(here(), "/data/cleaned_sdg.RData"))
 # `df_dat` is the data from World Bank, and `df_un_reduced` is the data from UN SDGs
 df_dat <- df_dat |> ungroup()
 df_un_reduced <- df_un_reduced |> ungroup()
@@ -123,17 +146,11 @@ df_un_reduced <- df_un_reduced |> ungroup()
 
 *Variable selection:* We computed the proportion of missing values for all time series related to our initial selection of indicators (Figs S1, S2, S3).
 We discarded indicators for which time series contained more than 30% of missing values, or less than 45 countries.
-Missing values were then imputed using a cubic spline, leaving us with `r df_dat |> pull(country_code) |> unique() |> length()` countries, `r df_dat |> pull(year) |> unique() |> length()` years of data across 9 indicators for the WB dataset; and `r df_un_reduced |> pull(series_code) |> unique() |> length()` indicators, `r df_un_reduced |> pull(iso3) |> unique() |> length()` countries over `r df_un_reduced |> pull(year) |> unique() |> length()` years for the UN dataset.
-Table X summarizes our variable selection, their units and available ranges.
+Missing values were then imputed using a cubic spline, leaving us with `r df_dat |> pull(country_code) |> unique() |> length()` countries, `r df_dat |> pull(year) |> unique() |> length()` years of data across 9 indicators for the WB dataset; and `r df_un_reduced |> pull(series_name) |> unique() |> length()` indicators, `r df_un_reduced |> pull(iso3) |> unique() |> length()` countries over `r df_un_reduced |> pull(year) |> unique() |> length()` years for the UN dataset. The UN dataset was further reduced to 50 countries because the WID does not report inequality timeseries for Fiji.
 
-*Ordination:* We used multiple factor analysis and principal component analysis over time to ...
+*Ordination:* We used multiple factor analysis and principal component analysis to reduce the dimensionality of the data and explore similarities and differences across countries. 
 
 Notes:
-
--   Add Gini to the datasets!
-    repeat the analysis
-
--   Add the SM figures, they are ready
 
 -   Paper figures:
 
@@ -144,11 +161,82 @@ Notes:
         Do clustering on trayectories as well?
         -- and then add a map with the clusters for each dataset.
 
-\# References {.unnumbered}
+# References {.unnumbered}
 
 ::: {#refs}
 :::
 
-\\pagebreak
+\pagebreak
 
 # Supplementary Material {#sec:SM}
+
+```{=tex}
+\renewcommand\thefigure{S\arabic{figure}}
+\renewcommand\thetable{S\arabic{table}}
+\setcounter{table}{0}
+\setcounter{figure}{0}
+```
+```{=tex}
+\begin{figure*}[ht]
+\centering
+\includegraphics[width = 6in, height = 6in]{WB_environment_SDGs}
+\caption{\textbf{World Bank environmental SDGs} }
+\label{fig:SM_WB_env}
+\end{figure*}
+```
+```{=tex}
+\begin{figure*}[ht]
+\centering
+\includegraphics[width = 6in, height = 6in]{WB_environment_SDGs_othervars}
+\caption{\textbf{World Bank environmental SDGs additional variables} }
+\label{fig:SM_WB_env2}
+\end{figure*}
+```
+```{=tex}
+\begin{figure*}[ht]
+\centering
+\includegraphics[width = 6in, height = 6in]{WB_selected_vars}
+\caption{\textbf{World Bank selected variables} }
+\label{fig:SM_WB_select}
+\end{figure*}
+```
+```{=tex}
+\begin{figure*}[ht]
+\centering
+\includegraphics[width = 6in, height = 5in]{WB_correlogram}
+\caption{\textbf{Correlogram of World Bank selected variables} }
+\label{fig:SM_WBcorr}
+\end{figure*}
+```
+```{=tex}
+\begin{figure*}[ht]
+\centering
+\includegraphics[width = 6in, height = 5in]{UN_SDG_10-14-15}
+\caption{\textbf{United Nations SDGs 10, 14 and 25 dataset} }
+\label{fig:SM_UNdata}
+\end{figure*}
+```
+```{=tex}
+\begin{figure*}[ht]
+\centering
+\includegraphics[width = 6in, height = 5in]{UN_selected_vars}
+\caption{\textbf{UN selected variables} }
+\label{fig:SM_UNselect}
+\end{figure*}
+```
+```{=tex}
+\begin{figure*}[ht]
+\centering
+\includegraphics[width = 6in, height = 5in]{UN_reduced_vars}
+\caption{\textbf{UN reduced variables} }
+\label{fig:SM_UNred}
+\end{figure*}
+```
+```{=tex}
+\begin{figure*}[ht]
+\centering
+\includegraphics[width = 6in, height = 5in]{UN_correlogram}
+\caption{\textbf{Correlogram of United Nations selected variables} }
+\label{fig:SM_UNcorr}
+\end{figure*}
+```

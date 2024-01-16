@@ -215,14 +215,16 @@ c3 <- df_dat |>
     # scale_fill_viridis_c() + 
     #geom_density_2d(color = "white", size = 0.2) +
     geom_density_2d_filled(alpha = 0.95, show.legend = FALSE) +
-    geom_point(aes(color = gni_log), size = 0.05, alpha = 0.25) +
-    geom_path(aes(group = iso3, color = gni_log), size = 0.05, alpha = 0.75) +
+    geom_point(aes(color = gni_log), size = 0.01, alpha = 0.15) +
+    geom_path(aes(group = iso3, color = gni_log), size = 0.01, alpha = 0.5) +
     scico::scale_color_scico(
         "Prosperity (GNI [log])", palette = "grayC", direction = -1,
         guide = guide_colorbar(title.position = "top")) +
     geom_hline(yintercept = 1.68, linetype = 2, color = "gray90", size = 0.2) +
     geom_vline(xintercept = 30, linetype = 2, color = "gray90", size = 0.2) +
     labs(x = "Inequality (Gini)", y = "Ecological footprint") +
+    annotate("text", x = c(32, 50), y = c(10,5), label = c("Regime 1", "Regime 2"), 
+             colour = "white", size = 2) +
     theme_light(base_size = 7) +
     theme(legend.position = "top", panel.grid = element_blank(),
           legend.key.width = unit(7, "mm"), legend.key.height = unit(2,"mm"))
@@ -230,14 +232,16 @@ c3 <- df_dat |>
 c2 <- df_dat |> 
     ggplot(aes(gini,gni2)) +
     geom_density_2d_filled(alpha = 0.95, show.legend = FALSE) +
-    geom_point(aes(color = EFconsPerCap), size = 0.01, alpha = 0.25) +
-    geom_path(aes(group = iso3, color = EFconsPerCap), size = 0.05, alpha = 0.75) +
+    geom_point(aes(color = EFconsPerCap), size = 0.01, alpha = 0.15) +
+    geom_path(aes(group = iso3, color = EFconsPerCap), size = 0.01, alpha = 0.5) +
     geom_hline(yintercept = (12546), linetype = 2, color = "gray90", size = 0.2) +
     geom_vline(xintercept = 30, linetype = 2, color = "gray90", size = 0.2) +
     scico::scale_color_scico(
         "Ecological footprint",palette = "grayC", direction = 1,
         guide = guide_colorbar(title.position = "top")) +
     labs(y= "Prosperity (GNI [log])", x = "Inequality (Gini)") +
+    annotate("text", x = c(45, 55), y = c(30000,1500), label = c("Regime 1", "Regime 2"), 
+             colour = "white", size =2) +
     scale_y_log10() +
     theme_light(base_size = 7) +
     theme(legend.position = "top", panel.grid = element_blank(),
@@ -246,13 +250,15 @@ c2 <- df_dat |>
 c1 <- df_dat |> 
     ggplot(aes(y = gni2, x = EFconsPerCap)) +
     geom_density_2d_filled(alpha = 0.95, show.legend = FALSE) +
-    geom_point(aes(color = gini), size = 0.01, alpha = 0.25) +
-    geom_path(aes(group = iso3, color = gini), size = 0.05, alpha = 0.75) +
+    geom_point(aes(color = gini), size = 0.01, alpha = 0.15) +
+    geom_path(aes(group = iso3, color = gini), size = 0.01, alpha = 0.5) +
     scico::scale_color_scico(
         "Inequality (Gini)",palette = "grayC", direction = 1,
         guide = guide_colorbar(title.position = "top")) +
     labs(y = "Prosperity (GNI)", x = "Ecological footprint") +
     scale_y_log10()+
+    annotate("text", x = c(8,4), y = c(30000,500), label = c("Regime 1", "Regime 2"), 
+             colour = "white", size = 2) +
     geom_hline(yintercept = (12546), linetype = 2, color = "gray90", size = 0.2) +
     geom_vline(xintercept = 1.68, linetype = 2, color = "gray90", size = 0.2) +
     theme_light(base_size = 7) +
@@ -278,13 +284,13 @@ a1 <- df_dat |>
         arrow = arrow(length = unit(0.1, "cm")), show.legend = FALSE, size = 0.15) +
     geom_text(
         aes(y = EF *1.1, x = Gini * 1.1, label = iso3, colour = Group), 
-        size = 1, show.legend = FALSE) +
+        size = 2, show.legend = FALSE) +
     scale_color_manual("Groups", values = c("#73B3A3","#FEA621","#5BA4CA")) +
     labs(y = "Ecological Footprint", x = "Inequality (Gini)") +
-    theme_light(base_size = 5) +
-    theme(panel.grid = element_blank(), legend.position = c(0.8,0.2), 
-          legend.text = element_text(size = 4), legend.title = element_text(size =4),
-          legend.key.width = unit(2,"mm"), legend.key.height = unit(2, "mm"))    
+    theme_light(base_size = 7) 
+    # theme(panel.grid = element_blank(), legend.position = c(0.8,0.2), 
+    #       legend.text = element_text(size = 4), legend.title = element_text(size =4),
+    #       legend.key.width = unit(2,"mm"), legend.key.height = unit(2, "mm"))    
 
 
 a1
@@ -317,12 +323,13 @@ a2 <- df_dat |>
         arrow = arrow(length = unit(0.1, "cm")), size = 0.15) +
     geom_text(aes(y = GNI * 1.1, x = Gini *1.1, 
                   label = iso3, colour = Group), 
-              size = 1, show.legend = FALSE) +
+              size = 2, show.legend = FALSE) +
     scale_color_manual("Groups", values = c("#73B3A3","#FEA621","#5BA4CA")) +
-    theme_light(base_size = 5) + labs(y = "Prosperity (GNI [log])", x = "Inequality (Gini)") +
-    theme(panel.grid = element_blank(), legend.position = c(0.8,0.2),
-          legend.text = element_text(size = 4), legend.title = element_text(size = 4),
-          legend.key.width = unit(2,"mm"), legend.key.height = unit(2, "mm")) 
+    theme_light(base_size = 7) + 
+    labs(y = "Prosperity (GNI [log])", x = "Inequality (Gini)") 
+    #theme(panel.grid = element_blank(), legend.position = c(0.8,0.2),
+          # legend.text = element_text(size = 4), legend.title = element_text(size = 4),
+          # legend.key.width = unit(2,"mm"), legend.key.height = unit(2, "mm")) 
 
 f2 <- c2 + annotation_custom(
     grob = ggplotGrob(a2),
@@ -351,13 +358,14 @@ a3 <- df_dat |>
         arrow = arrow(length = unit(0.1, "cm")), size = 0.15) +
     geom_text(aes(y = GNI * 1.1, x = EF *1.1, 
                   label = iso3, colour = Group), 
-              size = 1, show.legend = FALSE) +
+              size = 2, show.legend = FALSE) +
     scale_color_manual("Groups", values = c("#73B3A3","#FEA621","#5BA4CA")) +
-    theme_light(base_size = 5) + labs(x = "Ecological footprint", y = "Prosperity (GNI)") +
-    theme(panel.grid = element_blank(), legend.position = c(0.8,0.8),
-          legend.text = element_text(size = 4), legend.title = element_text(size = 4),
-          legend.key.width = unit(2,"mm"), legend.key.height = unit(2, "mm")) 
-
+    theme_light(base_size = 7) + 
+    labs(x = "Ecological footprint", y = "Prosperity (GNI)")
+    # theme(panel.grid = element_blank(), legend.position = c(0.8,0.8),
+    #       legend.text = element_text(size = 4), legend.title = element_text(size = 4),
+    #       legend.key.width = unit(2,"mm"), legend.key.height = unit(2, "mm")) 
+    # 
 
 f1 <- c1 + annotation_custom(
     grob = ggplotGrob(a3),
@@ -372,12 +380,22 @@ f1 <- c1 + annotation_custom(
 
 
 ### ensamble
-
+#old
+# ggsave(
+#     filename = "trilema_ensamble.png", device = "png", path = "figures/",
+#     width = 7.5, height = 3.5, bg = "white", dpi = 600,
+#     plot = f1 + labs(tag = "A") + f2 + labs(tag = "B") +  f3 + labs(tag = "C")
+# )
+# new for tong;
 ggsave(
-    filename = "trilema_ensamble.png", device = "png", path = "figures/",
-    width = 7.5, height = 3.5, bg = "white", dpi = 600,
-    plot = f1 + labs(tag = "A") + f2 + labs(tag = "B") +  f3 + labs(tag = "C")
+    filename = "trilema_ensamble2.pdf", device = "pdf", path = "figures/",
+    width = 7.5, height = 5, bg = "white", dpi = 600,
+    plot = (c1 + labs(tag = "A") + c2 + labs(tag = "B") +  c3 + labs(tag = "C")) / 
+        (a3 + labs(tag = "D") + a2 + labs(tag = "E") +  a1 + labs(tag = "F"))
 )
+
+
+
 
 #### surface ####
 old_par <- par()
