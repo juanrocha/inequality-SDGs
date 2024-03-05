@@ -81,9 +81,9 @@ Conclusion {400w}
 
 SM
 
--   Figure with missing values from WB dataset
+-   Figure with missing values from WB dataset: **improve resolution**
 
--   Figure with missing alues from UN dataset
+-   Figure with missing values from UN dataset: **improve resolution**
 
 -   Correlograms
 
@@ -135,7 +135,8 @@ sdg <- sdg |>
 The WB dataset offers `r dat$indicator_name |> unique() |> length()` indicators, with time series from 1990 to 2019 for `r dat$country_name |> unique() |> length()` countries or administrative areas (N = 2'013.791 observations).
 The UN dataset offers time series from 2000 to 2019 for 17 SDGs, 112 targets, and 356 indicators, in 310 administrative areas (N = 1'072.731 observations).
 Despite their coverage, both datasets contain high proportion of missing values and the sample is unbalanced across countries and time, meaning some countries have better temporal coverage than others.
-We focused subsequent analysis only on country level indicators for SDGs 10, 14 and 15, related to inequality and the biosphere respectively. We complemented the SDGs datasets with inequality data from the World Inequality database (WID), using their estimates of the pre-tax national income computed as ratio or Gini.
+We focused subsequent analysis only on country level indicators for SDGs 10, 14 and 15, related to inequality and the biosphere respectively.
+We complemented the SDGs datasets with inequality data from the World Inequality database (WID), using their estimates of the ratio of pre-tax national income for working adults (population > 20 years old) computed as the share of the top 10% over the share of the bottom 50% (`rptinc992j_p0p100`), the share of the 1% (`sptinc992j_p99p100`), and the Gini coefficient (`gptinc992j_p0p100`).
 
 ```{r echo = FALSE}
 load(file = paste0(here(), "/data/cleaned_sdg.RData"))
@@ -146,16 +147,44 @@ df_un_reduced <- df_un_reduced |> ungroup()
 
 *Variable selection:* We computed the proportion of missing values for all time series related to our initial selection of indicators (Figs S1, S2, S3).
 We discarded indicators for which time series contained more than 30% of missing values, or less than 45 countries.
-Missing values were then imputed using a cubic spline, leaving us with `r df_dat |> pull(country_code) |> unique() |> length()` countries, `r df_dat |> pull(year) |> unique() |> length()` years of data across 9 indicators for the WB dataset; and `r df_un_reduced |> pull(series_name) |> unique() |> length()` indicators, `r df_un_reduced |> pull(iso3) |> unique() |> length()` countries over `r df_un_reduced |> pull(year) |> unique() |> length()` years for the UN dataset. The UN dataset was further reduced to 50 countries because the WID does not report inequality timeseries for Fiji.
+Missing values were then imputed using a cubic spline, leaving us with `r df_dat |> pull(country_code) |> unique() |> length()` countries, `r df_dat |> pull(year) |> unique() |> length()` years of data across 9 indicators for the WB dataset; and `r df_un_reduced |> pivot_longer(cols = 3:last_col(), names_to = "var", values_to= "value") |> separate(var, into = c("year", "series_name"), sep = "_") |>  pull(series_name) |> unique() |> length()` indicators, `r df_un_reduced |> pull(iso3) |> unique() |> length() + 1` countries over `r df_un_reduced |> pivot_longer(cols = 3:last_col(), names_to = "var", values_to= "value") |> separate(var, into = c("year", "series_name"), sep = "_") |> pull(year) |> unique() |> length()` years for the UN dataset.
+The UN dataset was further reduced to 50 countries because the WID does not report inequality timeseries for Fiji.
+Table X summarizes our selected variables, their units and available ranges.
+A list of the countries analysed is presented in the supplementary information (SI).
 
-*Ordination:* We used multiple factor analysis and principal component analysis to reduce the dimensionality of the data and explore similarities and differences across countries. 
+*Ordination:* We used multiple factor analysis (MFA) and principal component analysis (PCA) to reduce the dimensionality of the data and explore similarities and differences across countries.
+MFA enables to specify the nested structure of our data and account for repeated observations of our variables over time.
+We recover some of the qualitative results with PCA as robustness check, but these results are presented in the SI.
+We also performed a clustering routine following the protocols by Charrad [] and Brooks [].
+In short, we tested over 10 clustering techniques and compared them across \>30 performance metrics to infer from the data what are the optimal numbers of clusters to fit and preferable algorithms.
+
+*Analysis of trajectories:* With the results from the MFA we extracted trajectories of the countries of analysis on the reduced dimensions space.
+We were particularly interested on the principal components related to inequality and performance on SDGs related to life on land and water.
+The use of trajectories in the MFA space allows us to test whether countries can achieve low inequality and high environmental standards over time, or whether trade offs emerge in improving one dimension at the cost of another.
+
+# Results
+
+```{=tex}
+\begin{figure*}[ht]
+\centering
+\includegraphics[width = 7in, height = 4in]{fig_mfa_wb}
+\caption{\textbf{Multiple factor analysis with World Bank data}  }
+\label{fig:wb}
+\end{figure*}
+```
+
+```{=tex}
+\begin{figure*}[ht]
+\centering
+\includegraphics[width = 7in, height = 4in]{fig_UN_ordination}
+\caption{\textbf{Multiple factor analysis with United Nations data}  }
+\label{fig:un}
+\end{figure*}
+```
 
 Notes:
 
 -   Paper figures:
-
-    -   Ordination plot for each dataset (nicer arrows) using iso codes instead of numbers.
-        Show clustering groups in colors.
 
     -   Plot with PCA selection (2-3 components?) and then change over time of the components.
         Do clustering on trayectories as well?
@@ -179,7 +208,7 @@ Notes:
 ```{=tex}
 \begin{figure*}[ht]
 \centering
-\includegraphics[width = 6in, height = 6in]{WB_environment_SDGs}
+\includegraphics[width = 6in, height = 4in]{WB_environment_SDGs}
 \caption{\textbf{World Bank environmental SDGs} }
 \label{fig:SM_WB_env}
 \end{figure*}

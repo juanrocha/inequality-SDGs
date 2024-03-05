@@ -188,7 +188,7 @@ p <- dat |>
     #scale_fill_viridis_c(
     #    guide = guide_colorbar(barwidth = unit(2,"mm"), barheight = unit(20, "mm"))) + 
     labs(x = "Mean proportion of missing values across countries", y = "Indicator name", tag = "A")+
-    theme_light(base_size = 6)
+    theme_light(base_size = 8)
 
 #p + theme_light(base_size = 8)
 
@@ -211,16 +211,16 @@ q <- dat |>
     geom_tile(aes(fill = missing)) +
     scale_fill_viridis_c(
         "Proportion of missing values",
-        guide = guide_colorbar(barwidth = unit(2,"cm"), barheight = unit(2,"mm"))) + 
+        guide = guide_colorbar(barwidth = unit(2,"cm"), barheight = unit(5,"mm"))) + 
     labs(x = "Country code", y = "Indicator name", tag = "B") +
-    theme_light(base_size = 6) +
+    theme_light(base_size = 8) +
     theme(axis.text.x = element_text(angle = 90, size = 3), 
           legend.position = "bottom")
 
 p/q
 # ggsave(
-#     plot = p/q, filename = "WB_selected_vars.png", path = "figures/", device = "png",
-#     width = 7, height = 7, dpi = 400, bg = "white"
+#     plot = p/q, filename = "WB_selected_vars.png", path = "paper/figures/", device = "png",
+#     width = 7.5, height = 7, dpi = 400, bg = "white"
 # )
 
 ```
@@ -275,7 +275,13 @@ ineq_dat
 ineq_dat <- ineq_dat |> 
     mutate(country = case_when(is.na(country) ~ "NA", TRUE ~ country)) #|> filter(country == "NA")
 ```
-`m` is total, `a` is average. All other codes are documented here: [https://wid.world/codes-dictionary/#packages](https://wid.world/codes-dictionary/#packages). 
+`m` is total, `a` is average. All other codes are documented here: [https://wid.world/codes-dictionary/#packages](https://wid.world/codes-dictionary/#packages). The selected variables are:
+
+- `rptinc992j_p0p100` which means the ratio of the pretax national income adults (pop > 20yrs) of the top 10% / the bottom 50%
+
+- `sptinc992j_p99p100`: share of pretax national income adults equal-split for the top 1% 
+
+- `gptinc992j_p0p100`: Gini coefficient for the pretax national income for the adult population
 
 ### Correlations
 
@@ -295,12 +301,12 @@ crg <- dat |>
     lower = list(continuous = GGally::wrap("points", alpha = 0.5, size = 0.5)),
     diag = list(continuous = GGally::wrap("densityDiag", alpha = 0.2))
     # upper = list(continuous = GGally::wrap("cor", size = 2))
-    ) + theme_light(base_size = 4)
+    ) + theme_light(base_size = 8)
 
 crg
 
 # ggsave(
-#     plot = crg, filename = "WB_correlogram.png", path = "figures/", device = "png",
+#     plot = crg, filename = "WB_correlogram.png", path = "paper/figures/", device = "png",
 #     width = 7, height = 7, dpi = 400, bg = "white"
 # )
 ```
@@ -393,7 +399,7 @@ a <- sdg |>
         guide = guide_colorbar(barheight = unit(2,"cm"), barwidth = unit(2,"mm"))) + 
     labs(title = "SDG10: Inequality indicators", 
          x = "Year", y = "Indicator name", tag = "A") +
-    theme_light(base_size = 6)
+    theme_light(base_size = 8)
 a
 # sdg |> 
 #     filter(series_description == "Proportion of voting rights of developing countries in international organizations, by organization (%)")
@@ -419,7 +425,7 @@ b <- sdg |>
         "Missing",
         guide = guide_colorbar(barheight = unit(2,"cm"), barwidth = unit(2,"mm"))) +
     labs(title = "SDG14: Life under water", x = "Year", y = "Indicator name", tag = "B") +
-    theme_light(base_size = 6)
+    theme_light(base_size = 8)
 b
 ```
 
@@ -442,7 +448,7 @@ c <- sdg |>
     scale_fill_viridis_c("Missing",
         guide = guide_colorbar(barheight = unit(2,"cm"), barwidth = unit(2,"mm"))) +
     labs(title = "SDG15: Life on land", x = "Year", y = "Indicator name", tag = "C") +
-    theme_light(base_size = 6)
+    theme_light(base_size = 8)
 c
 
 ## Very long names:
@@ -454,8 +460,9 @@ sdg |>
     unique()
 
 # ggsave(
-#     plot = a/b/c, filename = "UN_selected_vars.png", path = "figures/", device = "png",
-#     width = 7, height = 7, dpi = 400, bg = "white"
+#     plot = a/b/c + plot_layout(heights = c(1,1,1.5)), 
+#     filename = "UN_selected_vars.png", path = "paper/figures/", device = "png",
+#     width = 7, height = 8, dpi = 400, bg = "white"
 # )
 
 ```
@@ -492,10 +499,12 @@ p2 <- sdg |>
     # theme_light()
     summarize(missing_countries = sum(is.na(missing))) |> 
     filter(missing_countries < 45) |> 
+    mutate(series_name = str_replace(series_name, " covered", "\ncovered"),
+           series_name = str_replace(series_name, " certification", "\ncertification")) |> 
     ggplot(aes(missing_countries, series_name))+
     geom_point() +
     labs(tag = "A", y = "Series name", x = "Proportion of missing countries") +
-    theme_light(base_size = 6)
+    theme_light(base_size = 8)
 p2
 vars2 <- p2$data$series_name
 ```
@@ -528,22 +537,25 @@ q2 <- sdg |>
     ungroup() |> group_by(iso3 ) |> 
     #filter(sum(is.na(missing)) < 45) |> # remove absent_countries > 45
     filter(!any(is.na(missing))) |> 
+    mutate(series_name = str_replace(series_name, " covered", "\ncovered"),
+           series_name = str_replace(series_name, " certification", "\ncertification")) |> 
     ggplot(aes(iso3, series_name)) +
     #geom_point()
     geom_tile(aes(fill = missing)) +
     scale_fill_viridis_c("Missing",
         guide = guide_colorbar(barwidth = unit(2,"mm"), barheight = unit(2,"cm"))) +
     labs(tag = "B", y = "Series name", x = "Countries") +
-    theme_light(base_size = 6) +
-    theme(axis.text.x = element_text(angle = 90))
+    theme_light(base_size = 8) +
+    theme(axis.text.x = element_text(angle = 90, size = 4))
 
 q2
 
 complete_countries_sdg <- q2$data$iso3 |> unique()
 
 # ggsave(
-#     plot = p2/q2, filename = "UN_reduced_vars.png", path = "figures/", device = "png",
-#     width = 7, height = 7, dpi = 400, bg = "white"
+#     plot = p2/q2, filename = "UN_reduced_vars.png", 
+#     path = "paper/figures/", device = "png",
+#     width = 7, height = 7.5, dpi = 400, bg = "white"
 # )
 
 ```
@@ -582,7 +594,7 @@ crg <- df_un_reduced |>
 crg
 
 # ggsave(
-#     plot = crg, filename = "UN_correlogram.png", path = "figures/", device = "png",
+#     plot = crg, filename = "UN_correlogram.png", path = "paper/figures/", device = "png",
 #     width = 7, height = 7, dpi = 400, bg = "white"
 # )
 ```
@@ -693,14 +705,16 @@ p <- pca1$rotation |>
     filter(PC < 5) |> 
     ggplot(aes(year, load)) +
     geom_line(aes(color = variable)) +
-    facet_wrap(~PC) +
-    theme_light(base_size = 8)
-
+    labs(y = "Component loadings", x = "Year", title = "Top 4 principal components",
+         caption = "Data source: World Bank and World Inequality Database") +
+    facet_wrap(~PC) + scale_color_brewer("Variables", palette = "Set3") +
+    theme_light(base_size = 10)
+p
 # ggsave(
-#     plot = p, file = "pca-wb-time.png", path = "figures/", device = "png",
+#     plot = p, file = "pca-wb-time.png", path = "paper/figures/", device = "png",
 #     width = 7, height = 4, bg = "white", dpi = 400
 # )
-p + scale_color_brewer(palette = "Set3")
+
 ```
 
 
@@ -723,7 +737,7 @@ ggplot(data = x |> filter(var == "Proportion of Variance"), aes(comp, value)) +
     labs(x = "Principal components", y = "Explained variance") +
     scale_x_continuous(n.breaks = 10) +
     scale_y_continuous(labels = scales::label_percent()) +
-    theme_light(base_size = 6)
+    theme_light(base_size = 10)
 
 a <- pca1$x |> as_tibble() |> 
     select(PC1:PC2) |> 
@@ -733,7 +747,7 @@ a <- pca1$x |> as_tibble() |>
     ggplot(aes(PC1, PC2)) +
     geom_text(aes(label = iso), size = 2) +
     coord_equal() +
-    theme_light(base_size = 6)
+    theme_light(base_size = 10)
 
 b <- ggplot() +
     geom_segment(
@@ -749,16 +763,16 @@ b <- ggplot() +
         guide = guide_legend(ncol = 2, title.position = "top")) +
     scale_alpha("Year", guide = guide_legend(ncol = 1, title.position = "top")) +
     coord_equal()+
-    theme_light(base_size = 6)
+    theme_light(base_size = 10)
 
 a + b + plot_layout(guides = "collect") & 
     theme_light(base_size = 10) &
     theme(legend.position = "bottom") 
 
 # ggsave(
-#     filename = "pca_wb-data.png", path = "figures/", dpi = 400, bg = "white",
+#     filename = "pca_wb-data.png", path = "paper/figures/", dpi = 400, bg = "white",
 #     device = "png", width = 7, height = 4,
-#     plot = (a + b + plot_layout(guides = "collect") & 
+#     plot = (a + b + plot_layout(guides = "collect") &
 #     theme_light(base_size = 6) &
 #     theme(legend.position = "bottom") )
 # )
@@ -769,6 +783,8 @@ a + b + plot_layout(guides = "collect") &
 - 95% of the variability is explained by the first 10 PCs
 
 For the UN dataset, the area based nature proxies have zero variance (SD), which means that despite completness, it is not informative.
+
+**240220** To do: code categorical variables so they appear on the order of Inequality, life on land, life on water. Do the clustering routine on the PCA coordinates, use all components, or the first 10. Show the clusters on fig A.
 
 
 ```{r}
@@ -865,7 +881,7 @@ df_un_reduced |>
 mfa1 <- df_un_reduced |> 
     select(-iso3, -country) |> 
     as.matrix(dimnames = list(df_un_reduced |> pull(iso3) |> unique())) |> 
-    FactoMineR::MFA(group = rep(19, 9), type = rep("s", 9)) # 19 years times 9 variables
+    FactoMineR::MFA(group = rep(19, 9), type = rep("s", 9), ncp = 20) # 19 years times 9 variables, 20 components (PCAs)
 ```
 
 ```{r}
@@ -877,7 +893,7 @@ mfa1$eig[1:10,2] |> barplot(names = 1:10)
 
 ```
 ```{r}
-mfa1$group
+#mfa1$group
 ```
 
 ```{r}
@@ -894,7 +910,7 @@ mfa2 <- df_dat |>
     ungroup() |> 
     select(-country_code) |> 
     as.matrix(dimnames = list(df_dat |> pull(country_code) |> unique())) |> 
-    FactoMineR::MFA(group = rep(19, 12), type = rep("s", 12)) # 19 years times 9 variables
+    FactoMineR::MFA(group = rep(19, 12), type = rep("s", 12), ncp = 20) # 19 years times 9 variables
 ```
 
 
@@ -919,17 +935,50 @@ ggbiplot::ggbiplot(
 Extract the weight per country on the relevant components to see how they move on PCA or MFA space.
 
 ```{r}
-mfa1 |> summary()
-mfa2$summary.quanti
+# mfa1 |> summary()
+# mfa2$summary.quanti
 ```
-
-
 
 
 ```{r}
-# save(pca1, pca2, mfa1, mfa2, file = "data/ordination_results.Rda")
+#save(pca1, pca2, mfa1, mfa2, file = "data/ordination_results.Rda")
 ```
 
+
+```{r}
+df_un_reduced |> 
+    pivot_longer(3:last_col(), names_to = "variables", values_to = "values") |> 
+    separate(variables, sep = "_", into = c("year", "variable")) |> 
+    mutate(year= as.numeric(year)) |> 
+    filter(variable == "gptinc992j") |> 
+    ggplot(aes(year, values)) +
+    geom_line(aes(group = iso3))
+```
+
+```{r}
+
+df_un_reduced |> 
+    pivot_longer(3:last_col(), names_to = "variables", values_to = "values") |> 
+    separate(variables, sep = "_", into = c("year", "variable")) |> 
+    mutate(year= as.numeric(year)) |> #pull(variable) |> unique()
+    mutate(variable = case_when(
+        variable == "Average proportion of Freshwater Key Biodiversity Areas (KBAs) covered by protected areas (%)" ~ "freshwater",
+        variable == "Average proportion of Marine Key Biodiversity Areas (KBAs) covered by protected areas (%)"~"marine",
+        variable == "Average proportion of Mountain Key Biodiversity Areas (KBAs) covered by protected areas (%)" ~ "mountain",
+        variable == "Average proportion of Terrestrial Key Biodiversity Areas (KBAs) covered by protected areas (%)" ~ "terrestrial", 
+        variable == "Forest area certified under an independently verified certification scheme (thousands of hectares)" ~ "forest",
+        variable == "gptinc992j" ~ "Gini",
+        variable == "rptinc992j"~ "Ratio 10/50",
+        variable == "sptinc992j" ~ "Share 1%",
+        .default = variable
+    )) |> 
+    filter(variable %in% c("freshwater", "marine", "terrestrial", "mountain", "forest", "Gini", "Ratio 10/50", "Share 1%")) |> #pull(variable) |> unique()
+    pivot_wider(names_from = variable, values_from = values) |> 
+    ggplot(aes(Gini, freshwater)) + 
+    geom_line(aes(group = iso3, color = year))
+  
+    
+```
 
 
 ## To dos:
