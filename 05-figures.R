@@ -5,6 +5,9 @@ library(tidyverse)
 library(ggforce) # for circles
 library(NbClust)
 library(clValid)
+library(ggnewscale)
+library(gganimate)
+library(patchwork)
 
 load("data/cleaned_sdg.RData") # cleaned datasets
 load("data/ordination_results.Rda")
@@ -33,7 +36,8 @@ country_codes <- df_dat |>
 mfa2$global.pca$eig # the first 10 components explain 94.8 of the variability
 
 # clustering:
-# using first 10 components
+# using first 10 components 
+m <- "ward.D2" 
 clust_num <- NbClust( 
     data = (mfa2$ind$coord[,1:10] %>% as.data.frame() %>% 
                 select(where(is.numeric)) ),
@@ -103,16 +107,16 @@ si_wb1 <- mfa2$group$contrib|>
     labs(y = "Variables", x = "Dimension", tag = "A") +
     theme_light(base_size = 6) +
     theme(legend.position = "bottom") 
-
+si_wb1
 
 ## Note on interpretation (source: Multiple Factor Analysis by example using R, pg 138)
 ## Lg and RV are measurements that help understand relationships between variables.
 ## They are 0 iff each variable of one group is uncorrelated with every variable of the other.
 ## RV is a measurement of the relationship between two groups of multidimensional variables, in 
-## cases when one group is one-dimensiona, Lg is more suitable. In both measurements, we evaluate
+## cases when one group is one-dimensional, Lg is more suitable. In both measurements, we evaluate
 ## the importance of the structure common to two groups of variables:
-## - In RV, wihtout paying attention to the diminsion of this common structure
-## - In Lg, taking into account the dimension of this common structure and its innertia
+## - In RV, without paying attention to the dimension of this common structure
+## - In Lg, taking into account the dimension of this common structure and its inertia
 ## relative to that of the groups. Lg is in some ways a "number of common dimensions", each
 ## weighted by its inertia.
 mfa2$group$cos2 |> 
@@ -144,7 +148,7 @@ b <- mfa2$quanti.var$coord |>
     coord_equal() +
     theme_light(base_size = 7) +
     theme(legend.position = "bottom") 
-
+b
 # c <-  mfa2$ind$coord |> 
 #     as_tibble() |> 
 #     add_column(country_codes) |> 
@@ -320,12 +324,175 @@ bb
 #     theme(legend.position = "bottom") 
 # dd
 
-ggsave(file = "fig_UN_ordination.png", path  = "paper/figures/", device = "png",
+ggsave(file = "fig_UN_ordination.png", 
+       path  = "paper/figures/", device = "png",
        bg = "white", dpi = 400, width = 7, height = 4,
        plot = (aa + bb + plot_layout(guides = "collect") & 
                    theme_light(base_size = 6) &
                    theme(legend.position = "bottom") ))
 
 
-#### PCA ####
-pca1
+
+#### trajectories ####
+# following this: http://ggobi.github.io/ggally/articles/ggpairs.html#custom-functions
+# I can create a custom function to plot trajectories and contours instead of 
+# ggpairs defaults.
+
+trajectory_plot <- function(data, mapping, ...) {
+    ggplot(data = data, mapping = mapping) +
+        geom_path(aes(group = country_code, color = year), alpha = 0.25) +
+        geom_point(aes(color = year, group = country_code), 
+                   alpha = 0.25, size = 0.5) +
+        scale_colour_viridis_c()
+}
+
+contour_plot <- function(data, mapping, ...) {
+    ggplot(data = data, mapping = mapping) +
+        geom_density2d(...) 
+}
+
+GGally::ggpairs(
+    df_dat |> 
+        filter(!is.na(rptinc992j_p0p100)) |>
+        select(year, starts_with("country"), everything(), -sptinc992j_p0p100),
+    columns = 5:16,
+    lower = list(continuous = contour_plot) ,
+    upper = list(continuous = trajectory_plot)
+)
+
+# normalize all to 0-1 range to avoid complicated axis lables.
+# don't plot all, select a few key vars where there is variability to explore
+a <- df_dat |> #ungroup() |> skimr::skim()
+    select(-sptinc992j_p0p100, -matches("Women|Individuals|Urban|Access|Forest")) |> 
+    ungroup() |> #skimr::skim()
+    mutate(across(matches("Cereal|CO2|Energy"), .fn = ~scales::rescale(.x, to= c(0,1))) ) |> 
+    filter(!is.na(rptinc992j_p0p100)) |> 
+    mutate(rptinc992j_p0p100 = rptinc992j_p0p100/100) |> #skimr::skim()
+    select(year, starts_with("country"), everything()) |> 
+    pivot_longer(cols = 5:10, names_to = "variable",
+                 values_to = "value") |>  #skimr::skim()
+    # nicer names for plotting
+    mutate(variable = str_remove_all(variable, " \\(.*\\)|992j_p0p100|992j_p99p100| level of primary energy")) |> 
+    pivot_wider(names_from = variable, values_from = value) |> 
+    pivot_longer(cols = matches("Cereal|CO2|Energy"), names_to = "Environment", values_to = "env_values") |> 
+    pivot_longer(cols = matches("tinc"), names_to = "Inequality", values_to = "inq_values") |> 
+    mutate(Inequality = case_when(
+        Inequality == "rptinc" ~ "Ratio 10/90",
+        Inequality == "sptinc" ~ "Share top 1%",
+        Inequality == "gptinc" ~ "Gini"
+    )) |> 
+    left_join(tibble(
+        country_code = df_dat |> 
+            filter(!is.na(rptinc992j_p0p100)) |> 
+            pull(country_code) |> unique(),
+        cluster = as.factor(clust_num$Best.partition)
+    )) |> 
+    ggplot(aes(inq_values, env_values)) +
+    #geom_density_2d_filled() +
+    geom_path(aes(group = country_code, color = cluster), linewidth = 0.15, alpha = 0.5) +
+    scale_colour_manual(values = c("#73B3A3","#FEA621","#5BA4CA")) +
+    geom_density2d(alpha = 0.75, show.legend = FALSE, color = 'red', linewidth = 0.1) +
+    facet_grid(Environment ~ Inequality, scales = "free") +
+    labs(x = "Inequality dimensions", y = "Enviornmental dimensions", tag = "A") +
+    theme_light(base_size = 6)
+
+# b <- df_dat |> #ungroup() |> skimr::skim()
+#     select(-sptinc992j_p0p100, -matches("Women|Individuals|Urban|Access|Forest")) |> 
+#     ungroup() |> #skimr::skim()
+#     mutate(across(matches("Cereal|CO2|Energy"), .fn = ~scales::rescale(.x, to= c(0,1))) ) |> 
+#     filter(!is.na(rptinc992j_p0p100)) |> 
+#     mutate(rptinc992j_p0p100 = rptinc992j_p0p100/100) |> #skimr::skim()
+#     select(year, starts_with("country"), everything()) |> 
+#     pivot_longer(cols = 5:10, names_to = "variable",
+#                  values_to = "value") |>  #skimr::skim()
+#     # nicer names for plotting
+#     mutate(variable = str_remove_all(variable, " \\(.*\\)|992j_p0p100|992j_p99p100| level of primary energy")) |> 
+#     pivot_wider(names_from = variable, values_from = value) |> 
+#     pivot_longer(cols = matches("Cereal|CO2|Energy"), names_to = "Environment", values_to = "env_values") |> 
+#     pivot_longer(cols = matches("tinc"), names_to = "Inequality", values_to = "inq_values") |> 
+#     mutate(Inequality = case_when(
+#         Inequality == "rptinc" ~ "Ratio 10/90",
+#         Inequality == "sptinc" ~ "Share top 1%",
+#         Inequality == "gptinc" ~ "Gini"
+#     )) |> 
+#     left_join(tibble(
+#         country_code = df_dat |> 
+#             filter(!is.na(rptinc992j_p0p100)) |> 
+#             pull(country_code) |> unique(),
+#         cluster = as.factor(clust_num$Best.partition)
+#     )) |> 
+#     ggplot(aes(inq_values, env_values)) +
+#     geom_density_2d_filled(show.legend = FALSE) +
+#     #geom_path(aes(group = country_code, color = cluster), alpha = 0.5) +
+#     #scale_colour_manual(values = c("#73B3A3","#FEA621","#5BA4CA")) +
+#     #geom_density2d(alpha = 0.75, show.legend = FALSE, color = 'red') +
+#     facet_grid(Environment ~ Inequality, scales = "free") +
+#     labs(x = "Inequality dimensions", y = "Enviornmental dimensions", tag = "B") +
+#     lims(y = c(0,0.3)) +
+#     theme_light(base_size = 6)
+
+
+ggsave(plot = a+b, filename = "bimodal.png", device = "png", path = "figures/",
+       width = 7, height = 3.5, dpi = 500, bg = "white")
+
+df_dat |> 
+    filter(!is.na(rptinc992j_p0p100)) |> 
+    left_join(tibble(
+        country_code = df_dat |> 
+            filter(!is.na(rptinc992j_p0p100)) |> 
+            pull(country_code) |> unique(),
+        cluster = as.factor(clust_num$Best.partition)
+    )) |> 
+    ggplot(aes(`CO2 emissions (metric tons per capita)`,`rptinc992j_p0p100`)) +
+    geom_path(aes(group = country_code, color = cluster), alpha = 0.5) +
+    geom_point(aes(color = cluster), size = 5, alpha = 0.7) +
+    geom_text(aes(label = country_code), color = "white") +
+    geom_density2d(alpha = 0.75, show.legend = FALSE, color = 'red') +
+    scale_colour_manual(values = c("#73B3A3","#FEA621","#5BA4CA")) +
+    # new_scale_color() +
+    # geom_point(aes(group = country_code, color = year), 
+    #            alpha = 0.25, size = 0.5) +
+    labs(title = 'Year: {closest_state}', x = "CO2 emissions", y = 'Ratio 10/90') +
+    theme_light(base_size = 10) +
+    transition_states(year, transition_length = 2, state_length = 1) +
+    #transition_time(year) +
+    ease_aes("linear")
+
+anim_save("ineq_CO2.gif", animation = last_animation() , path = "figures/")
+
+
+sm_un <- df_un_reduced |> #names()
+    pivot_longer(cols = 3:173, names_to = "variable", values_to = "value") |> 
+    # make nicer names:
+    mutate(variable = str_remove_all(variable, "Average proportion of | Key Biodiversity Areas \\(KBAs\\) covered by protected areas \\(%\\)| under an independently verified certification scheme \\(thousands of hectares\\)|_p0p100|_p99p100|992j")) |> 
+    separate(variable, into = c("year", "var"), sep = "_") |> 
+    # pull(var) |> unique()
+    mutate(across(matches("Forest area|Freshwater|Marine|Mountain|Terrestrial"),
+                  .fn = ~scales::rescale(.x, to= c(0,1))) )  |> 
+    pivot_wider(names_from = var, values_from = value) |> 
+    pivot_longer(cols = matches("tinc"), names_to = "Inequality", values_to = "inq_values") |> 
+    rename(`Forest area\n certified`= `Forest area certified`) |> 
+    pivot_longer(cols = Freshwater:`Red List Index`, names_to = "Environment", values_to = "env_values") |> 
+    mutate(Inequality = case_when(
+        Inequality == "rptinc" ~ "Ratio 10/90",
+        Inequality == "sptinc" ~ "Share top 1%",
+        Inequality == "gptinc" ~ "Gini"
+    )) |> 
+    left_join(
+        tibble(iso3 = df_un_reduced$iso3,
+               cluster = as_factor(clust_UN$Best.partition))
+    ) |> 
+    ggplot(aes(inq_values, env_values)) +
+    #geom_density_2d_filled() +
+    geom_path(aes(group = iso3, color = cluster), linewidth = 0.15, alpha = 0.5) +
+    scale_colour_manual(values = c("#73B3A3","#FEA621","#5BA4CA")) +
+    geom_density2d(alpha = 0.75, show.legend = FALSE, color = 'red', linewidth = 0.1) +
+    facet_grid(Environment ~ Inequality, scales = "free") +
+    labs(x = "Inequality dimensions", y = "Enviornmental dimensions") +
+    theme_light(base_size = 6)
+
+ggsave(plot = sm_un, filename = "bimodal_UN.png", device = "png", path = "figures/",
+       width = 4, height = 3.5, dpi = 500, bg = "white")
+
+
+

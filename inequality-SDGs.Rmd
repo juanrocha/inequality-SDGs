@@ -669,7 +669,7 @@ Following Ingo's advise, here I run a PCA with each variable_year as variable.
 ```{r}
 pca1 <- df_dat |> 
     select(-country_name, -country, -sptinc992j_p0p100) |> 
-    filter(!is.na(rptinc992j_p0p100)) |> 
+    filter(!is.na(rptinc992j_p0p100)) |>#  pull(country_code) |> unique() |> length()
     pivot_longer(cols = `Access to electricity (% of population)`:last_col(),
                  values_to = "value", names_to = "variable") |> 
     unite(col = "var", year, variable, sep = "_") |> 
