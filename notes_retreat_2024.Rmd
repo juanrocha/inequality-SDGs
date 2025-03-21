@@ -1,0 +1,56 @@
+---
+title: "Notes: retreat 2024"
+output: html_notebook
+editor_options: 
+  chunk_output_type: inline
+---
+
+## Mechanisms & feedbacks session
+
+1. Fairness and perceptions
+2. Market concentration
+3. Aspiration
+    - conspicuous consumtpion
+    - social norms
+4. Cooperation
+5. Environmental change
+6. Environmental shocks
+
+**Literature review workflow**
+
+- map research: who, what, etc + key topics
+- effects social inequality on environment
+
+Problems:
+
+- Levels, aggregation
+- Measures
+- direct vs indirect effects
+- intertwinness
+- positive feedbacks vs negative ones
+
+Policy = P; Inequality = I; Enviornment = E
+
+```{r}
+library(DiagrammeR)
+mermaid(
+    "graph TB
+    P --> I
+    I --> E
+    "
+)
+
+mermaid(
+    "graph TB
+    P <--> I
+    I <--> E
+    P <--> E
+    "
+)
+```
+
+Environmental justice: colonialims etc
+
+Potential way of coding:
+
+

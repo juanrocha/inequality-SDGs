@@ -1,0 +1,131 @@
+---
+title: "Subnational inequality"
+author: "Juan Rocha"
+date: "Updated `r Sys.Date()`"
+output:
+  html_notebook:
+    toc: yes
+    toc_float: yes
+    highlight: tango
+    code_folding: hide
+    df_print: paged
+    theme: 
+      bootswatch: cosmo
+      code_font:
+        google: Fira Code
+editor_options: 
+  chunk_output_type: console
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  cache = TRUE, warning = FALSE, message = FALSE, echo = TRUE,
+  fig.width = 8, fig.height = 5
+)
+
+
+library(tidyverse)
+library(naniar)
+library(plotly)
+library(patchwork)
+library(fs)
+library(tictoc)
+
+# time series
+library(tsibble)
+library(fable)
+library(imputeTS)
+library(slider)
+
+## spatial
+library(terra)
+library(tidyterra)
+library(ggspatial)
+library(stars)
+
+# # clustering
+# library(vegan)
+# library(NbClust)
+# library(clValid)
+# library(mclust)
+
+#theme_set(theme_light(base_size = 12))
+```
+
+## Inequality
+
+Exploring subnational inequality data from Kummu et al. Load data:
+
+```{r}
+
+fls <- dir_ls("~/Documents/Projects/DATA/Kummu_inequality/transfer_294976_files_744c217c/")
+dat <- rast(fls[2])
+dat
+
+dat <- vect(fls[5])
+#terra::plot(dat$gini_disp_2021)
+
+tmap::tm_polygons(dat)
+
+ggplot(data = dat) +
+    geom_spatvector(aes(fill = `2020`), color = "white", linewidth = 0.1) +
+    scale_fill_viridis_c()
+   # scale_fill_gradient2() 
+   # 
+dat |> as_tibble() |> 
+    ggplot(aes(`1990`, `2021`)) +
+    geom_point(aes(color = slope)) +
+    geom_abline(slope = 1, intercept = 0) +
+    scale_color_gradient2()
+```
+
+Time series
+
+```{r}
+dat |> 
+    as_tibble() |> 
+    pivot_longer(cols = `1990`:`2021`, names_to = "year", values_to = "Gini") |> 
+    ggplot(aes(year, Gini)) +
+    geom_line(aes(group = iso3), alpha = 0.5)
+```
+
+## Human footprint
+
+```{r}
+hfp <- dir_ls("/Users/juanrocha/Documents/Projects/DATA/HII_human_impact_index/first-gen/")
+
+fp1 <- stars::read_stars(hfp[10])
+fp1 <- rast(hfp[20])
+
+terra::plot(fp1, type = "continuous", #col = map.pal("viridis", 100),
+            range = c(-100,5000),
+            col = c("#224f1a","#a3ff76","#feff6f","#a09568","#ffa802","#f7797c","#fb0102","#d87136","#a90086","#7a1ca5","#421137","#000000")
+            )
+#click(n=1)
+
+# tic()
+# m <- max(fp1, na.rm = TRUE)
+# toc() # 496s
+
+m
+
+fp1[,10000,] |> range(na.rm= TRUE)
+```
+
+From Google Earth engine 
+```{javascript eval=FALSE}
+var hiiviz = {min: 5, max: 5000, palette: ["224f1a","a3ff76","feff6f","a09568","ffa802","f7797c","fb0102","d87136","a90086","7a1ca5","421137","000000"]
+```
+
+## Spatial joints
+
+```{r}
+#dat <- dat |> st_as_sf()
+#plgns <- dat |> select(admID, iso3, geometry)
+
+tic()
+fp <- extract(x = fp1, y = dat, fun = mean, bind = TRUE, na.rm = TRUE)
+toc() #
+```
+

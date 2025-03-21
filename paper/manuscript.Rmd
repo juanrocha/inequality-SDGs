@@ -114,13 +114,12 @@ SM
 
 \pagebreak
 
-```{=tex}
 \begin{abstract}
 
   
 
 \end{abstract}
-```
+
 # Introduction
 
 Countries around the world have committed to achieve 17 sustainable development goals.
@@ -209,40 +208,37 @@ Despite the differences in coverage with respect to countries, time, and indicat
 For the WB data set, countries along the first principal component are differentiated by high levels of economic inequality, high energy intensity but low carbon emissions (negative values of Dim 1, green cluster), versus countries with relatively low gender inequality, high agricultural productivity, high carbon emissions, high urbanization and internet access (positive values in Dim 1, yellow and blue clusters).
 Forest related variables have the lowest loading on the first two components and do not change over time, while access to internet or inclusion of women in leadership roles have the highest variability over time.
 
-```{=tex}
 \begin{figure*}[ht]
 \centering
 \includegraphics[width = 7in, height = 4in]{fig_mfa_wb}
 \caption{\textbf{Multiple factor analysis with World Bank data} The first 10 principal componets explain 94.8\% of the varation, the first two (A) explain 53\%. The 10 first components were used to cluster 151 countries resulting in three clusters (A). The correlation circle across explanatory variables is presented in (B) along their loadings on the first two components of the ordination.}
 \label{fig:wb}
 \end{figure*}
-```
+
 The UN dataset offers a similar ordination, where countries with low values along the first axes but higher values along the second axis have the highest inequalities (e.g Mexico, Fig \ref{fig:un}).
 The inequality variables are highly correlated but also explain large amounts of the variance.
 Contrary to the WB data, here forest related variables do show variability over time, but variables related to biodiversity loss (Red list index) do not change much over the time period of the data (2000-2015).
 Interestingly, the ordination suggests that places with low inequality would have high Red list index.
 Japan, Italy or Ireland are examples of countries on the region of the parameter space where inequality is relatively low but conservation metrics per country are relatively high.
 
-```{=tex}
 \begin{figure*}[ht]
 \centering
 \includegraphics[width = 7in, height = 4in]{fig_UN_ordination}
 \caption{\textbf{Multiple factor analysis with United Nations data}  }
 \label{fig:un}
 \end{figure*}
-```
+
 We find evidence of multi-modal distributions in inequality and environmental variables.
 This finding supports the hypothesis of the existence of inequality regimes, particularly when inequality is measured as the share of the top 1% (Fig \ref{fig:bim}).
 However, the lack of variability in environmental variables and smaller sample size in the UN data set prevent us to statistically derive modes in the distribution, except for the red list index (Fig \ref{fig:SM_UNbim}).
 
-```{=tex}
 \begin{figure*}[ht]
 \centering
 \includegraphics[width = 7in, height = 4in]{bimodal}
 \caption{\textbf{Inequality regimes} We find bimodal distributions for some dimensions of inequality against environmental factors in the WB dataset. Countries trajectories in A using the same cluster groups as in Fig \ref{fig:un}. Bimodal distributions are more common for the share of the top 1\% than other inequality variables (B). The y-axis has been rescaled to the range 0-1 to ease comparison. Supplementary figure \ref{fig:SM_UNbim} shows a similar plot for the UN data, however lack of variability in the environmental data prevents the identification of multiple modes in the distribution.}
 \label{fig:bim}
 \end{figure*}
-```
+
 # Discussion
 
 -   Biodiversity variables are either limited to conservation, or resource production.
@@ -273,89 +269,67 @@ Notes:
 
 # Supplementary Material {#sec:SM}
 
-```{=tex}
 \renewcommand\thefigure{S\arabic{figure}}
 \renewcommand\thetable{S\arabic{table}}
 \setcounter{table}{0}
 \setcounter{figure}{0}
-```
-```{=tex}
 \begin{figure*}[ht]
 \centering
 \includegraphics[width = 6in, height = 4in]{WB_environment_SDGs}
 \caption{\textbf{World Bank environmental SDGs} }
 \label{fig:SM_WB_env}
 \end{figure*}
-```
-```{=tex}
 \begin{figure*}[ht]
 \centering
 \includegraphics[width = 6in, height = 6in]{WB_environment_SDGs_othervars}
 \caption{\textbf{World Bank environmental SDGs additional variables} }
 \label{fig:SM_WB_env2}
 \end{figure*}
-```
-```{=tex}
 \begin{figure*}[ht]
 \centering
 \includegraphics[width = 6in, height = 6in]{WB_selected_vars}
 \caption{\textbf{World Bank selected variables} }
 \label{fig:SM_WB_select}
 \end{figure*}
-```
-```{=tex}
 \begin{figure*}[ht]
 \centering
 \includegraphics[width = 6in, height = 5in]{WB_correlogram}
 \caption{\textbf{Correlogram of World Bank selected variables} }
 \label{fig:SM_WBcorr}
 \end{figure*}
-```
-```{=tex}
 \begin{figure*}[ht]
 \centering
 \includegraphics[width = 6in, height = 5in]{UN_SDG_10-14-15}
 \caption{\textbf{United Nations SDGs 10, 14 and 15 dataset} }
 \label{fig:SM_UNdata}
 \end{figure*}
-```
-```{=tex}
 \begin{figure*}[ht]
 \centering
 \includegraphics[width = 6in, height = 5in]{UN_selected_vars}
 \caption{\textbf{UN selected variables} }
 \label{fig:SM_UNselect}
 \end{figure*}
-```
-```{=tex}
 \begin{figure*}[ht]
 \centering
 \includegraphics[width = 6in, height = 5in]{UN_reduced_vars}
 \caption{\textbf{UN reduced variables} }
 \label{fig:SM_UNred}
 \end{figure*}
-```
-```{=tex}
 \begin{figure*}[ht]
 \centering
 \includegraphics[width = 6in, height = 5in]{UN_correlogram}
 \caption{\textbf{Correlogram of United Nations selected variables} }
 \label{fig:SM_UNcorr}
 \end{figure*}
-```
-```{=tex}
 \begin{figure*}[ht]
 \centering
 \includegraphics[width = 6in, height = 5in]{sm_wb_ordinations}
 \caption{\textbf{Variable importance in ordination on WB data} }
 \label{fig:SM_WBord}
 \end{figure*}
-```
-```{=tex}
 \begin{figure*}[ht]
 \centering
 \includegraphics[width = 4in, height = 3.5in]{bimodal_UN}
 \caption{\textbf{Bimodality in UN data} The quality of the data does not allow for detection of bimodality in most UN variables. The lack of variation in biosphere related data does not allow the identification of areas in the parameter space where trajectories converge, except for the red list index, where we find multimodal distributions }
 \label{fig:SM_UNbim}
 \end{figure*}
-```
