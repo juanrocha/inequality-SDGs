@@ -5,6 +5,15 @@ editor_options:
   chunk_output_type: inline
 ---
 
+## Notes meeting 2025
+
+- We re-visit the selection of variables and downloaded all SDGs data from the UN API
+    - script `sdg_api.R`
+- We ran again into issues of missing values, took us long to solve it but we did some progress
+- Decision: to include SDGs `c("5", "6", "10", "13","14", "15")` so add water and climate
+
+
+
 ## Mechanisms & feedbacks session
 
 1. Fairness and perceptions

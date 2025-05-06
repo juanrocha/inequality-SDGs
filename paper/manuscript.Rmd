@@ -122,28 +122,32 @@ SM
 
 # Introduction
 
-Countries around the world have committed to achieve 17 sustainable development goals.
-The ambitious agenda is materialized in 169 targets and indicators, yet not all targets are monitored and not all countries report them.
+Countries around the world have committed to achieve 17 sustainable development goals as proposed by the United Nations.
+The ambitious agenda is materialized in 169 targets and indicators, yet not all targets are monitored or properly measured, and not all countries report them, presenting significant data and knowledge gaps.
 An open question in sustainability science is if these targets are achievable simultaneously?
 Previous work on synergies and trade-offs between sustainable development goals (SDGs) suggest that both options are possible, yet this work is limited to expert elicitation and correlational studies.
-It is unclear if there are structural constraints that limits a country capacity to achieve particular SDGs, or if there are milestones that need to be unlocked before it can achieve the desired performance in a particular dimension of sustainability.
-In other words, these correlations do not account for the path dependency inherent on the process of development.
+It is unclear if there are system or structural constraints that limit a country's capacity to achieve particular SDGs, or if there are milestones that need to be unlocked before it can achieve the desired performance in a particular dimension of sustainability.
+In other words, these correlations do not account for the path dependency and causal inference inherent on the process of development.
 
--   Add a paragraph on lit review on SDGs synergies and trade-offs
+When the SDGs were adopted in 2015, work began to create a comprehensive database of SDG indicators [@schmidt-traub2017; @sachs2024], to be updated annually.
+Based on these data, previous analyses found that goals associated with poverty alleviation, well-being, economic development, and innovation (e.g. SDGs 1, 3, 7, 8, 9) tended to be synergistic with other goals, while goals related to responsible consumption, climate action, natural resources, and cooperation showed the most trade-offs (e.g. SDGs 11, 12, 13, 14, 16, 17) [@pradhan2017; @s41599-019-0335-5].
+Drawing upon relevant World Bank data, Lusseau and Mancini [@s41893-019-0231-4] find these patterns to be modulated by the overall income level of countries, with low-income countries showing synergies across all goals, while trade-offs start to appear in higher income categories.
+More recently, [@s41467-023-44679-w] analysed transboundary SDG interactions and found that high income countries play a disproportionate role in influencing the achievement of SDGs in other countries.
 
 Here we address the question of synergies and trade-offs by focusing on goals related to biosphere and inequality (SDGs 10, 14 and 15).
-The motivation is twofold.
+The motivation is threefold.
 First, the Convention for Biological Diversity is currently negotiating and agreeing on the next set of goals and ambitions to bend the curve of biodiversity loss.
 Understanding which countries are well positioned to achieve biodiversity goals or not will be necessary to design strategies that support countries with low capabilities, that address the dimensions of justice, and design targets with plausibility in mind.
-Second, within country inequality has been rising in the last decades even in high income countries, and as consequence of the Covid pandemic, in between country inequality raised for first time in a generation.
+Second, within-country inequality has been rising in the last decades even in high income countries, and as a consequence of the Covid pandemic, in between country inequality raised for first time in a generation.
 These statistics set back progress on the inequality SDG by at least a decade, and undermines the mantra of leaving no one behind.
+And third, recent conceptual and theoretical work has proposed mechanisms by which increase in inequality can impact the environment, and changes in the environment can feedback into further inequalities [@hamann2018; @dade2022; @leach2018].
 
-Recent work shows that a trilemma exist where countries struggle to achieve high prosperity, high environmental standards while reducing inequality [@Wu_2024].
+Recent work also shows that a trilemma exists where countries struggle to achieve high prosperity, high environmental standards while reducing inequality [@Wu_2024].
 Using data from environmental footprint, the gross national product, and the Gini coefficient time series, 53 countries were clustered and a typology of trajectories identified.
-No country achieved the three goals simultenously, and Latin American countries seem to have dynamics characterized by an inequality trap.
-Countries trajectories on the trilemma space, however, suggest the hypothesis that social progress can be achieved without compromising the biosphere.
+No country achieved the three goals simultaneously, and Latin American countries seem to have dynamics characterized by an inequality trap.
+Countries trajectories on the trilemma space, however, suggest the hypothesis that social progress can be achieved without compromising the biosphere [@Wu_2024].
 
-It remains an open questions if these patterns hold across different datasets and scales.
+It remains an open question if these patterns hold across different datasets and scales.
 If the hypothesis of the inequality trap is true, we should observe bimodal or multimodal distributions in inequality and environmental variables.
 Each mode would correspond to an inequality regime, and the transitions probability of staying within one regime should be much higher than the probability of shifting regimes.
 Here we address such questions by studying synergies and trade-offs between SDGs related to inequality and the biosphere.
@@ -157,26 +161,47 @@ dat <- read_csv(file = "~/Documents/Projects/DATA/WorldBank/SDG_csv/SDGData.csv"
     janitor::clean_names()
 
 un_countries <- read_csv2(file = "~/Documents/Projects/DATA/SDGs_UNStats/UNSD — Methodology.csv")
-sdg <- read_csv(file = "~/Documents/Projects/DATA/SDGs_UNStats/20180817102044132_juan.rocha@su.se_data.csv") |> janitor::clean_names()
 
-sdg <- sdg |> 
-    left_join(
-        select(un_countries, country = `Country or Area`, starts_with("ISO")),
-        by = c("geo_area_name" = "country")) |> 
-    filter(value != "-")|> 
-    mutate(value = as.numeric(value))
+# old UN dataset
+# sdg <- read_csv(file = "~/Documents/Projects/DATA/SDGs_UNStats/20180817102044132_juan.rocha@su.se_data.csv") |> janitor::clean_names()
 
+## new UN dataset:
+fls <- dir_ls("data/sdgs/")
+
+sdg <- list()
+tic()
+for (i in seq_along(fls)){
+    load(fls[i])
+    sdg[[i]] <- d
+}
+toc() # 21s
+
+tic()
+sdg <- sdg |> bind_rows() |> 
+    unnest(c(goal, target, indicator))
+toc() # 12.1s
+
+# sdg <- sdg |> 
+#     left_join(
+#         select(un_countries, country = `Country or Area`, starts_with("ISO")),
+#         by = c("geo_area_name" = "country")) |> 
+#     filter(value != "-")|> 
+#     mutate(value = as.numeric(value))
 
 ```
 
 *Datasets:* To that end, we used the SDGs datasets made openly available by the World Bank (WB) and United Nations (UN).
 The WB dataset offers `r dat$indicator_name |> unique() |> length()` indicators, with time series from 1990 to 2019 for `r dat$country_name |> unique() |> length()` countries or administrative areas (N = 2'013.791 observations).
-The UN dataset offers time series from 2000 to 2019 for 17 SDGs, 112 targets, and 356 indicators, in 310 administrative areas (N = 1'072.731 observations).
+The UN dataset offers time series from 1963 to 2025 for 17 SDGs, 168 targets, and 247 indicators, 687 time series, in 413 administrative areas (N = `r sdg |> nrow()` observations).
 Despite their coverage, both datasets contain high proportion of missing values and the sample is unbalanced across countries and time, meaning some countries have better temporal coverage than others.
-We focused subsequent analysis only on country level indicators for SDGs 10, 14 and 15, related to inequality and the biosphere respectively.
+We focused subsequent analysis only on country level indicators for SDGs 5, 6, 10, 13, 14 and 15, related to inequality and the biosphere respectively.
 We complemented the SDGs datasets with inequality data from the World Inequality database (WID), using their estimates of the ratio of pre-tax national income for working adults (population \> 20 years old) computed as the share of the top 10% over the share of the bottom 50% (`rptinc992j_p0p100`), the share of the 1% (`sptinc992j_p99p100`), and the Gini coefficient (`gptinc992j_p0p100`).
+We also used their estimates for net wealth inequality computed as the share of the top 10% over the share of the bottom 50% (`rhweal992j_p0p100`), the share of the 1% (`shweal992j_p99p100`), and the Gini coefficient(`ghweal992j_p0p100`).
 
 ```{r echo = FALSE}
+rm(dat, sdg, fls) # remove unnecessary objects
+load(file = paste0(here(), "/data/cleaned_SDGs_2025.Rda")) 
+# dat is the most recent UN dataset 2025, keys is the var names
 load(file = paste0(here(), "/data/cleaned_sdg.RData"))
 # `df_dat` is the data from World Bank, and `df_un_reduced` is the data from UN SDGs
 df_dat <- df_dat |> ungroup()
@@ -185,10 +210,16 @@ df_un_reduced <- df_un_reduced |> ungroup()
 
 *Variable selection:* We computed the proportion of missing values for all time series related to our initial selection of indicators (Figs S1, S2, S3).
 We discarded indicators for which time series contained more than 30% of missing values, or less than 45 countries.
-Missing values were then imputed using a cubic spline, leaving us with `r df_dat |> filter(!is.na(rptinc992j_p0p100)) |> pull(country_code) |> unique() |> length()` countries, `r df_dat |> pull(year) |> unique() |> length()` years of data across 9 indicators for the WB dataset; and `r df_un_reduced |> pivot_longer(cols = 3:last_col(), names_to = "var", values_to= "value") |> separate(var, into = c("year", "series_name"), sep = "_") |>  pull(series_name) |> unique() |> length()` indicators, `r df_un_reduced |> pull(iso3) |> unique() |> length() + 1` countries over `r df_un_reduced |> pivot_longer(cols = 3:last_col(), names_to = "var", values_to= "value") |> separate(var, into = c("year", "series_name"), sep = "_") |> pull(year) |> unique() |> length()` years for the UN dataset.
+Missing values were then imputed using a cubic spline, leaving us with `r df_dat |> filter(!is.na(rptinc992j_p0p100)) |> pull(country_code) |> unique() |> length()` countries, `r df_dat |> pull(year) |> unique() |> length()` years of data across 9 indicators for the WB dataset; and `r keys |> filter(series %in% unique(dat$series)) |>  pull(series) |> unique() |> length()` series capturing `r keys |> filter(series %in% unique(dat$series)) |>  pull(indicator) |> unique() |> length()` indicators, `r dat |> pull(geoAreaName) |> unique() |> length()` countries over `r dat |> pull(timePeriodStart) |> unique() |> length()` years for the UN dataset.
 The UN dataset was further reduced to 50 countries because the WID does not report inequality timeseries for Fiji.
 Table X summarizes our selected variables, their units and available ranges.
 A list of the countries analysed is presented in the supplementary information (SI).
+
+```{r echo=FALSE}
+# create table: source, series code, name, 
+```
+
+VOY AQUI
 
 *Ordination:* We used multiple factor analysis (MFA) and principal component analysis (PCA) to reduce the dimensionality of the data and explore similarities and differences across countries.
 MFA enables to specify the nested structure of our data and account for repeated observations of our variables over time.
@@ -201,6 +232,45 @@ A trade-off in the reduced dimensional space occurs when improving on the direct
 Similarly, a synergy would be when increasing in one indicator seems to pull a country on the direction of improving in another indicator.
 We extracted trajectories of the countries of analysis for some of these candidate variables.
 If the hypothesis of inequality traps or inequality regimes is true, we would expect to find multimodal distributions in inequality indicators with respect to other variables; we expect the modes of these distributions to be correlated to the countries groups identified via clustering analysis; and we expect that most countries stay within their region of the parameter space and perhaps a few of them able to move between regimes.
+
+```{r table1, include=TRUE, echo=FALSE, warning=FALSE, message=FALSE}
+
+library(kableExtra)
+
+un_vars <- df_un_reduced |> names() |> str_subset("^\\d{4}_") |> str_remove("\\d{4}_") |> unique()
+un_vars <- un_vars[-c(7:9)]
+wb_vars <- names(df_dat)[4:12]
+iq_vars <-  names(df_dat)[c(14,16,17)]
+
+tbl <- tibble(
+    Source = c(rep("UN",length(un_vars)), rep("WB", length(wb_vars)), rep("WII",length(iq_vars))),
+    Variable = c(un_vars, wb_vars, iq_vars)
+    #Units = c(rep("Percentage", 4), "Thousands of hectares", "0-1")
+)
+
+tbl <- tbl |> mutate(
+    Units = str_extract(Variable, "\\(.\\)$"),
+    Units = str_remove_all(Units, "\\(|\\)")
+) |> mutate(
+        Variable = str_remove(Variable, " \\(%\\)"),
+        Units = str_extract(Variable, "\\(.*\\)$"),
+        Variable = str_remove(Variable, " \\(.*\\)$"),
+        Units = str_remove_all(Units, "\\(|\\)"))
+
+tbl$Units[1:4] <- "Percentage"
+tbl$Units[6] <- "0 to 1"
+tbl$Units[16:18] <- "0 to 1"
+tbl$Variable[16:18] <- c(
+    "Ratio of pre-tax national income for working adults (rptinc992j_p0p100)", "Gini coefficient (gptinc992j_p0p100)", "Share of the top 1% (sptinc992j_p99p100)"
+)
+
+
+knitr::kable(tbl, format = "latex", booktabs = TRUE, caption = "Summary of variables used") %>%
+  kable_styling(latex_options = c("striped", "hold_position"), 
+                full_width = TRUE, font_size = 8) %>%
+  column_spec(1, width = "15mm") |> 
+  column_spec(2, width = "10cm") 
+```
 
 # Results
 
