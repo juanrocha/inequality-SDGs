@@ -27,7 +27,7 @@ header-includes:
 - \usepackage{setspace}
 ---
 
-```{r data, include=FALSE}
+```{r setup, include=FALSE}
 library(tidyverse)
 library(here)
 
@@ -152,35 +152,31 @@ If the hypothesis of the inequality trap is true, we should observe bimodal or m
 Each mode would correspond to an inequality regime, and the transitions probability of staying within one regime should be much higher than the probability of shifting regimes.
 Here we address such questions by studying synergies and trade-offs between SDGs related to inequality and the biosphere.
 
--   Add a figure that describes the rationale of the methods and hypotheses
-
 # Methods
 
 ```{r echo = FALSE, message=FALSE, warning=FALSE}
-dat <- read_csv(file = "~/Documents/Projects/DATA/WorldBank/SDG_csv/SDGData.csv") |> 
-    janitor::clean_names()
-
-un_countries <- read_csv2(file = "~/Documents/Projects/DATA/SDGs_UNStats/UNSD — Methodology.csv")
+# dat <- read_csv(file = "~/Documents/Projects/DATA/WorldBank/SDG_csv/SDGData.csv") |> 
+#     janitor::clean_names()
+# 
+# un_countries <- read_csv2(file = "~/Documents/Projects/DATA/SDGs_UNStats/UNSD — Methodology.csv")
 
 # old UN dataset
 # sdg <- read_csv(file = "~/Documents/Projects/DATA/SDGs_UNStats/20180817102044132_juan.rocha@su.se_data.csv") |> janitor::clean_names()
 
 ## new UN dataset:
-fls <- dir_ls("data/sdgs/")
-
-sdg <- list()
-tic()
-for (i in seq_along(fls)){
-    load(fls[i])
-    sdg[[i]] <- d
-}
-toc() # 21s
-
-tic()
-sdg <- sdg |> bind_rows() |> 
-    unnest(c(goal, target, indicator))
-toc() # 12.1s
-
+# fls <- fs::dir_ls(paste0(here(), "/data/sdgs/"))
+# 
+# sdg <- list()
+# 
+# for (i in seq_along(fls)){
+#     load(fls[i])
+#     sdg[[i]] <- d
+# }
+# 
+# 
+# sdg <- sdg |> bind_rows() |> 
+#     unnest(c(goal, target, indicator))
+# 
 # sdg <- sdg |> 
 #     left_join(
 #         select(un_countries, country = `Country or Area`, starts_with("ISO")),
@@ -191,40 +187,32 @@ toc() # 12.1s
 ```
 
 *Datasets:* To that end, we used the SDGs datasets made openly available by the World Bank (WB) and United Nations (UN).
-The WB dataset offers `r dat$indicator_name |> unique() |> length()` indicators, with time series from 1990 to 2019 for `r dat$country_name |> unique() |> length()` countries or administrative areas (N = 2'013.791 observations).
-The UN dataset offers time series from 1963 to 2025 for 17 SDGs, 168 targets, and 247 indicators, 687 time series, in 413 administrative areas (N = `r sdg |> nrow()` observations).
+The WB dataset offers 403 indicators, with time series from 1990 to 2019 for 263 countries or administrative areas (N = 2'013.791 observations).
+The UN dataset offers time series from 1963 to 2025 for 17 SDGs, 168 targets, and 247 indicators, 687 time series, in 413 administrative areas (N = 2'821.669 observations).
 Despite their coverage, both datasets contain high proportion of missing values and the sample is unbalanced across countries and time, meaning some countries have better temporal coverage than others.
 We focused subsequent analysis only on country level indicators for SDGs 5, 6, 10, 13, 14 and 15, related to inequality and the biosphere respectively.
 We complemented the SDGs datasets with inequality data from the World Inequality database (WID), using their estimates of the ratio of pre-tax national income for working adults (population \> 20 years old) computed as the share of the top 10% over the share of the bottom 50% (`rptinc992j_p0p100`), the share of the 1% (`sptinc992j_p99p100`), and the Gini coefficient (`gptinc992j_p0p100`).
 We also used their estimates for net wealth inequality computed as the share of the top 10% over the share of the bottom 50% (`rhweal992j_p0p100`), the share of the 1% (`shweal992j_p99p100`), and the Gini coefficient(`ghweal992j_p0p100`).
 
 ```{r echo = FALSE}
-rm(dat, sdg, fls) # remove unnecessary objects
+#rm(dat, sdg, fls) # remove unnecessary objects
 load(file = paste0(here(), "/data/cleaned_SDGs_2025.Rda")) 
-# dat is the most recent UN dataset 2025, keys is the var names
-load(file = paste0(here(), "/data/cleaned_sdg.RData"))
-# `df_dat` is the data from World Bank, and `df_un_reduced` is the data from UN SDGs
-df_dat <- df_dat |> ungroup()
-df_un_reduced <- df_un_reduced |> ungroup()
+un_dat <- ungroup(un_dat)
+wb_dat <- ungroup(wb_dat)
+
 ```
 
 *Variable selection:* We computed the proportion of missing values for all time series related to our initial selection of indicators (Figs S1, S2, S3).
 We discarded indicators for which time series contained more than 30% of missing values, or less than 45 countries.
-Missing values were then imputed using a cubic spline, leaving us with `r df_dat |> filter(!is.na(rptinc992j_p0p100)) |> pull(country_code) |> unique() |> length()` countries, `r df_dat |> pull(year) |> unique() |> length()` years of data across 9 indicators for the WB dataset; and `r keys |> filter(series %in% unique(dat$series)) |>  pull(series) |> unique() |> length()` series capturing `r keys |> filter(series %in% unique(dat$series)) |>  pull(indicator) |> unique() |> length()` indicators, `r dat |> pull(geoAreaName) |> unique() |> length()` countries over `r dat |> pull(timePeriodStart) |> unique() |> length()` years for the UN dataset.
-The UN dataset was further reduced to 50 countries because the WID does not report inequality timeseries for Fiji.
-Table X summarizes our selected variables, their units and available ranges.
+Missing values were then imputed using a cubic spline, leaving us with `r wb_dat |> pull(country_code) |> unique() |> length()` countries, `r wb_dat |> pull(year) |> unique() |> length()` years of data across 9 indicators for the WB dataset; and `r un_keys |> filter(series %in% unique(un_dat$series)) |>  pull(series) |> unique() |> length()` series capturing `r un_keys |> filter(series %in% unique(un_dat$series)) |>  pull(indicator) |> unique() |> length()` indicators, `r un_dat |> pull(geoAreaName) |> unique() |> length()` countries over `r un_dat |> pull(timePeriodStart) |> unique() |> length()` years for the UN dataset.
+The UN dataset was further reduced to 67 countries because the WID does not report inequality time series for Fiji.
+Table \ref{tbl1} summarizes our selected variables, their units and available ranges.
 A list of the countries analysed is presented in the supplementary information (SI).
-
-```{r echo=FALSE}
-# create table: source, series code, name, 
-```
-
-VOY AQUI
 
 *Ordination:* We used multiple factor analysis (MFA) and principal component analysis (PCA) to reduce the dimensionality of the data and explore similarities and differences across countries.
 MFA enables to specify the nested structure of our data and account for repeated observations of our variables over time.
 We recover some of the qualitative results with PCA as robustness check, but these results are presented in the SI.
-We also performed a clustering routine following the protocols by Charrad [] and Brooks [].
+We also performed a clustering routine following the protocols by Charrad [@charrad2014] and Brooks [@brock2008].
 We tested over 10 clustering techniques and compared them across \>30 performance metrics to infer from the data what are the optimal numbers of clusters to fit and preferable algorithms.
 
 *Analysis of trajectories:* With the results from the MFA we identified candidate variables where synergies or trade-offs are expected.
@@ -237,18 +225,46 @@ If the hypothesis of inequality traps or inequality regimes is true, we would ex
 
 library(kableExtra)
 
-un_vars <- df_un_reduced |> names() |> str_subset("^\\d{4}_") |> str_remove("\\d{4}_") |> unique()
-un_vars <- un_vars[-c(7:9)]
-wb_vars <- names(df_dat)[4:12]
-iq_vars <-  names(df_dat)[c(14,16,17)]
+load(paste0(here(),"/data/wb_var_defs.Rda"))
+load(paste0(here(),"/data/wii_small-data.RData"))
 
-tbl <- tibble(
-    Source = c(rep("UN",length(un_vars)), rep("WB", length(wb_vars)), rep("WII",length(iq_vars))),
-    Variable = c(un_vars, wb_vars, iq_vars)
-    #Units = c(rep("Percentage", 4), "Thousands of hectares", "0-1")
+
+un_vars <- un_keys |> 
+    filter(series %in% unique(un_dat$series)) |> 
+    select(Goal = goal, Series = series, Variable = seriesDescription) |> 
+    mutate(Source = "UN")
+
+wb_vars <- wb_key |> 
+    filter(indicator_name %in% colnames(wb_dat)[4:12]) |> 
+    select(Series = series_code, Variable = indicator_name) |> 
+    mutate(Goal = c("15", "10", rep("13", 2), "10", rep("15",2),"10","10" ),
+           Source = "WB")
+
+iq_vars <- tibble(
+    Source = "WII", 
+    Goal = "10", 
+    Series = ineq_dat |> 
+        unite(col = "series", variable, percentile, sep = "_") |>
+        # removed due to zero variance
+        filter(!series %in% c("sptinc992j_p0p100","shweal992j_p0p100")) |>
+        pull(series) |> unique(),
+    Variable = c(
+        "Ratio of pre-tax national income for working adults",
+        "Ratio of wealth for working adults",
+        "Share of the top 1% of wealth",
+        "Gini coefficient of wealth",
+        "Gini coefficeint of pre-tax income for working adults",
+        "Share of the 1% of pre-tax income for working adults"
+    )
 )
 
-tbl <- tbl |> mutate(
+
+tbl <- bind_rows(wb_vars, un_vars, iq_vars) |> 
+    select(Source, Goal, Series, Variable) |> 
+    mutate(Goal = as.numeric(Goal)) |> 
+    arrange(Goal)
+
+tbl <-  tbl |> mutate(
     Units = str_extract(Variable, "\\(.\\)$"),
     Units = str_remove_all(Units, "\\(|\\)")
 ) |> mutate(
@@ -257,50 +273,54 @@ tbl <- tbl |> mutate(
         Variable = str_remove(Variable, " \\(.*\\)$"),
         Units = str_remove_all(Units, "\\(|\\)"))
 
-tbl$Units[1:4] <- "Percentage"
+tbl$Units[3:4] <- "0 to 1"
+tbl$Units[5] <- "US$ per cubic meter"
 tbl$Units[6] <- "0 to 1"
-tbl$Units[16:18] <- "0 to 1"
-tbl$Variable[16:18] <- c(
-    "Ratio of pre-tax national income for working adults (rptinc992j_p0p100)", "Gini coefficient (gptinc992j_p0p100)", "Share of the top 1% (sptinc992j_p99p100)"
-)
+tbl$Units[18:23] <- "0 to 1"
+tbl$Units[29:32] <- "0 to 1"
+tbl$Units[c(7,9,13)] <- "sq. km"
 
-
-knitr::kable(tbl, format = "latex", booktabs = TRUE, caption = "Summary of variables used") %>%
+knitr::kable(
+    tbl, format = "latex", booktabs = TRUE, caption = "Summary of variables used", label = "tbl1") %>%
   kable_styling(latex_options = c("striped", "hold_position"), 
-                full_width = TRUE, font_size = 8) %>%
-  column_spec(1, width = "15mm") |> 
-  column_spec(2, width = "10cm") 
+                full_width = TRUE, font_size = 8) |> 
+  column_spec(c(1,2), width = "5mm") |> column_spec(3, width = "25mm") |>
+  column_spec(4, width = "8cm") 
 ```
 
 # Results
 
-Despite the differences in coverage with respect to countries, time, and indicators tracked, the ordination in both data sets results in three clusters of countries (Fig \ref{fig:wb}, Fig \ref{fig:un}).
-For the WB data set, countries along the first principal component are differentiated by high levels of economic inequality, high energy intensity but low carbon emissions (negative values of Dim 1, green cluster), versus countries with relatively low gender inequality, high agricultural productivity, high carbon emissions, high urbanization and internet access (positive values in Dim 1, yellow and blue clusters).
-Forest related variables have the lowest loading on the first two components and do not change over time, while access to internet or inclusion of women in leadership roles have the highest variability over time.
+Despite the differences in coverage with respect to countries, time, and indicators tracked, the ordination in both data sets results in two clusters of countries (Fig \ref{fig:wb}, Fig \ref{fig:un}).
+For the WB data set, countries along the first principal component are differentiated by high levels of economic inequality, high energy intensity but low carbon emissions (positive values of Dim 1, eg. green cluster Mexico: MEX or South Africa: ZAF), versus countries with relatively low gender inequality, high agricultural productivity, high carbon emissions, high urbanization and internet access (negative values in Dim 1, yellow cluster).
+Forest related variables have the lowest loading on the first two components and do not change much over time, while access to internet or inclusion of women in leadership roles have the highest variability over time.
+The first dimension on the ordination is best explained by variability in the inequality variables including women in buisness, access to internet and electricity, while the second dimension is best explained by urbanization and carbon emissions (Fig \ref{fig:SM_WBord}).
 
 \begin{figure*}[ht]
 \centering
 \includegraphics[width = 7in, height = 4in]{fig_mfa_wb}
-\caption{\textbf{Multiple factor analysis with World Bank data} The first 10 principal componets explain 94.8\% of the varation, the first two (A) explain 53\%. The 10 first components were used to cluster 151 countries resulting in three clusters (A). The correlation circle across explanatory variables is presented in (B) along their loadings on the first two components of the ordination.}
+\caption{\textbf{Multiple factor analysis with World Bank data} The first 10 principal componets explain 94.8\% of the varation, the first two (A) explain 53\%. The 10 first components were used to cluster 151 countries resulting in two clusters (A). The correlation circle across explanatory variables is presented in (B) along their loadings on the first two components of the ordination. Variables in the legend are ordered and coloured according to the SDGs used (e.g. orange for gender equality, blues for water and sanitation, reds for inequality, and greens for life on land).}
 \label{fig:wb}
 \end{figure*}
 
-The UN dataset offers a similar ordination, where countries with low values along the first axes but higher values along the second axis have the highest inequalities (e.g Mexico, Fig \ref{fig:un}).
+The UN dataset offers a similar ordination, where countries with high values along the first axes and higher values along the second axis have the highest inequalities (e.g Fig \ref{fig:un}).
 The inequality variables are highly correlated but also explain large amounts of the variance.
-Contrary to the WB data, here forest related variables do show variability over time, but variables related to biodiversity loss (Red list index) do not change much over the time period of the data (2000-2015).
-Interestingly, the ordination suggests that places with low inequality would have high Red list index.
-Japan, Italy or Ireland are examples of countries on the region of the parameter space where inequality is relatively low but conservation metrics per country are relatively high.
+Contrary to the WB data, here forest related variables do show variability over time, but variables related to biodiversity loss (Red list index) or some of the area based indicators for water related SDGs do not change much over the time period of the data (2000-2021).
+Places with lower economic inequality also tend to have better opportunities for woman to participate in political decision making.
+Interestingly, high values on the red list index correlate with lower levels of inequality.
+The first dimension on the ordination is best explained by variability in the inequality, while the second dimension is best explained by key biodiversity areas in terrestrial systems, reservoir statistics, as well as women participation in parliament (Fig \ref{fig:SM_UNord}).
 
 \begin{figure*}[ht]
 \centering
-\includegraphics[width = 7in, height = 4in]{fig_UN_ordination}
-\caption{\textbf{Multiple factor analysis with United Nations data}  }
+\includegraphics[width = 7in, height = 4.5in]{fig_UN_ordination}
+\caption{\textbf{Multiple factor analysis with United Nations data} The first 10 principal components used in the ordination explain 72\% of the variation, the first two (A) explain 29.9\%. The first 10 components were used to cluster 67 countires resulting in two clusters (A). The correlation circle across explanatory variables is presented in (B) along their loadings on teh first two components of the ordination. Variables in the legend are ordered and coloured according to the SDGs used (e.g. reds are inequality, greens are life in land).}
 \label{fig:un}
 \end{figure*}
 
 We find evidence of multi-modal distributions in inequality and environmental variables.
-This finding supports the hypothesis of the existence of inequality regimes, particularly when inequality is measured as the share of the top 1% (Fig \ref{fig:bim}).
-However, the lack of variability in environmental variables and smaller sample size in the UN data set prevent us to statistically derive modes in the distribution, except for the red list index (Fig \ref{fig:SM_UNbim}).
+This finding supports the hypothesis of the existence of inequality regimes both in income and wealth, particularly when inequality is measured as the share of the top 1% (Fig \ref{fig:bim}).
+However, the lack of variability in environmental variables and smaller sample size in the UN data set prevent us to statistically derive modes in the distribution or all our variables (Table \\ref{tab}).
+As a result, we only report bimodal distributions for cereal yields, carbon emissions, and energy intensity (WB data, Fig \ref{fig:bim}}), and the red list index (UN data, Fig \ref{fig:SM_UNbim}).
+We also confirm that, as expected, these inequality regimes are related with the country typologies identified.
 
 \begin{figure*}[ht]
 \centering
@@ -311,16 +331,34 @@ However, the lack of variability in environmental variables and smaller sample s
 
 # Discussion
 
--   Biodiversity variables are either limited to conservation, or resource production.
-    Other biodiversity related values such as cultural values (intrinsic, recreational, spiritual) are not captured by SDG indicators.
+Most countries in the world are committed to achieve progress on sustainable development goals by 2030.
+Despite several of these aspirational goals wont be meet by 2030; they concentrate political willingness and action that has been translated into some progress in most countries.
+One key question is whether there are synergies and trade-offs between these goals.
+Here we addressed this question by investigating SDGs related to inequality and the biosphere (SDGs 5, 6, 10, 13, 14, and 15) through ordination methods.
 
--   Data gaps undermine the analysis of trajectories over time.
-    For some of the variables where information exist, the statistics do not change (e.g. % forest area).
-    Thus the indicators fail at capturing progress or lack of it towards the sustainable goals.
+We find evidence of synergies and trade-offs.
+For example, almost all inequality metrics are correlated, except the ratio of wealth which is much more noisy and sometimes anti-correlated with inequality metrics on income.
+For example, Sweden traditionally has had low income inequality but high wealth inequality, although the former has been increasing as well.
+Similarly, gender equity measured as share of women in parliament is generally better in places with lower income inequality but not necessarily low wealth inequality.
+Interestingly, countries with high gender equality perform better in area based indicators of ecological and biological conservation.
+Higher levels of urbanization are correlated with improvements on access to electricity and internet usage, but also with higher carbon emissions and lower energy intensity.
 
--   We find evidence for bistability in inequality, further supporting the hypothesis of inequality traps.
-    However, data gaps and lack of variability in biodiversity indicators prevent us to further test features of regime shift dynamics such as hysteresis.
-    Further work can look into this hypothesis by looking into other datasets or longer time series.
+We had an explicit interest in the interactions between inequality and biosphere related SDGs.
+Biodiversity variables are either limited to conservation, or resource production.
+Most of the proxies of ecosystem variables are area based (e.g. % forest area), meaning they change very little over time.
+The lack of variability in the SDGs datasets and a large proportion of missing values (Figs \ref{fig:SM_WB_env}, \ref{fig:SM_WB_env2}, \ref{fig:SM_UNdata} ) forced us to drop many indicators.
+It also questions whether the indicators currently used are good proxies of progress or lack of in the goals.
+If a variable does not change over time at a scale at which information can feedback political decisions, then is not very useful as proxy of progress a desired direction.
+Other biodiversity related values such as cultural values (intrinsic, recreational, spiritual) are not currently captured by SDG indicators.
+An interesting avenue for future research is to design comparable observables that can be monitored by third parties (not reported by governments) that are sensitive enough to capture progress or lack of it towards the goals.
+Some examples include the essential biodiversity variables innitiative advanced by GeoBON, the human footprint index, or recent developments on functional integrity.
+All of them offer time series at varied levels of resolution that enable subnational monitoring.
+
+Despite these limitations, we find evidence for bistability in inequality, further supporting the hypothesis of inequality traps [@Wu_2024].
+However, data gaps and lack of variability in biodiversity indicators prevent us to further test features of regime shift dynamics such as hysteresis.
+To further test the existence of hysteresis we need a better understanding of the potential mechanisms at the country scale that might be generating the alternative regimes, including a controlling parameter at which the shift from one regime to the other should result on a different break point.
+Further work can look into this hypothesis by looking into other datasets or longer time series, or by exploring the plausibility of alternative mechanisms through modelling.
+Generative models for wealth inequality exist inspired in biological mechanisms of heredity, but less is known on inequality mechanisms for income or gender dimensions.
 
 # Conclusion
 
@@ -343,6 +381,11 @@ Notes:
 \renewcommand\thetable{S\arabic{table}}
 \setcounter{table}{0}
 \setcounter{figure}{0}
+
+List of countries analyzed in the UN dataset after removing time series with too many missing values or too few countries: `r un_dat |> pull(geoAreaName) |> unique() |> str_flatten_comma(last = " and ")`
+
+List of countries analyzed in the WB dataset after removing time series with too many missing values or too few countries: `r wb_dat |> pull(country_name) |> unique() |> str_flatten_comma(last = " and ")`
+
 \begin{figure*}[ht]
 \centering
 \includegraphics[width = 6in, height = 4in]{WB_environment_SDGs}
@@ -397,6 +440,14 @@ Notes:
 \caption{\textbf{Variable importance in ordination on WB data} }
 \label{fig:SM_WBord}
 \end{figure*}
+
+\begin{figure*}[ht]
+\centering
+\includegraphics[width = 6in, height = 5in]{sm_un_ordinations}
+\caption{\textbf{Variable importance in ordination on UN data} }
+\label{fig:SM_UNord}
+\end{figure*}
+
 \begin{figure*}[ht]
 \centering
 \includegraphics[width = 4in, height = 3.5in]{bimodal_UN}

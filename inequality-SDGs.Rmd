@@ -74,7 +74,7 @@ countries_list <- countries |> filter(!is.na(currency_unit)) |> pull(country_cod
 ## correct Namibia, it is not an NA in x2_alpha_code
 
 countries$x2_alpha_code[countries$country_code == "NAM"] <- "NA"
-
+#save(key, file = "data/wb_var_defs.Rda")
 ```
 
 ```{r}
