@@ -192,3 +192,68 @@ a + b + plot_layout(guides = "collect") &
 
 
 ## Improve the graph, use nice names
+
+#### Animation ####
+# new UN dataset:
+fls <- fs::dir_ls("data/sdgs/")
+##list of countries
+un_countries <- read_csv2(file = "~/Documents/Projects/DATA/SDGs_UNStats/UNSD — Methodology.csv") |> 
+    janitor::clean_names()
+sdg <- list()
+
+for (i in seq_along(fls)){
+    load(fls[i])
+    sdg[[i]] <- d
+}
+
+
+sdg <- sdg |> bind_rows() |>
+    unnest(c(goal, target, indicator))
+
+sdg <- sdg |>
+    left_join(
+        select(un_countries, country = country_or_area, starts_with("iso") ),
+        by = c("geoAreaName" = "country")) |>
+    filter(value != "-")|>
+    mutate(value = as.numeric(value))
+
+## For visualization use all the data.
+tic()
+sdg <- sdg |>
+    filter(valueType != "String") |>
+    mutate(value = as.numeric(value)) |> filter(!is.na(value)) |>
+    filter(geoAreaName %in% df_countries$geoAreaName) #|>
+# group_by(goal, target, indicator, series, geoAreaName, timePeriodStart ) |>
+# summarize(value = mean(value, na.rm = TRUE))
+toc() # 3s
+
+## Dont expand: this recover implicit missing values
+tic()
+sdg <- right_join(
+    sdg |> select(-c(time_detail:dimensions)),
+    sdg |>
+        ungroup() |>
+        expand(series, geoAreaName, timePeriodStart))
+toc() # 6s
+
+tic()
+sdg |> ungroup() |> 
+    # filter(geoAreaName %in% c("Colombia", "Peru", "Ecuador", "Sweden", "South Africa", 
+    #                           "France", "United States of America", "China", "Cameroon",
+    #                           "Japan")) |> #, "Peru", "Ecuador"
+    ggplot(aes(timePeriodStart, series)) +
+    geom_tile(aes(fill = value)) +
+    geom_text(aes(label = geoAreaName), x = 1975, y = 600, color = "white", size = 8) +
+    scale_fill_viridis_c(na.value = "orange") +
+    labs(title = "Sustainable Development Goals",
+         subtitle = "Everything orange are missing values", caption = "Data source: UN SDGs API",
+         x = "Year", y = "637 series set to measure progresss towards SDGs") +
+    theme_light(base_size = 12) +
+    theme(axis.text.y = element_blank()) +
+    transition_manual(geoAreaName, cumulative = FALSE) 
+toc() # 354s for 10 countries | 1hr all
+
+anim_save("mind_the_gap_full.gif", animation = last_animation() , path = "figures/")
+
+
+

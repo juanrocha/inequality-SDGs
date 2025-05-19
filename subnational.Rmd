@@ -95,7 +95,7 @@ dat |>
 ```{r}
 hfp <- dir_ls("/Users/juanrocha/Documents/Projects/DATA/HII_human_impact_index/first-gen/")
 
-fp1 <- stars::read_stars(hfp[10])
+fp1 <- stars::read_stars(hfp[10], proxy = TRUE)
 fp1 <- rast(hfp[20])
 
 terra::plot(fp1, type = "continuous", #col = map.pal("viridis", 100),

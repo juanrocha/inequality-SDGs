@@ -5,6 +5,18 @@ editor_options:
   chunk_output_type: inline
 ---
 
+## BYS retreat 2025
+
+- Session National SDGs:
+    - Discussion comparsion to other studies, analysis from Matti and Chinese papers
+    - List factors or mechanisms that can create the regimes
+    - Hypothesize and test causes that distinguishes clusters: wealth, income, corruption
+    
+- Futures discussion
+    - Mistra: case studies in Indonesia with Robert, mining with Exeter,
+    - Writers: Maike, Emilie, Tom, Caro, Peter, Juan, Tong(?)
+
+
 ## Notes meeting 2025
 
 - We re-visit the selection of variables and downloaded all SDGs data from the UN API

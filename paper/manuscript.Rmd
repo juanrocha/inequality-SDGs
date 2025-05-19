@@ -1,5 +1,5 @@
 ---
-title: "Trade-offs between biosphere goals and inequality at the national scale"
+title: "Biosphere Stewardship in an Unequal World: A Sustainable Development Goals Approach"
 output:
   pdf_document:
     dev: pdf
@@ -123,33 +123,37 @@ SM
 # Introduction
 
 Countries around the world have committed to achieve 17 sustainable development goals as proposed by the United Nations.
-The ambitious agenda is materialized in 169 targets and indicators, yet not all targets are monitored or properly measured, and not all countries report them, presenting significant data and knowledge gaps.
+The ambitious agenda is materialized in 169 targets and indicators, yet not all targets are monitored or properly measured, and not all countries report them, presenting significant data and knowledge gaps [@min2024].
 An open question in sustainability science is if these targets are achievable simultaneously?
-Previous work on synergies and trade-offs between sustainable development goals (SDGs) suggest that both options are possible, yet this work is limited to expert elicitation and correlational studies.
+Previous work on synergies and trade-offs between sustainable development goals (SDGs) suggest that both options are possible [@schmidt-traub2017; @sachs2024; @pradhan2017; @kroll2019], yet this work is limited to expert elicitation and correlational studies.
 It is unclear if there are system or structural constraints that limit a country's capacity to achieve particular SDGs, or if there are milestones that need to be unlocked before it can achieve the desired performance in a particular dimension of sustainability.
 In other words, these correlations do not account for the path dependency and causal inference inherent on the process of development.
 
-When the SDGs were adopted in 2015, work began to create a comprehensive database of SDG indicators [@schmidt-traub2017; @sachs2024], to be updated annually.
-Based on these data, previous analyses found that goals associated with poverty alleviation, well-being, economic development, and innovation (e.g. SDGs 1, 3, 7, 8, 9) tended to be synergistic with other goals, while goals related to responsible consumption, climate action, natural resources, and cooperation showed the most trade-offs (e.g. SDGs 11, 12, 13, 14, 16, 17) [@pradhan2017; @s41599-019-0335-5].
-Drawing upon relevant World Bank data, Lusseau and Mancini [@s41893-019-0231-4] find these patterns to be modulated by the overall income level of countries, with low-income countries showing synergies across all goals, while trade-offs start to appear in higher income categories.
-More recently, [@s41467-023-44679-w] analysed transboundary SDG interactions and found that high income countries play a disproportionate role in influencing the achievement of SDGs in other countries.
+When the SDGs were adopted in 2015, the United Nations began to create a comprehensive database of SDG indicators [@schmidt-traub2017; @sachs2024], to be updated annually.
+Based on these data, previous analyses found that goals associated with poverty alleviation, well-being, economic development, and innovation (e.g. SDGs 1, 3, 7, 8, 9) tended to be synergistic with other goals, while goals related to responsible consumption, climate action, natural resources, and cooperation showed the most trade-offs (e.g. SDGs 11, 12, 13, 14, 16, 17) [@pradhan2017; @kroll2019].
+Drawing upon relevant World Bank data, Lusseau and Mancini [@lusseau2019] find these patterns to be modulated by the overall income level of countries, with low-income countries showing synergies across all goals, while trade-offs start to appear in higher income categories.
+More recently, [@xiao2024] analysed transboundary SDG interactions and found that high income countries play a disproportionate role in influencing the achievement of SDGs in other countries.
+These differences suggest that it may be worthwhile investigating if the nature of the mechanisms linking SDG to each other could be dependent on income level.
 
-Here we address the question of synergies and trade-offs by focusing on goals related to biosphere and inequality (SDGs 10, 14 and 15).
+Here we address the question of synergies and trade-offs by focusing on goals related to biosphere and inequality (SDGs 5, 6, 10, 13, 14 and 15).
 The motivation is threefold.
 First, the Convention for Biological Diversity is currently negotiating and agreeing on the next set of goals and ambitions to bend the curve of biodiversity loss.
-Understanding which countries are well positioned to achieve biodiversity goals or not will be necessary to design strategies that support countries with low capabilities, that address the dimensions of justice, and design targets with plausibility in mind.
-Second, within-country inequality has been rising in the last decades even in high income countries, and as a consequence of the Covid pandemic, in between country inequality raised for first time in a generation.
+Understanding which countries are well positioned to achieve biodiversity goals or not will be necessary to design strategies that support countries with low capabilities, that address the dimensions of justice, and design targets with plausibility in mind [@díaz2020].
+Second, within-country inequality has been rising in the last decades even in high income countries [@milanovic2024], and as a consequence of the Covid pandemic, in between country inequality raised for first time in a generation [@wade2023world].
 These statistics set back progress on the inequality SDG by at least a decade, and undermines the mantra of leaving no one behind.
-And third, recent conceptual and theoretical work has proposed mechanisms by which increase in inequality can impact the environment, and changes in the environment can feedback into further inequalities [@hamann2018; @dade2022; @leach2018].
+And third, recent conceptual and theoretical work has proposed mechanisms by which increase in inequality can impact the environment, while changes in the environment can feedback into further inequalities [@hamann2018; @dade2022; @leach2018].
 
-Recent work also shows that a trilemma exists where countries struggle to achieve high prosperity, high environmental standards while reducing inequality [@Wu_2024].
+Recent work also shows that a trilemma exists where countries struggle to simultaneously achieve high prosperity, high environmental standards while reducing inequality [@Wu_2024].
 Using data from environmental footprint, the gross national product, and the Gini coefficient time series, 53 countries were clustered and a typology of trajectories identified.
 No country achieved the three goals simultaneously, and Latin American countries seem to have dynamics characterized by an inequality trap.
-Countries trajectories on the trilemma space, however, suggest the hypothesis that social progress can be achieved without compromising the biosphere [@Wu_2024].
+Some countries trajectories on the trilemma space, however, suggest the hypothesis that social progress can be achieved without compromising the biosphere [@Wu_2024].
+While no country has simultaneously achieved these three goals, some countrie are indeed moving on the right direction [@Wu_2024; @chrisendo2024; @liu2025]
 
-It remains an open question if these patterns hold across different datasets and scales.
+It remains open questions whether these patterns are robust across different datasets and scales, or whether there are specific driving factors and feedback mechanisms that underlie inequality traps.
+The dichotomy between low-income countries exhibiting synergies across all goals, while trade-offs starting to appear in higher-income countries [@lusseau2019] motivates the need to study mechanisms explaining these trade-offs and how they may differ due to countries’ level of income.
 If the hypothesis of the inequality trap is true, we should observe bimodal or multimodal distributions in inequality and environmental variables.
 Each mode would correspond to an inequality regime, and the transitions probability of staying within one regime should be much higher than the probability of shifting regimes.
+If there are nonlinear dynamics in inequality keeping countries trapped on a particular regime, then we should also observe hysteresis or different break points between regimes.
 Here we address such questions by studying synergies and trade-offs between SDGs related to inequality and the biosphere.
 
 # Methods
@@ -189,7 +193,7 @@ Here we address such questions by studying synergies and trade-offs between SDGs
 *Datasets:* To that end, we used the SDGs datasets made openly available by the World Bank (WB) and United Nations (UN).
 The WB dataset offers 403 indicators, with time series from 1990 to 2019 for 263 countries or administrative areas (N = 2'013.791 observations).
 The UN dataset offers time series from 1963 to 2025 for 17 SDGs, 168 targets, and 247 indicators, 687 time series, in 413 administrative areas (N = 2'821.669 observations).
-Despite their coverage, both datasets contain high proportion of missing values and the sample is unbalanced across countries and time, meaning some countries have better temporal coverage than others.
+Despite their coverage, both datasets contain a high proportion of missing values and the sample is unbalanced across countries and time, meaning some countries have better temporal coverage than others.
 We focused subsequent analysis only on country level indicators for SDGs 5, 6, 10, 13, 14 and 15, related to inequality and the biosphere respectively.
 We complemented the SDGs datasets with inequality data from the World Inequality database (WID), using their estimates of the ratio of pre-tax national income for working adults (population \> 20 years old) computed as the share of the top 10% over the share of the bottom 50% (`rptinc992j_p0p100`), the share of the 1% (`sptinc992j_p99p100`), and the Gini coefficient (`gptinc992j_p0p100`).
 We also used their estimates for net wealth inequality computed as the share of the top 10% over the share of the bottom 50% (`rhweal992j_p0p100`), the share of the 1% (`shweal992j_p99p100`), and the Gini coefficient(`ghweal992j_p0p100`).
@@ -210,18 +214,18 @@ Table \ref{tbl1} summarizes our selected variables, their units and available ra
 A list of the countries analysed is presented in the supplementary information (SI).
 
 *Ordination:* We used multiple factor analysis (MFA) and principal component analysis (PCA) to reduce the dimensionality of the data and explore similarities and differences across countries.
-MFA enables to specify the nested structure of our data and account for repeated observations of our variables over time.
+MFA enables us to specify the nested structure of our data and account for repeated observations of our variables over time.
 We recover some of the qualitative results with PCA as robustness check, but these results are presented in the SI.
-We also performed a clustering routine following the protocols by Charrad [@charrad2014] and Brooks [@brock2008].
+We also performed a clustering sensitivity analysis following the protocols by Charrad [@charrad2014] and Brooks [@brock2008].
 We tested over 10 clustering techniques and compared them across \>30 performance metrics to infer from the data what are the optimal numbers of clusters to fit and preferable algorithms.
 
 *Analysis of trajectories:* With the results from the MFA we identified candidate variables where synergies or trade-offs are expected.
-A trade-off in the reduced dimensional space occurs when improving on the direction of one indicator (e.g. reducing inequality) implies declining on the direction of another indicator.
-Similarly, a synergy would be when increasing in one indicator seems to pull a country on the direction of improving in another indicator.
+A trade-off in the reduced dimensional space occurs when improving on the direction of one indicator (e.g. reducing inequality) implies a decline in the direction of another indicator.
+Similarly, a synergy would be when increasing in one indicator coincides with a country towards improving in another indicator.
 We extracted trajectories of the countries of analysis for some of these candidate variables.
 If the hypothesis of inequality traps or inequality regimes is true, we would expect to find multimodal distributions in inequality indicators with respect to other variables; we expect the modes of these distributions to be correlated to the countries groups identified via clustering analysis; and we expect that most countries stay within their region of the parameter space and perhaps a few of them able to move between regimes.
 
-```{r table1, include=TRUE, echo=FALSE, warning=FALSE, message=FALSE}
+```{r table1, include=TRUE, echo=FALSE, warning=FALSE, message=FALSE, opts.label="tbl1"}
 
 library(kableExtra)
 
@@ -318,7 +322,7 @@ The first dimension on the ordination is best explained by variability in the in
 
 We find evidence of multi-modal distributions in inequality and environmental variables.
 This finding supports the hypothesis of the existence of inequality regimes both in income and wealth, particularly when inequality is measured as the share of the top 1% (Fig \ref{fig:bim}).
-However, the lack of variability in environmental variables and smaller sample size in the UN data set prevent us to statistically derive modes in the distribution or all our variables (Table \\ref{tab}).
+However, the lack of variability in environmental variables and smaller sample size in the UN data set prevent us to statistically derive modes in the distribution or all our variables (Table \ref{tbl1}).
 As a result, we only report bimodal distributions for cereal yields, carbon emissions, and energy intensity (WB data, Fig \ref{fig:bim}}), and the red list index (UN data, Fig \ref{fig:SM_UNbim}).
 We also confirm that, as expected, these inequality regimes are related with the country typologies identified.
 
@@ -347,18 +351,18 @@ We had an explicit interest in the interactions between inequality and biosphere
 Biodiversity variables are either limited to conservation, or resource production.
 Most of the proxies of ecosystem variables are area based (e.g. % forest area), meaning they change very little over time.
 The lack of variability in the SDGs datasets and a large proportion of missing values (Figs \ref{fig:SM_WB_env}, \ref{fig:SM_WB_env2}, \ref{fig:SM_UNdata} ) forced us to drop many indicators.
-It also questions whether the indicators currently used are good proxies of progress or lack of in the goals.
-If a variable does not change over time at a scale at which information can feedback political decisions, then is not very useful as proxy of progress a desired direction.
+It also questions whether the indicators currently used are good proxies of progress, or lack of it, in the goals.
+If a variable does not change over time at a scale at which information can feedback political decisions, then is not very useful as proxy of progress towards a desired direction.
 Other biodiversity related values such as cultural values (intrinsic, recreational, spiritual) are not currently captured by SDG indicators.
 An interesting avenue for future research is to design comparable observables that can be monitored by third parties (not reported by governments) that are sensitive enough to capture progress or lack of it towards the goals.
-Some examples include the essential biodiversity variables innitiative advanced by GeoBON, the human footprint index, or recent developments on functional integrity.
-All of them offer time series at varied levels of resolution that enable subnational monitoring.
+Some examples include the essential biodiversity variables initiative advanced by GeoBON, the human footprint index, or recent developments on functional integrity.
+All of them offer time series at varied levels of resolution that enable sub national monitoring.
 
 Despite these limitations, we find evidence for bistability in inequality, further supporting the hypothesis of inequality traps [@Wu_2024].
 However, data gaps and lack of variability in biodiversity indicators prevent us to further test features of regime shift dynamics such as hysteresis.
 To further test the existence of hysteresis we need a better understanding of the potential mechanisms at the country scale that might be generating the alternative regimes, including a controlling parameter at which the shift from one regime to the other should result on a different break point.
 Further work can look into this hypothesis by looking into other datasets or longer time series, or by exploring the plausibility of alternative mechanisms through modelling.
-Generative models for wealth inequality exist inspired in biological mechanisms of heredity, but less is known on inequality mechanisms for income or gender dimensions.
+Generative models for wealth inequality exist inspired in biological mechanisms of heredity [@arrow2009], but less is known on inequality mechanisms for income or gender dimensions, although some hypothesis have been put forward [@chancel2020unsustainable].
 
 # Conclusion
 
@@ -440,14 +444,12 @@ List of countries analyzed in the WB dataset after removing time series with too
 \caption{\textbf{Variable importance in ordination on WB data} }
 \label{fig:SM_WBord}
 \end{figure*}
-
 \begin{figure*}[ht]
 \centering
 \includegraphics[width = 6in, height = 5in]{sm_un_ordinations}
 \caption{\textbf{Variable importance in ordination on UN data} }
 \label{fig:SM_UNord}
 \end{figure*}
-
 \begin{figure*}[ht]
 \centering
 \includegraphics[width = 4in, height = 3.5in]{bimodal_UN}

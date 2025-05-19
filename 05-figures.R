@@ -167,7 +167,7 @@ b <- wb_mfa$quanti.var$coord |>
     mutate(var_name = str_replace(var_name, "j_p", "j-p")) |> 
     separate(var_name, into = c("year", "var_name"), sep = "_" ) |> #slice(172:200) 
     mutate(var_name = str_replace(var_name, "j-p", "j_p")) |> 
-    left_join(wb_short_names) |> 
+    left_join(wb_short_names) |> filter(!str_detect(var_name, "tinc|hwea")) |> 
     mutate(year = as.numeric(year)) |># pull(var_name) |> unique()
     ggplot() +
     geom_hline(yintercept = 0, linetype = 2, color = "grey50", linewidth = 0.5) +
@@ -176,9 +176,9 @@ b <- wb_mfa$quanti.var$coord |>
         aes(xend = Dim.1, x = 0, yend = Dim.2, y = 0, color = short_name, alpha = year), 
         arrow = arrow(length = unit(0.02, "npc"))) +
     geom_circle(aes(x0=0, y0=0, r = 1),  color = "grey24", linewidth = 0.01 ) +
-    scale_color_manual("Variables from the World Bank and World Inequality databases", 
-                       values = clrs,
-                       guide = guide_legend(ncol = 4, title.position = "top")) +
+    # scale_color_manual("Variables from the World Bank and World Inequality databases", 
+    #                    values = clrs,
+    #                    guide = guide_legend(ncol = 4, title.position = "top")) +
     scale_alpha("Year", guide = guide_legend(ncol = 1, title.position = "top")) +
     labs(x = glue::glue("Dim 1 (", round(wb_mfa$global.pca$eig[1,2], 2), "% of variance explained)" ),
          y = glue::glue("Dim 2 (", round(wb_mfa$global.pca$eig[2,2], 2), "% of variance explained)" ), tag = "B") +
@@ -359,7 +359,7 @@ bb <- un_mfa$quanti.var$coord |>
     mutate(var_name = str_replace(var_name, "_", "-")) |> #change the first one
     separate(var_name, into = c("year", "var_name"), sep = "-" ) |> #slice(172:200)
     mutate(year = as.numeric(year)) |> 
-    left_join(un_short_names) |> 
+    left_join(un_short_names) |> #filter(str_detect(var_name, "tinc|hwea")) |> 
     ggplot() +
     geom_hline(yintercept = 0, linetype = 2, color = "grey50", linewidth = 0.5) +
     geom_vline(xintercept = 0, linetype = 2, color = "grey50", linewidth = 0.5) +
