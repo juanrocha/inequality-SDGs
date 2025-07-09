@@ -1,5 +1,18 @@
 library(tidyverse)
 
+load("data/cleaned_SDGs_2025.Rda") # cleaned datasets
+load("data/ordination_results.Rda")
+load("data/wii_small-data.RData")
+countries <- read_csv(
+    file = "~/Documents/Projects/DATA/WorldBank/SDG_csv/SDGCountry.csv") |> 
+    janitor::clean_names()
+
+
+slope <- function(x){
+    fit <- lm(x~ seq_along(x))
+    return(coefficients(fit)[2])
+}
+
 ## Corruption datasets from Gothemburg
 
 ## Standard dataset: 12.391 obs, 2008 variables
@@ -41,10 +54,6 @@ wb <- read_csv(
 
 un_dat
 
-slope <- function(x){
-    fit <- lm(x~ seq_along(x))
-    return(coefficients(fit)[2])
-}
 
 ## static:
 df_dat <- wb_dat |> 
@@ -83,60 +92,90 @@ df_dat |> ggplot(aes(trend_crpt, trend_G_ineq)) +
     geom_smooth(method = "lm")
 
 
-df_dat |> 
+b <- df_dat |> 
     ggplot(aes(mean_crpt, mean_G_ineq)) +
     #geom_point(aes(color = trend_crpt)) +
     geom_text(aes(label = country_code, color = group), size = 1.5,
               show.legend = FALSE) +
     geom_smooth(aes(group = group), method = "lm") + #
-    #scale_color_gradient2(mid = "grey80") +
+    geom_vline(xintercept = c(35,80), color = "purple", linetype = 2, linewidth = 0.15) +
     scale_color_manual(values = c("#73B3A3","#FEA621")) +
-    labs(x = "Mean corruption index", y = "Mean Gini on income") +
+    labs(x = "Mean corruption index", y = "Mean Gini on income", tag = "B") +
     theme_light(base_size = 6) 
 
-
-ggsave(
-    plot = last_plot(),
-    filename = "paper/figures/map_clusters.png", device = "png", width = 3, height = 2.5,
-    bg = "white", dpi = 400)
 
 df_dat |> ggplot(aes(mean_G_ineq, mean_G_we)) + 
     geom_point(aes(color = trend_G_ineq))+
     scale_color_gradient2(mid = "grey60") +
     geom_smooth()
 
-df_dat |> 
-    lm(formula = mean_G_ineq ~ mean_S_we + trend_S_we + mean_crpt + trend_crpt + mean_gni + trend_gni + group) |> 
-    summary()
+# excluding inq vars, they are colinear
+fit <- df_dat |> 
+    lm(formula = mean_G_ineq ~  mean_crpt + trend_crpt + mean_gni + trend_gni + group)  
     #glm(formula = group-1 ~ mean_G_ineq + trend_G_ineq + mean_G_we + trend_G_we, family = "binomial")
-    lm(formula = mean_CO2 ~ mean_G_ineq + trend_G_ineq + mean_G_we + trend_G_we + mean_crpt + trend_crpt)
+    #lm(formula = mean_CO2 ~ mean_G_ineq + trend_G_ineq + mean_G_we + trend_G_we + mean_crpt + trend_crpt)
 
-fit
+c <- fit |> broom::tidy() |> 
+    mutate(term = case_when(
+        term == "mean_S_we" ~ "Share of 1% wealth (mean)",
+        term == "trend_S_we" ~ "Share of 1% wealth (trend)",
+        term == "mean_crpt" ~ "Corruption mean",
+        term == "trend_crpt" ~ "Corruption trend",
+        term == "mean_gni" ~ "GNI mean", 
+        term == "trend_gni" ~ "GNI trend",
+        term == "group2" ~ "Group 2 (yellow)", .default = term
+    ), p_val = case_when(
+        p.value < 0.05 ~ "p < 0.05",
+        p.value > 0.1 ~ "p > 0.1", .default = "p < 0.1"
+    ), term = as_factor(term) |> fct_rev()) |> 
+    ggplot(aes(estimate,term)) +
+    geom_point(aes(fill = p_val, color = p_val), size = 1) +
+    geom_errorbarh(
+        aes(xmin = estimate-std.error, xmax = estimate+std.error, color = p_val),
+        height = 0.3, linewidth = 0.25) +
+    geom_vline(xintercept = 0, color = "grey", linetype = 2, linewidth = 0.25) +
+    scale_fill_brewer(name = "P value", palette = "Set1") + 
+    scale_color_brewer(name = "P value",palette = "Set1") +
+    labs(y = "", tag = "C") +
+    theme_light(base_size = 6) +
+    theme(legend.position = 'inside',
+          legend.position.inside = c(0.8, 0.35))
+
 
 summary(fit)
 
-
+b
 
 #### maps ####
 library(sf)
 library(spData)
 data(world)
 
-world |> 
+a <- world |> 
     left_join(
         df_dat |> 
             left_join( countries |>  select(country_code, iso_a2 = x2_alpha_code))
     ) |> 
     ggplot() +
-    geom_sf(aes(fill = group), size = 0.05, color = "white", show.legend = FALSE) +
+    geom_sf(aes(fill = group), linewidth = 0.05, color = "white", show.legend = FALSE) +
     #scale_fill_gradient2() +
     scale_fill_manual(values = c("#73B3A3","#FEA621")) +
-    theme_void(base_size = 7)
+    lims(y = c(-58, NA))+ labs(tag = "A") +
+    theme_void(base_size = 6)
 
 wb_dat |> 
     left_join(
         crpt |> select(country_name = cname, country_code = ccodealp, year, ti_cpi )
     ) |> 
+    left_join(df_dat) |> 
     ggplot(aes(ti_cpi, gptinc992j_p0p100)) +
-    geom_path(aes(group = country))
+    geom_path(aes(group = country_name, color = group), 
+              arrow = arrow(ends = "last", length = unit(0.25, "cm"))) +
+    scale_color_manual(values = c("#73B3A3","#FEA621"))
 
+
+
+ggsave(
+    plot = (a+b+c) + plot_layout(widths = c(1.5, 1,1)) ,
+    filename = "paper/figures/fig_histeresis.png", device = "png", width = 7, height = 2,
+    bg = "white", dpi = 400)
