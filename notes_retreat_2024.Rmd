@@ -5,6 +5,10 @@ editor_options:
   chunk_output_type: inline
 ---
 
+## Ideas:
+
+- test CCM on inequality and corruption, assess feedback strenght
+
 ## BYS retreat 2025
 
 - Session National SDGs:

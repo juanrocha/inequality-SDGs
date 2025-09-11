@@ -104,6 +104,8 @@ b <- df_dat |>
     theme_light(base_size = 6) 
 
 
+df_dat
+
 df_dat |> ggplot(aes(mean_G_ineq, mean_G_we)) + 
     geom_point(aes(color = trend_G_ineq))+
     scale_color_gradient2(mid = "grey60") +
@@ -143,6 +145,8 @@ c <- fit |> broom::tidy() |>
 
 
 summary(fit)
+
+#save(fit, file = "data/lm_fit_Gini_corruption.Rda")
 
 b
 
