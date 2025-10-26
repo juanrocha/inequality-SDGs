@@ -26,23 +26,24 @@ knitr::opts_chunk$set(
 
 
 library(tidyverse)
-library(naniar)
-library(plotly)
+#library(naniar)
+#library(plotly)
 library(patchwork)
 library(fs)
 library(tictoc)
 
 # time series
-library(tsibble)
-library(fable)
-library(imputeTS)
-library(slider)
+# library(tsibble)
+# library(fable)
+# library(imputeTS)
+# library(slider)
 
 ## spatial
 library(terra)
 library(tidyterra)
 library(ggspatial)
 library(stars)
+library(sf)
 
 # # clustering
 # library(vegan)
@@ -60,11 +61,13 @@ Exploring subnational inequality data from Kummu et al. Load data:
 ```{r}
 
 fls <- dir_ls("~/Documents/Projects/DATA/Kummu_inequality/transfer_294976_files_744c217c/")
-dat <- rast(fls[2])
-dat
+dat <- rast(fls[2]) # as raster
+dat$gini_disp_1990 |> plot()
 
-dat <- vect(fls[5])
+dat <- vect(fls[5]) # as vector from terra
 #terra::plot(dat$gini_disp_2021)
+
+#dat <- sf::read_sf(fls[5])
 
 tmap::tm_polygons(dat)
 
@@ -98,10 +101,12 @@ hfp <- dir_ls("/Users/juanrocha/Documents/Projects/DATA/HII_human_impact_index/f
 fp1 <- stars::read_stars(hfp[10])
 fp1 <- rast(hfp[20])
 
+tic()
 terra::plot(fp1, type = "continuous", #col = map.pal("viridis", 100),
-            range = c(-100,5000),
+            #range = c(-100,5000),
             col = c("#224f1a","#a3ff76","#feff6f","#a09568","#ffa802","#f7797c","#fb0102","#d87136","#a90086","#7a1ca5","#421137","#000000")
             )
+toc() #18s
 #click(n=1)
 
 # tic()
@@ -118,14 +123,194 @@ From Google Earth engine
 var hiiviz = {min: 5, max: 5000, palette: ["224f1a","a3ff76","feff6f","a09568","ffa802","f7797c","fb0102","d87136","a90086","7a1ca5","421137","000000"]
 ```
 
-## Spatial joints
+### Spatial joints
+
+```{r eval = FALSE, include = FALSE}
+# library(furrr)
+# library(listenv)
+# plan(multisession, workers = 10)
+## this fails
+out <- list()
+out <- map(
+    .x = hfp,
+    .f = function(x){
+        tic("extracting values")
+        dat <- extract(x = rast(eval(x)), y = dat, fun = mean, bind = TRUE, na.rm = TRUE)
+        toc() # 7121.054, 2hrs with terra
+        return(dat)
+    },
+    .progress = TRUE
+) # >20hrs
+
+df_dat <- out |> 
+    map(.f = function(x) st_as_sf(x) |> select(-c(admID:p.value))) 
+
+save(df_dat, file = "data/subnational_hii.Rda")
+
+df_dat <- df_dat |> 
+    map(function(x) as.data.frame(x) |> select(starts_with("hii_"))) |> 
+    bind_cols() |> 
+    as_tibble()
+
+bind_cols(dat, df_dat)
+
+
+# out <- listenv()
+# tic()
+# for (i in seq_along(hfp)){
+#     hfp; dat;
+#     tic("extracting values")
+#     out[[i]] %<-% terra::extract(
+#         x = rast(hfp[i]),
+#         y = dat,
+#         fun = mean, na.rm = TRUE,
+#         bind = TRUE
+#     )
+#     toc()
+# }
+# toc()
+# 
+# out[[2]]
+
+# plan(sequential)
+# tic("extracting values")
+# dat <- extract(x = rast(hfp[1]), y = dat, fun = mean, bind = TRUE, na.rm = TRUE)
+# toc() # 7121.054, 2hrs with terra
+
+## playing with stars:: functions
+# dat needs to be read with sf
+# tic()
+# fp1 <- aggregate(x = fp1, by = dat, FUN = mean, na.rm = TRUE)
+# toc()
+```
+
+In the future, no need to run previous chunk
 
 ```{r}
-#dat <- dat |> st_as_sf()
-#plgns <- dat |> select(admID, iso3, geometry)
+load("data/subnational_hii.Rda")
+```
 
+
+
+Mix all but keep it as a data frame:
+```{r}
+dat <- dat |> as.data.frame() |> select(-slope, -estimate, -p.value) |> 
+    as_tibble() 
+
+df_dat <- df_dat |> 
+    add_column(admID = dat$admID, iso3 = dat$iso3)
+
+dat <- dat |> pivot_longer(cols = `1990`:`2021`, names_to = "year", values_to = "gini") 
+df_dat <- df_dat |> 
+    pivot_longer(cols = starts_with("hii"), names_to = "year", values_to = "hii")
+
+df_dat <- df_dat |> 
+    mutate(year = str_remove(year, "hii_")) |> 
+    mutate(year = str_remove(year, "\\.01\\.01$")) |> 
+    mutate(year = as.numeric(year))
+
+dat <- mutate(dat, year = as.numeric(year))
+
+tlm <- left_join(
+    df_dat |> filter(!is.na(hii)), 
+    dat |> filter(!is.na(gini)),
+    by = c("admID", "iso3", "year"))
+```
+
+add the proxy for prosperity
+```{r}
+prosp <- vect(fls[6])
+prosp <- prosp |> 
+    as.data.frame() |> 
+    as_tibble() |> 
+    select(-slope,-estimate, -p.value) |> 
+    pivot_longer(cols = `1990`:`2021`, names_to = "year", values_to = "gnic") |> 
+    mutate(year = as.numeric(year))
+
+prosp |> select(admID, iso3) |> 
+    unique()
+
+tlm |> select(admID, iso3) |> 
+    unique()
+
+tlm <- tlm |> left_join(prosp)
+### Not the same geo codes, ask Matti
+```
+
+```{r}
+tlm |> 
+    ggplot(aes(hii, gini)) +
+    # geom_path(aes(group = iso3), alpha = 0.2)
+    geom_density2d_filled()
+
+tlm |> ggplot(aes(gini)) + geom_density()
+
+tlm |> 
+    group_by(iso3) |> 
+    summarize(gini = mean(gini, na.rm = TRUE)) |> 
+    ggplot(aes(gini)) + geom_density()
+
+
+```
+
+Check differences in spatial units:
+```{r}
+gdi <- vect(fls[4])
+prosp <- vect(fls[6])
+ineq <- vect(fls[5])
+gdi
+ggplot(data = ineq) +
+    geom_spatvector(aes(fill = `2020`), color = "white", linewidth = 0.1) +
+    scale_fill_viridis_c()
+
+gdi # 1816 polygons
+prosp # 1816 polygons
+ineq # 1929 polygons
+
+gdi_units <- gdi |> as.data.frame() |> as_tibble() |> 
+    select(admID, iso3) 
+ineq_units <- ineq |> as.data.frame() |> as_tibble() |> 
+    select(admID, iso3) 
+
+
+gdi$iso3[!gdi$iso3 %in% ineq$iso3]
+ineq$iso3[!ineq$iso3 %in% gdi$iso3]
+
+full_join(
+    gdi_units|> group_by(iso3) |> summarize(n_gdi=n()),
+    ineq_units|> group_by(iso3) |> summarize(n_inq=n())) |> 
+    mutate(both = n_gdi == n_inq) |> 
+    print(n=252)
+```
+
+I'll need to use the raster layer and compute the vector one using the same layer.
+
+```{r}
+rst <- rast(fls[2])
 tic()
-fp <- extract(x = fp1, y = dat, fun = mean, bind = TRUE, na.rm = TRUE)
-toc() #
+ineq2 <- extract(rst, gdi, fun = mean, ID = TRUE)
+toc() # 47s
+
+ineq2 <- ineq2 |> as_tibble() |> 
+    add_column(admID = gdi$admID, iso3 = gdi$iso3) 
+
+ineq2 # 1816 rows
+
+ineq2 |> 
+    pivot_longer(cols = starts_with("gini"), names_to = "year", values_to = "gini") |> 
+    mutate(year = str_remove(year, "gini_disp_"),
+           year = as.numeric(year)) |> 
+    select(-ID)
+
+## Here I lose 20k obs, ineq2 has 
+
+tlm <- tlm |> left_join(
+    ineq2 |> 
+    pivot_longer(cols = starts_with("gini"), names_to = "year", values_to = "gini") |> 
+    mutate(year = str_remove(year, "gini_disp_"),
+           year = as.numeric(year)) |> 
+    select(-ID)
+)
+    
 ```
 
