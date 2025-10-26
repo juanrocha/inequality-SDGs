@@ -93,7 +93,7 @@ Key variables:
 key_vars <- inq |> 
     pull(variable) |> 
     unique() |> 
-    str_subset("(r|g|s)ptinc")
+    str_subset("(r|g|s)ptinc|(r|g|s)hweal")
 
 inq |> 
     filter(variable %in% key_vars) |># pull(percentile) |> unique()
@@ -116,7 +116,7 @@ ineq_dat <- map(fls, read_csv2) |>
             mutate(value = as.numeric(value), age = as.numeric(age))
         }) |> 
     bind_rows()
-toc()
+toc() # 90s
 
 ineq_dat |> 
     filter(variable != "sptinc992j") |> 
