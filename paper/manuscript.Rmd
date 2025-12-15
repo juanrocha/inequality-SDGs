@@ -1,15 +1,18 @@
 ---
 title: "Inequality traps detected on sustainable development goals data"
 author: |
-    | \small Juan C. Rocha^1^, Maike Hamann^2^, Jiangxiao Qiu^3^, Tong Wu^4^, Tomas Chaigneau^2^, Emilie Lindkvist^1^,
-    | \small  Caroline Schill^1,7^, Alon Shepon^5^, Andrew Tilman^9^, Geraldine D. Verkleij^7^, Anne-Sophie Crépin^7^, and  Carl Folke^1,7^
+    | \small Juan C. Rocha^1,2^, Maike Hamann^3^, Jiangxiao Qiu^4^, Tong Wu^5^, Tomas Chaigneau^3^, Emilie Lindkvist^1^,
+    | \small  Caroline Schill^1,2,6^, Alon Shepon^7,8^, Andrew Tilman^9^, Geraldine D. Verkleij^6^, Anne-Sophie Crépin^1,6^, and  Carl Folke^1,6^
     | \footnotesize ^1^Stockholm Resilience Centre, Stockholm University
-    | \footnotesize ^2^Environment and Sustainability Institute, University of Exeter
-    | \footnotesize ^3^School of Forest Resources & Conservation, Fort Lauderdale Research and Education Center, University of Florida
-    | \footnotesize ^4^The Natural Capital Project and Institute for International Studies, Stanford University
-    | \footnotesize ^5^Department of Environmental Studies, The Porter School of the Environment and Earth Science, Tel Aviv University
-    | \footnotesize ^6^US Forest Service
-    | \footnotesize ^7^Beijer Institute of Ecological Economics, The Royal Swedish Academy of Sciences
+    | \footnotesize ^2^Anthropocene Laboratory, Royal Swedish Academy of Sciences
+    | \footnotesize ^3^Environment and Sustainability Institute, University of Exeter
+    | \footnotesize ^4^School of Forest, Fisheries, and Geomatics Sciences, Fort Lauderdale Research and Education Center, 
+    | \footnotesize Institute of Food and Agricultural Sciences, University of Florida
+    | \footnotesize ^5^The Natural Capital Project and Institute for International Studies, Stanford University
+    | \footnotesize ^6^Beijer Institute of Ecological Economics, Royal Swedish Academy of Sciences
+    | \footnotesize ^7^The Steinhardt Museum of Natural History, Tel Aviv University, Tel Aviv
+    | \footnotesize ^8^The Department of Public Policy, Social Sciences Faculty, Tel Aviv University, Tel Aviv
+    | \footnotesize ^9^US Forest Service
     | \small \texttt{\href{mailto:juan.rocha@su.se}{\nolinkurl{juan.rocha@su.se}}}
 output:
   pdf_document:
@@ -46,7 +49,7 @@ library(here)
 
 \begin{abstract}
 
-  The relationship between inequality and the biosphere has been hypothesized to have feedbacks, to be mutually dependent. If that is true, one could expect that such feedbacks give rise to inequality regimes and potential tipping points between them. Here we explore synergies and trade-offs between inequality and biosphere related sustainable development goals. We used the openly available SDG datasets by the World Bank (WB) and United Nations (UN) and applied ordination methods to distill interactions between economic inequality and the environmental impact across countries. Our results confirm the existence of inequality regimes and find a potential candidate of tipping points for corruption, one of the drivers of inequality.
+  The relationship between inequality and the biosphere has been hypothesized to have feedbacks, to be mutually dependent. If that is true, one could expect that such feedbacks give rise to inequality regimes and potential tipping points between them. Here we explore synergies and trade-offs between inequality and biosphere-related sustainable development goals. We used the openly available SDG datasets by the World Bank (WB) and United Nations (UN) and applied ordination methods to distill interactions between economic inequality and the environmental impact across countries. Our results confirm the existence of inequality regimes and find a potential candidate of tipping points for corruption, one of the drivers of inequality.
 
 \end{abstract}
 
@@ -64,7 +67,7 @@ When the SDGs were adopted in 2015, the United Nations created a comprehensive, 
 Based on these data, previous analyses found that goals associated with poverty alleviation, well-being, economic development, and innovation (e.g. SDGs 1, 3, 7, 8, 9) tended to synergize with other goals, while goals related to responsible consumption, climate action, natural resources, and cooperation showed the most trade-offs (e.g. SDGs 11, 12, 13, 14, 16, 17) [@pradhan2017; @kroll2019].
 Drawing upon relevant World Bank data, Lusseau and Mancini [@lusseau2019] find these patterns to be modulated by countries’ overall income level, with low-income countries showing synergies across all goals, while trade-offs start to appear in higher income countries.
 More recently, Xiao *et al.*,[@xiao2024] analysed transboundary SDG interactions and found that high income countries play a disproportionate role in influencing the achievement of SDGs in other countries.
-These differences suggest that it may be worthwhile investigating if the nature of the mechanisms linking SDG to each other could depend on income inequality or other factors that modulate it, such as corruption [@holmberg2009; @scheve2017].
+These differences suggest that it may be worthwhile investigating if the nature of the mechanisms linking SDG to each other could depend on income inequality or other factors that modulate it, such as corruption (measured by the corruption perception index [@holmberg2009])[@scheve2017].
 
 Here we address the question of synergies and trade-offs by focusing on goals related to biosphere and inequality (SDGs 5, 6, 10, 13, 14 and 15).
 The motivation is threefold.
@@ -153,7 +156,7 @@ A list of the countries analysed is presented in the supplementary information (
 
 *Ordination:* We used multiple factor analysis (MFA) and principal component analysis (PCA) to reduce the dimensionality of the data and explore similarities and differences across countries.
 MFA enables us to specify the nested structure of our data and account for repeated observations of our variables over time.
-We recover some of the qualitative results with PCA as robustness check, but these results are presented in the SI.
+We recovered some of the qualitative results with PCA as robustness check, but these results are presented in the SI.
 We also performed a clustering sensitivity analysis following the protocols by Charrad [@charrad2014] and Brock [@brock2008].
 We tested over 10 clustering techniques and compared them across \>30 performance metrics to infer from the data what are the optimal numbers of clusters to fit and preferable algorithms.
 The ordination step helped us identify variables with enough variability and carrying information on inequality or the environment to explore the next steps of the analysis.
@@ -258,7 +261,7 @@ The first dimension on the ordination is best explained by variability in the in
 \label{fig:wb}
 \end{figure*}
 
-The UN dataset offers a similar ordination, where countries with high values along the first axes and higher values along the second axis have the highest inequalities (e.g Fig \ref{fig:un}).
+The UN dataset offers a similar ordination, where countries with high values along the first axis and higher values along the second axis have the highest inequalities (e.g Fig \ref{fig:un}).
 The inequality variables are highly correlated but also explain large amounts of the variance.
 Contrary to the WB data, here forest related variables do show variability over time, but variables related to biodiversity loss (Red list index) or some of the area based indicators for water related SDGs do not change much over the time period of the data (2000-2021).
 Places with lower economic inequality also tend to have better opportunities for women to participate in political decision making.
@@ -297,8 +300,6 @@ We also confirm that, as expected, these inequality regimes are related with the
 \caption{\textbf{Inequality regimes} We find bimodal distributions for some dimensions of inequality against environmental factors in the WB dataset. Countries trajectories in A using the same cluster groups as in Fig \ref{fig:un}. Bimodal distributions are more common for the share of the top 1\% than other inequality variables (B). The y-axis has been rescaled to the range 0-1 to ease comparison. Supplementary figure \ref{fig:SM_UNbim} shows a similar plot for the UN data, however lack of variability in the environmental data prevents the identification of multiple modes in the distribution.}
 \label{fig:bim}
 \end{figure*}
-
-
 \begin{figure*}[ht] 
 \centering 
 \includegraphics[width = 6.5in, height = 2in]{fig_histeresis} 
@@ -328,19 +329,46 @@ Similarly, gender equity measured as the share of women in parliament is general
 Interestingly, countries with high gender equality perform better in area-based indicators of ecological and biological conservation.
 Higher levels of urbanization are correlated with improvements in access to electricity and internet usage, but also with higher carbon emissions and lower energy intensity.
 
-Lack of variability in many SDG indicators, in particular related to the biosphere, questions their utility to track progress towards the SDG agenda. Biosphere variables are either limited to conservation, or resource production, consumption, or emissions. Most of the proxies of ecosystem variables are area-based (e.g. % forest area), meaning they change very little over time. The lack of variability in the SDGs datasets and a large proportion of missing values (Figs \ref{fig:SM_WB_env}, \ref{fig:SM_WB_env2}, \ref{fig:SM_UNdata} ) compelled us to abandon many indicators. It also questions whether the indicators currently used are reliable proxies for progress - or the lack thereof -  towards achieving the  SDG agenda. If a variable does not change over time at a scale at which information can feedback political decisions, then it is not very useful as a proxy of progress towards a desired direction. An important distinction to be made is variables which do not change but could (e.g. protected areas), and metrics which cannot really change fast on the time scale of policy making (e.g. area of forest, slow growth rates). Other biodiversity related values such as cultural values (intrinsic, recreational, spiritual) are not currently captured by SDG indicators. An interesting avenue for future research is to design comparable observables that can be monitored by third parties (not reported by governments) that are sensitive enough to capture progress or lack of it towards the goals. Some examples include the essential biodiversity variables initiative advanced by GeoBON [@pereira2013], the human footprint index [@venter2016], recent developments on functional integrity [@mohamed2024], or subnational historical estimates of inequality [@chrisendo2024a; @kummu2025]. All of them offer time series at varied levels of resolution that enable sub-national monitoring.
+Lack of variability in many SDG indicators, in particular related to the biosphere, questions their utility to track progress towards the SDG agenda.
+Biosphere variables are either limited to conservation, or resource production, consumption, or emissions.
+Most of the proxies of ecosystem variables are area-based (e.g. % forest area), meaning they change very little over time.
+The lack of variability in the SDGs datasets and a large proportion of missing values (Figs \ref{fig:SM_WB_env}, \ref{fig:SM_WB_env2}, \ref{fig:SM_UNdata}) compelled us to abandon many indicators.
+It also questions whether the indicators currently used are reliable proxies for progress - or the lack thereof - towards achieving the SDG agenda.
+If a variable does not change over time at a scale at which information can feedback political decisions, then it is not very useful as a proxy of progress towards a desired direction.
+An important distinction to be made is variables which do not change but could (e.g. protected areas), and metrics which cannot really change fast on the time scale of policy making (e.g. area of forest, slow growth rates).
+Other biodiversity related values such as cultural values (intrinsic, recreational, spiritual) are not currently captured by SDG indicators.
+An interesting avenue for future research is to design comparable observables that can be monitored by third parties (not reported by governments) that are sensitive enough to capture progress or lack of it towards the goals.
+Some examples include the essential biodiversity variables initiative advanced by GeoBON [@pereira2013], the human footprint index [@venter2016], recent developments on functional integrity [@mohamed2024], or subnational historical estimates of inequality [@chrisendo2024a; @kummu2025].
+All of them offer time series at varied levels of resolution that enable sub-national monitoring.
 
-Leveraging these subnational data, future research could explore whether the patterns reported here hold at finer scales. Our national level analysis of the interactions between inequality and the biosphere falls short in capturing heterogeneity within countries. Most mechanistic accounts of the origin of inequality happen at the scale of individuals, households, or businesses. Preliminary analysis of subnational inequality shows that different trends and mechanisms could be in place, calling for different policy interventions depending on context [@chrisendo2024]. Hence testing for mechanisms would benefit from a higher resolution in space and time, which we were not able to test with SDG data.
+Leveraging these subnational data, future research could explore whether the patterns reported here hold at finer scales.
+Our national level analysis of the interactions between inequality and the biosphere falls short in capturing heterogeneity within countries.
+Most mechanistic accounts of the origin of inequality happen at the scale of individuals, households, or businesses.
+Preliminary analysis of subnational inequality shows that different trends and mechanisms could be in place, calling for different policy interventions depending on context [@chrisendo2024].
+Hence testing for mechanisms would benefit from a higher resolution in space and time, which we were not able to test with SDG data.
 
-Despite these limitations, we find evidence for bistability in inequality, further supporting the hypothesis of inequality traps [@Wu_2024]. We also find preliminary evidence for hysteresis. However the lack of transitions between regimes prevents us from empirically estimating potential tipping points. To further test the existence of hysteresis we need a better understanding of the potential mechanisms at the country scale that might be generating the alternative regimes, including a controlling parameter at which the shift from one regime to the other should result in a different break point depending on the direction of the shift. Here we only investigated corruption, but other underlying mechanisms exist [@chancel2020unsustainable; @hamann2018; @molander2022]. Further work can investigate this hypothesis by analyzing other datasets or longer time series, or by exploring the plausibility of alternative mechanisms through modelling [@molander2022]. Biologically-inspired models of intergenerational wealth accumulation have provided a mechanistic explanation for the emergence of wealth inequality [@arrow2009], but less is known on which mechanisms might explain income or gender inequalities, although some hypotheses have been put forward [@chancel2020unsustainable; @molander2022].
+Despite these limitations, we find evidence for bistability in inequality, further supporting the hypothesis of inequality traps [@Wu_2024].
+We also find preliminary evidence for hysteresis.
+However the lack of transitions between regimes prevents us from empirically estimating potential tipping points.
+To further test the existence of hysteresis we need a better understanding of the potential mechanisms at the country scale that might be generating the alternative regimes, including a controlling parameter at which the shift from one regime to the other should result in a different break point depending on the direction of the shift.
+Here we only investigated corruption, but other underlying mechanisms exist [@chancel2020unsustainable; @hamann2018; @molander2022].
+Further work can investigate this hypothesis by analyzing other datasets or longer time series, or by exploring the plausibility of alternative mechanisms through modelling [@molander2022].
+Biologically-inspired models of intergenerational wealth accumulation have provided a mechanistic explanation for the emergence of wealth inequality [@arrow2009], but less is known on which mechanisms might explain income or gender inequalities, although some hypotheses have been put forward [@chancel2020unsustainable; @molander2022].
 
 # Conclusion
 
-Inequality is one of the greatest challenges of our time. We explored potential synergies and trade-offs between inequality- and biosphere-related Sustainable Development Goals. We confirm some of the synergies and trade-offs previously reported, but also show that data gaps, low data quality and low variability prevent countries from measuring progress towards the SDG agenda in a meaningful way. We discussed alternative datasets that could improve independent monitoring, and suggested further studies investigating whether the patterns reported here hold at subnational scales. We found support for the hypothesis of inequality traps, regimes and hysteresis. Preliminarily, we showed that corruption can drive countries between regimes of inequality. Further testing this theory requires higher resolution data closer to the scale at which mechanisms are hypothesized. 
+Rising economic inequality is a defining challenge of 21st century.
+We explored potential synergies and trade-offs between inequality- and biosphere-related Sustainable Development Goals.
+We confirm some of the synergies and trade-offs previously reported, but also show that data gaps, low data quality and low variability prevent countries from measuring progress towards the SDG agenda in a meaningful way.
+We discussed alternative datasets that could improve independent monitoring, and suggested further studies investigating whether the patterns reported here hold at subnational scales.
+We found support for the hypothesis of inequality traps, regimes and hysteresis.
+Preliminarily, we showed that corruption, measured as corruption perception index, can drive countries between regimes of inequality.
+Further testing this theory requires higher resolution data closer to the scale at which mechanisms are hypothesized.
 
 ## Acknowledgements
 
-This work was supported by Formas grant 2020-00454. Our work benefited from feedback from Kevin Berry, Tracie Curry, Robert Heilmayr, Patrik Henriksson, Yolanda Lopez-Maldonado, and Per Molander.
+This work was supported by Formas grant 2020-00454.
+Our work benefited from feedback from Kevin Berry, Tracie Curry, Robert Heilmayr, Patrik Henriksson, Yolanda Lopez-Maldonado, and Per Molander.
 
 # References {.unnumbered}
 
@@ -432,4 +460,3 @@ load(file = paste0(here::here(), "/data/lm_fit_Gini_corruption.Rda") )
 
 stargazer::stargazer(fit, type = "latex", header = FALSE, title = "Regression table for Figure 4C. Mean inequality is regressed against mean and trend of corruption index for 148 countries after controlling for gross national income (mean and trend)", dep.var.labels = "Mean Gini on income", covariate.labels = c("Mean corruption index", "Trend on corruption index", "Mean GNI", "Trend GNI", "Group 2: yellow cluster", "Constant"), label = "tab:reg")
 ```
-
