@@ -15,3 +15,10 @@
 *.Rdata
 *.xlsx
 *.docx
+*.tex
+*.bib
+*.Rda
+*.zip
+*.dbf
+.Rapp.history
+*cache
