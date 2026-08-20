@@ -9,6 +9,14 @@ editor_options:
 
 - test CCM on inequality and corruption, assess feedback strenght
 
+
+## Working on reviewers comments July 2026
+
+- World Bank variables are wrongly matched to SDGs: ask Maike to correct, she did some of the matching
+- Confirm that centering and re-scaling was done before PCA, add info to the text
+- Added SDG12 to the UN analysis
+
+
 ## BYS retreat 2025
 
 - Session National SDGs:

@@ -6,7 +6,7 @@ library(patchwork)
 
 
 load("data/wii_small-data.RData")
-load("data/cleaned_SDGs_2025.Rda")
+load("data/cleaned_SDGs_2026.Rda")
 
 countries <- read_csv(
     file = "~/Documents/Projects/DATA/WorldBank/SDG_csv/SDGCountry.csv") |> 
@@ -23,13 +23,13 @@ ineq_dat <- ineq_dat |>
 un_dat
 un_dat <- un_dat |> 
     rename(year = timePeriodStart) |> 
-    select(-missing, -obs) |> 
+    group_by(series, geoAreaName, year) |> unique() |> 
     left_join(df_countries) |> 
     pivot_wider(names_from = series, values_from = value) |> 
     left_join(
         ineq_dat |> 
             rename(iso_alpha2_code = country, ineq = value) |> 
-            filter(year >= 2000 & year <= 2021) |> 
+            filter(year >= 2005 & year <= 2021) |> 
             select(-age, -pop) |> 
             unite(col = "var", c("variable", "percentile")) |> 
             pivot_wider(names_from = var, values_from = ineq)
@@ -54,6 +54,12 @@ un_pca <- un_dat |>
 un_pca
 
 ## correct dimensions here:
+n_cnt <- un_dat |> pull(geoAreaName) |> unique() |> length()
+n_var <- un_dat |> 
+    pivot_longer(cols = EN_LKRV_PWAC:last_col(), values_to = "value", names_to = "variable") |> 
+    pull(variable) |> unique() |> length()
+n_yrs <- un_dat |> pull(year) |> unique() |> length()
+
 un_mfa <- un_dat |> 
     ungroup() |> 
     select(-geoAreaName, -country_or_area, -iso_alpha2_code, -geoAreaCode, -m49_code) |> 
@@ -65,19 +71,22 @@ un_mfa <- un_dat |>
     unite(col = "var", year, variable, sep = "_") |> 
     pivot_wider(names_from = var, values_from = value) |> 
     ungroup() |> 
-    arrange(iso_alpha3_code) |> # 67 countries in alphabetic order - FJ
-    select(-iso_alpha3_code) |> # 550 columns = 22 years * 25 variables
+    arrange(iso_alpha3_code) |> 
+    select(-iso_alpha3_code) |> # 408 columns = 17 years * 24 variables
     as.matrix(dimnames = list(
         un_dat |> arrange(iso_alpha3_code) |> filter(iso_alpha3_code!="FJI") |> 
             pull(iso_alpha3_code) |> unique() # 67 countries
     )) |> 
-    FactoMineR::MFA(group = rep(22, 25), type = rep("s", 25), ncp = 20) # 22 years times 25 variables, 
+    FactoMineR::MFA(group = rep(17, 24), type = rep("s", 24), ncp = 20) # 22 years times 25 variables, 
 
 un_mfa
 
 #### WB data ####
 wb_dat
+
+
 wb_dat <- wb_dat |>
+    pivot_wider(names_from = "indicator_name", values_from = "value") |> 
     left_join(countries |> select(country_code, country = x2_alpha_code)) |> 
     left_join(ineq_dat |> 
                   select(-age, -pop) |> 

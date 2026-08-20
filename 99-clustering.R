@@ -1,3 +1,5 @@
+## J: this is done now on the figures script, can be skipped
+
 library(tidyverse)
 library(NbClust)
 library(clValid)
@@ -22,13 +24,13 @@ clust_num <- NbClust(
     data = (un_pca$x[,1:10] %>% as.data.frame() %>% 
                 select(where(is.numeric)) ),
     #distance = "maximum",
-    min.nc = 2, max.nc = 10, 
+    min.nc = 2, max.nc = 12, 
     method = m, 
     index = 'all') # 3 recommended clusters
 toc()
 ## Stability & Internal validation
 stab <- clValid(
-    obj = pca1$x[,1:10] ,
+    obj = un_pca$x[,1:10] ,
     nClust = 2:10,
     clMethods = c(
         "hierarchical", "kmeans",  "som", 

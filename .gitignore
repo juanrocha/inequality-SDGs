@@ -21,9 +21,4 @@
 *.zip
 *.dbf
 .Rapp.history
-<<<<<<< HEAD
 *cache
-.gif
-=======
-*cache
->>>>>>> 0b4b10027e718ae9fde7c74f5549085f219f9cf5

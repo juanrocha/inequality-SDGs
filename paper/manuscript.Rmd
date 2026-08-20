@@ -1,5 +1,6 @@
 ---
 title: "Inequality traps detected in sustainable development goals data"
+subtitle: "Short title: Inequality traps in sustainable development data"
 author: |
     | \small Juan C. Rocha^1,2^, Maike Hamann^3^, Jiangxiao Qiu^4^, Tong Wu^5^, Tomas Chaigneau^3^, Emilie Lindkvist^1^,
     | \small  Caroline Schill^1,2,6^, Alon Shepon^7,8^, Andrew R. Tilman^9^, Geraldine D. Verkleij^6^, Anne-Sophie Crépin^1,6^, and  Carl Folke^1,6^
@@ -23,7 +24,7 @@ output:
   rtf_document:
     toc: no
   word_document:
-csl: /Users/juanrocha/Documents/styles/nature.csl
+csl: /Users/juanrocha/Documents/styles/science.csl
 bibliography: refs.bib
 citecolor: blue
 documentclass: article
@@ -45,29 +46,212 @@ header-includes:
 library(tidyverse)
 library(here)
 
+#rm(dat, sdg, fls) # remove unnecessary objects
+load(file = paste0(here(), "/data/cleaned_SDGs_2025.Rda")) 
+un_dat <- ungroup(un_dat)
+wb_dat <- ungroup(wb_dat)
+
 ```
 
 \begin{abstract}
 
-  The relationship between inequality and the biosphere has been hypothesized to mutual dependecies and feedbacks. If that is true, such feedbacks may give rise to inequality regimes and potential tipping points between them. Here we explore synergies and trade-offs between inequality and biosphere-related sustainable development goals. We used the openly available SDG datasets by the World Bank (WB) and United Nations (UN) and applied ordination methods to distill interactions between economic inequality and the environmental impact across countries. Our results confirm the existence of inequality traps, and we find preliminary evidence that corruption may be a candidate driver of tipping between regimes.
+  The relationship between inequality and the biosphere has been hypothesized to have mutual dependecies and feedbacks. If that is true, such feedbacks may give rise to inequality regimes and potential tipping points between them. Here we explore synergies and trade-offs between inequality and biosphere-related sustainable development goals. We used the openly available SDG datasets by the World Bank (WB) and United Nations (UN) and applied ordination methods to distill interactions between economic inequality and the environmental impact across countries. Our results confirm the existence of inequality traps, and we find preliminary evidence that corruption may be a candidate driver of tipping between regimes.
 
 \end{abstract}
 
 # Introduction
 
-Countries around the world have committed to achieve 17 sustainable development goals (SDGs) as proposed by the United Nations. The ambitious agenda is materialized in 169 targets and indicators, yet not all targets are monitored or properly measured, and not all countries report them, presenting significant data and knowledge gaps [@min2024]. An open question in sustainability science is whether these targets are simultaneously achievable or if trade-offs occur between them? Previous work on synergies and trade-offs between SDGs suggest that both may be present [@schmidt-traub2017; @sachs2024; @pradhan2017; @kroll2019]. Yet this work is based on expert elicitation and correlational studies, which are limited in their ability to identify path dependencies in development trajectories or mechanistic relationships among indicators. As a result, it remains unclear whether structural constraints limits a country's capacity to achieve the SDGs. It may be the case that certain milestones must be unlocked before development can proceed towards the achievement of a particular dimension of sustainability. These complexities suggest that new analyses may be necessary to guide policymakers toward simultaneous achievement of the SDGs
+Countries around the world have committed to achieve 17 sustainable development goals (SDGs) as proposed by the United Nations.
+The ambitious agenda is materialized in 169 targets and indicators, yet not all targets are monitored or properly measured, and not all countries report them, presenting significant data and knowledge gaps [@min2024].
+An open question in sustainability science is whether these targets are simultaneously achievable or if trade-offs occur between them?
+Previous work on synergies and trade-offs between SDGs suggest that both may be present [@schmidt-traub2017; @sachs2024; @pradhan2017; @kroll2019].
+Yet this work is based on expert elicitation and correlational studies, which are limited in their ability to identify path dependencies in development trajectories or mechanistic relationships among indicators.
+As a result, it remains unclear whether structural constraints limits a country's capacity to achieve the SDGs.
+It may be the case that certain milestones must be unlocked before development can proceed towards the achievement of a particular dimension of sustainability.
+These complexities suggest that new analyses may be necessary to guide policymakers toward simultaneous achievement of the SDGs
 
-When the SDGs were adopted in 2015, the United Nations created a comprehensive, annually-updated database of SDG indicators [@schmidt-traub2017; @sachs2024]. Based on these data, previous analyses found that goals associated with poverty alleviation, well-being, economic development, and innovation (e.g. SDGs 1, 3, 7, 8, 9) tended to synergize with other goals, while goals related to responsible consumption, climate action, natural resources, and cooperation showed the most trade-offs (e.g. SDGs 11, 12, 13, 14, 16, 17) [@pradhan2017; @kroll2019]. Drawing upon relevant World Bank data, Lusseau and Mancini [@lusseau2019] find these patterns to be modulated by countries’ overall income level, with low-income countries showing synergies across all goals, while trade-offs start to appear in higher income countries. More recently, Xiao *et al.*,[@xiao2024] analysed transboundary SDG interactions and found that high income countries play a disproportionate role in influencing the achievement of SDGs in other countries. These differences suggest that it may be worthwhile investigating if the nature of the mechanisms linking SDGs to each other could depend on income inequality or other factors that modulate it, such as corruption (measured by the corruption perception index [@holmberg2009])[@scheve2017].
+When the SDGs were adopted in 2015, the United Nations created a comprehensive, annually-updated database of SDG indicators [@schmidt-traub2017; @sachs2024].
+Based on these data, previous analyses found that goals associated with poverty alleviation, well-being, economic development, and innovation (e.g. SDGs 1, 3, 7, 8, 9) tended to synergize with other goals, while goals related to responsible consumption, climate action, natural resources, and cooperation showed the most trade-offs (e.g. SDGs 11, 12, 13, 14, 16, 17) [@pradhan2017; @kroll2019].
+Drawing upon relevant World Bank data, Lusseau and Mancini [@lusseau2019] find these patterns to be modulated by countries’ overall income level, with low-income countries showing synergies across all goals, while trade-offs start to appear in higher income countries.
+More recently, Xiao *et al.*,[@xiao2024] analysed transboundary SDG interactions and found that high income countries play a disproportionate role in influencing the achievement of SDGs in other countries.
+These differences suggest that it may be worthwhile investigating if the nature of the mechanisms linking SDGs to each other could depend on income inequality or other factors that modulate it, such as corruption (measured by the corruption perception index [@holmberg2009])[@scheve2017].
 
-Here we explore the possible existence of inequality traps and regimes by investigating synergies and trade-offs between inequality and biosphere-related sustainable development goals across nations (SDGs 5, 6, 10, 13, 14 and 15). The motivation is threefold. First, the Convention for Biological Diversity is currently negotiating and agreeing on the next set of goals and ambitions to mitigate biodiversity loss. A deeper understanding of the relationships among sustainable development indicators may bolster progress towards this vision by enabling the setting of realistic, achievable targets for all nations, regardless of their current development trajectory [@díaz2020]. Second, within-country inequality has been rising in the last decades even in high income countries [@milanovic2024], and as a consequence of the Covid pandemic, in-between-country inequality has risen for the first time in a generation [@wade2023world]. These statistics set back progress on the inequality SDG by at least a decade [@li2023], and undermines the mantra of leaving no one behind. Lastly, recent conceptual and theoretical work has proposed mechanisms by which an increase in inequality can impact the environment, while changes in the environment can feedback and further impact inequalities [@hamann2018; @dade2022; @leach2018]. Inequality traps, similar to the idea of poverty traps [REF], refers to self sustaining feedback mechanisms that maintain certain levels of inequality. If the mechanisms exist and are strong enough, one expects multi-modal distributions on empirical data that represent the different regimes. A regime is the set of initial conditions that lead to the same qualitative behavior, in dynamical systems theory it is the basin of attraction [REF].
+Here we explore the possible existence of inequality traps and regimes by investigating synergies and trade-offs between inequality and biosphere-related sustainable development goals across nations (SDGs 5, 6, 10, 13, 14 and 15).
+The motivation is threefold.
+First, the Convention for Biological Diversity is currently negotiating and agreeing on the next set of goals and ambitions to mitigate biodiversity loss.
+A deeper understanding of the relationships among sustainable development indicators may bolster progress towards this vision by enabling the setting of realistic, achievable targets for all nations, regardless of their current development trajectory [@díaz2020].
+Second, within-country inequality has been rising in the last decades even in high income countries [@milanovic2024], and as a consequence of the Covid pandemic, in-between-country inequality has risen for the first time in a generation [@wade2023world].
+These statistics set back progress on the inequality SDG by at least a decade [@li2023], and undermines the mantra of leaving no one behind.
+Lastly, recent conceptual and theoretical work has proposed mechanisms by which an increase in inequality can impact the environment, while changes in the environment can feedback and further impact inequalities [@hamann2018; @dade2022; @leach2018].
+Inequality traps, similar to the idea of poverty traps [@bowles2011poverty], refers to self sustaining feedback mechanisms that maintain certain levels of inequality.
+If the mechanisms exist and are strong enough, one expects multi-modal distributions on empirical data that represent the different regimes.
+A regime is the set of initial conditions that lead to the same qualitative behavior, in dynamical systems theory it is the basin of attraction [@rocha2025].
 
-Previous work on the origins and persistence of inequality have proposed mechanisms across scales. For example, micro-level dynamics such as aspirations, conspicuous consumption, social norms, and perceptions of fairness have been proposed as potential mechanisms linking inequality and the biosphere by disincentivising cooperation [@hamann2018]. At the meso-level, market-concentration and lobbying have been proposed as mechanisms by which powerful actors tend to favor institutions that further enable capital accumulation [@hamann2018; @chancel2020unsustainable]. At the national scale, tax policies are key mechanisms for redistribution, but they are not easily comparable across countries [@molander2022]. Another key mechanism proposed is corruption [@holmberg2009; @scheve2017], which, similar to market concentration, enables actors in power to seek their individual interests at the expense of the social good.
+Previous work on the origins and persistence of inequality have proposed mechanisms across scales.
+For example, micro-level dynamics such as aspirations, conspicuous consumption, social norms, and perceptions of fairness have been proposed as potential mechanisms linking inequality and the biosphere by disincentivising cooperation [@hamann2018].
+At the meso-level, market-concentration and lobbying have been proposed as mechanisms by which powerful actors tend to favor institutions that further enable capital accumulation [@hamann2018; @chancel2020unsustainable].
+At the national scale, tax policies are key mechanisms for redistribution, but they are not easily comparable across countries [@molander2022; @drupp2025].
+Another key mechanism proposed is corruption [@holmberg2009; @scheve2017], which, similar to market concentration, enables actors in power to seek their individual interests at the expense of the social good.
 
-Recent work also shows that a trilemma exists where countries struggle to simultaneously achieve high prosperity, high environmental standards, while reducing inequality [@Wu_2024]. Using data from environmental footprint, the gross national product, and the Gini coefficient time series, 53 countries were clustered and a typology of trajectories identified. No country achieved the three goals simultaneously, and Latin American countries seem to exhibit dynamics of an inequality trap or a high inequality regime. Some countries’ development trajectories suggest that social progress can be achieved without compromising the biosphere [@Wu_2024]. While no country has simultaneously achieved these three goals, some countries are indeed moving in the right direction [@Wu_2024; @chrisendo2025; @liu2025].
+Recent work also shows that a trilemma exists where countries struggle to simultaneously achieve high prosperity, high environmental standards, while reducing inequality [@Wu_2024].
+Using data from environmental footprint, the gross national product, and the Gini coefficient time series, 53 countries were clustered and a typology of trajectories identified.
+No country achieved the three goals simultaneously, and Latin American countries seem to exhibit dynamics of an inequality trap or a high inequality regime.
+Some countries’ development trajectories suggest that social progress can be achieved without compromising the biosphere [@Wu_2024].
+While no country has simultaneously achieved these three goals, some countries are indeed moving in the right direction [@Wu_2024; @chrisendo2025; @liu2025].
+Wu *et al* [@Wu_2024] hypothesized that if feedbacks maintaining inequality are strong enough, there could be regime shifts in inequality, or inequality traps.
 
-It remains an open question whether these patterns are robust across different datasets and scales, or whether there exist specific driving factors and feedback mechanisms that underlie inequality traps. The dichotomy between low-income countries exhibiting synergies across all goals, while trade-offs start to appear in higher-income countries [@lusseau2019] motivates the need to study mechanisms explaining these trade-offs and how they may differ due to countries’ income level. If the hypothesis of the inequality trap is true, we should observe bimodal or multimodal distributions across inequality and environmental variables. Each mode would correspond to an inequality regime, and the transitions probability of staying within one regime should be much higher than the probability of shifting regimes. If there are nonlinear dynamics in inequality keeping countries trapped in a particular regime, then we could also observe hysteresis or different break points between regimes. Here we explore the possible existence of inequality traps and regimes by investigating synergies and trade-offs between inequality and biosphere-related sustainable development goals across nations.
+It remains an open question whether these patterns are robust across different datasets and scales, or whether there exist specific driving factors and feedback mechanisms that underlie inequality traps.
+The dichotomy between low-income countries exhibiting synergies across all goals, while trade-offs start to appear in higher-income countries [@lusseau2019] motivates the need to study mechanisms explaining these trade-offs and how they may differ due to countries’ income level.
+If the hypothesis of the inequality trap is true, we should observe bimodal or multimodal distributions across inequality and environmental variables.
+Each mode would correspond to an inequality regime, and the transitions probability of staying within one regime should be much higher than the probability of shifting regimes.
+If there are nonlinear dynamics in inequality keeping countries trapped in a particular regime, then we could also observe hysteresis or different break points between regimes.
+Here we explore the possible existence of inequality traps and regimes by investigating synergies and trade-offs between inequality and biosphere-related sustainable development goals across nations.
 
-# Methods
+To that end, we analyzed data on SDGs from United Nations (UN) and World Bank (WB), data on inequality by the World Inequality Database, and data on corruption by the Quality of Government datasets [@holmberg2009].
+We first selected variables and countries for which there was enough data and apply ordination and clustering methods to distinguish countries with similar dynamics.
+We applied statistical test looking for signatures of bimodal distributions, and fitted statistical models to test for signatures of nonlinear behavior (e.g. tipping points, bifurcations) in the data (see Materials and methods).
+
+# Results
+
+We find confirming evidence that inequality regimes exist and that some countries tend to be trapped on high inequality.
+Exploring corruption data as a potential mechanism, we find empirical evidence suggesting the existence of hysteresis, further providing support for the idea of potential regime shifts in inequality.
+We also observe some synergies and trade-offs between inequality and environmental goals.
+
+Despite the differences in coverage with respect to countries, time, and indicators tracked, the ordination in both SDGs data sets results in two clusters of countries (Fig \ref{fig:wb}, Fig \ref{fig:un}).
+For the WB data set, countries along the first principal component are differentiated by high levels of economic inequality, high energy intensity but low carbon emissions (positive values of Dim 1, eg. green cluster Mexico: MEX or South Africa: ZAF), versus countries with relatively low gender inequality, high agricultural productivity, high carbon emissions, high urbanization and internet access (negative values in Dim 1, amber cluster).
+Forest related variables have the lowest loading on the first two components and do not change much over time, while access to the internet or inclusion of women in leadership roles have the highest variability over time.
+The first dimension on the ordination is best explained by variability in the inequality variables including women in business, access to internet and electricity, while the second dimension is best explained by urbanization and carbon emissions (Fig \ref{fig:SM_WBord}).
+
+\begin{figure*}[ht]
+\centering
+\includegraphics[width = 7in, height = 4in]{fig_mfa_wb}
+\caption{\textbf{Multiple factor analysis with World Bank data} The first 10 principal components explain 94.8\% of the variation, the first two (A) explain 53\%. The 10 first components were used to cluster 151 countries resulting in two clusters (A). Only countries and SDG time series with low missing values (<30\%) were included. The correlation circle across explanatory variables is presented in (B) along their loadings on the first two components of the ordination. Variables in the legend are ordered and colored according to the SDGs used (e.g. orange for gender equality, blues for water and sanitation, reds for inequality, and greens for life on land).}
+\label{fig:wb}
+\end{figure*}
+
+The UN dataset offers a similar ordination, where countries with high values along the first axis and higher values along the second axis have the highest inequalities (e.g Fig \ref{fig:un}).
+The inequality variables are highly correlated but also explain large amounts of the variance.
+Contrary to the WB data, here forest related variables do show variability over time, but variables related to biodiversity loss (Red list index) or some of the area based indicators for water related SDGs do not change much over the time period of the data (2000-2021).
+Places with lower economic inequality also tend to have better opportunities for women to participate in political decision making.
+Interestingly, high values on the red list index correlate with lower levels of inequality.
+The first dimension on the ordination is best explained by variability in the inequality, while the second dimension is best explained by key biodiversity areas in terrestrial systems, reservoir statistics, as well as women participation in parliament (Fig \ref{fig:SM_UNord}).
+
+\begin{figure*}[ht]
+\centering
+\includegraphics[width = 7in, height = 4.5in]{fig_UN_ordination}
+\caption{\textbf{Multiple factor analysis with United Nations data} The first 10 principal components used in the ordination explain 72\% of the variation, the first two (A) explain 29.9\%. The first 10 components were used to cluster 67 countries resulting in two clusters (A). Only countries and SDG time series with low missing values (<30\%) were included. The correlation circle across explanatory variables is presented in (B) along their loadings on the first two components of the ordination. Variables in the legend are ordered and coloured according to the SDGs used (e.g. reds are inequality, greens are life in land).}
+\label{fig:un}
+\end{figure*}
+
+```{r include = FALSE}
+# d.tst <- map(.x = ineq_dat |> pull(variable) |> unique(),
+#              .f = function(x){
+#                  ineq_dat |> filter(variable == x) |> 
+#                      pull(value) |> diptest::dip.test()
+#              }
+#              )
+## to calculate N: 
+#table(ineq_dat$variable)
+```
+
+We find evidence of multi-modal distributions in inequality and environmental variables.
+A Hartigan's Dip test for unimodality results on significant p-values for all variables except the Gini in wealth (ratio of income N = 9145 p \< 2.2e-16, ratio of wealth N = 5766 p = 0.020, share of 1% wealth N = 11871 p \< 2.2e-16, Gini of wealth N = 5852 p = 0.113, share of 1% income N = 19322 p \< 2.2e-16, Gini of income N = 9258 p = 9.023e-05).
+Significant p-values suggest that the distribution is not unimodal, at least bimodal.
+This finding supports the hypothesis of the existence of inequality regimes [@Wu_2024] both in income and wealth, particularly when inequality is measured as the share of the top 1% (Fig \ref{fig:bim}).
+However, the lack of variability in environmental variables and smaller sample size in the UN data set prevent us from statistically deriving modes in the distribution or all our variables (Table \ref{tab:tbl1}).
+As a result, we only report bimodal distributions for cereal yields, carbon emissions, and energy intensity (WB data, Fig \ref{fig:bim}), and the red list index (UN data, Fig \ref{fig:SM_UNbim}).
+We also confirm that, as expected, these inequality regimes are related with the country typologies identified.
+
+\begin{figure*}[ht]
+\centering
+\includegraphics[width = 6.5in, height = 3.5in]{bimodal}
+\caption{\textbf{Inequality regimes} We find bimodal distributions for some dimensions of inequality against environmental factors in the WB dataset. Countries trajectories in A using the same cluster groups as in Fig \ref{fig:un}. Bimodal distributions are more common for the share of the top 1\% than other inequality variables (B). The y-axis has been rescaled to the range 0-1 to ease comparison. Supplementary figure \ref{fig:SM_UNbim} shows a similar plot for the UN data, however lack of variability in the environmental data prevents the identification of multiple modes in the distribution.}
+\label{fig:bim}
+\end{figure*}
+\begin{figure*}[ht] 
+\centering 
+\includegraphics[width = 6.5in, height = 2in]{fig_histeresis} 
+\caption{\textbf{Inequality, corruption, and potential hysteresis} We find two inequality regimes that correspond to the country groups previously reported (A). Corruption has been proposed as a generative mechanism of inequality. Here we find support for the idea of corruption being a driver (B) that can tip countries between inequality regimes. For values below 35 or above 80 in the corruption index only one regime exists, in between these values two regimes of inequality exist. A linear regression analysis (N = 148 countries) shows that negative trends on corruption index (lower values means more corruption) increases inequality measured as the mean Gini coefficient on income (C). A regression table for (C) is available on SI Table \ref{tab:reg}.} 
+\label{fig:hysteresis} 
+\end{figure*}
+
+Using data from the quality of government dataset [@holmberg2009], we find support for the hypothesis that corruption increases inequality [@gupta2002; @tacconi2020].
+A linear regression, using the mean Gini coefficient of income (per country) as dependent variable, shows the existence of different slopes for the country groups found in the clustering analysis, whereby the higher the corruption trend (negative and significant coefficient), the higher the inequality measured as the mean Gini on income (Fig \ref{fig:hysteresis}).
+Our results also support the idea of inequality regimes [@Wu_2024] in the sense of finding support for hysteresis between the clusters of countries.
+There is a region on the corruption space where the two inequality regimes co-exist (approximately between 35 and 80).
+There are not many transitions between one regime and the other in the historical record, thus we cannot empirically confirm the existence of a tipping point in corruption that potentially triggers a country to shift from one inequality regime to another.
+Nonetheless, our results provide provisional evidence for the hypothesis of hysteresis and the existence of tipping points in inequality [@Wu_2024].
+
+The preliminary evidence of bimodal distributions and hysteresis (Fig \ref{fig:bim}, Fig \ref{fig:hysteresis} ) suggest that the dynamics of inequality and the environment could be better explained by bifurcations.
+Given the focus of our work –the potential interactions between inequality and the environment– we fitted statistical models for a cups bifurcation and compare its fitness against a linear alternative.
+We found further empirical support for the idea of bifurcations on the dynamics of inequality.
+First, we fit a model with mean $CO_2$ emissions per capita as response variable, and inequality as bifurcation parameters ($\alpha$ for share of top 1% in wealth and $\beta$ for share of top 1% in income, see Methods).
+We found significant coefficients for our response variable, meaning there is a strong bimodality in the system, as well as significant and positive coefficients for mean income inequality and the trend of inequality in wealth (Fig \ref{fig:cusps}A, \ref{fig:SM_cusp1}, Table \ref{tab:static_reg}).
+But this model takes as input aggregated trends over time.
+Next, we fit a similar model using the full time series, with $CO_2$ emissions as response variable, inequality features on income and corruption as bifurcation parameters ($\alpha$ and $\beta$, see Methods, Fig \ref{fig:cusps}B, \ref{fig:SM_cusp2}, and table \ref{tab:dyn_reg}).
+We confirm that hypothesis that bifurcation dynamics explain much better the data than the alternative linear regression, all coefficients are significant in our second regression, and in both model fits several countries lie on the region of the parameter space where multiple regimes are plausible (Fig \ref{fig:cusps}).
+For both cases a cusp bifurcation is a better than a linear fit to the data by having lower AICc and BIC, while maximizing the log-likelihood (see regression Tables \ref{tab:static_reg}, \ref{tab:dyn_reg}).
+
+\begin{figure*}[ht]
+\centering
+\includegraphics[width = 6in, height = 4in]{fig_cusps}
+\caption{\textbf{Statistical models of cusp bifurcations} We fitted cusp bifurcation models to the data, with means and trends aggregated over time (A) and with the full time series including corruption (B). In both cases we find that a cusp model is superior in explaining the variability in the data by AICc, BIC and log-likelihoods (see regression tables \ref{tab:static_reg}, \ref{tab:dyn_reg}), there are significant effects on the bifurcation parameters, and several instances of our dataset lie on the region of the parameter space where two regimes are possible. Figures \ref{fig:SM_cusp1} and \ref{fig:SM_cusp2} present goodness-of-fit statistics such as residuals and density plots for the different quadrants of the manifold. }
+\label{fig:cusps}
+\end{figure*}
+
+# Discussion
+
+-   add sentence on SDG12, it would have been ideal to have data on consumption and consuption indicators. Previous work Wu\
+-   lack of causality
+
+Although nearly all countries have committed to achieving progress on the SDGs by 2030, it is not clear whether, at the global level, these goals will be met.
+Nonetheless, the agenda itself has stimulated political willingness and policy action in most countries[@theworl2023].
+Making progress on SDGs requires understanding the inevitable synergies and trade-offs between them.
+Furthermore, it is clear that socio-economic inequalities can hinder collective action and other types of political activity conducive for environmental stewardship [@oreilly2022; @folke2021; @hamann2018].
+Here we address this challenge directly by investigating SDGs related to inequality and biosphere stewardship (SDGs 5, 6, 10, 13, 14, and 15) through ordination methods.
+
+We find evidence of synergies and trade-offs.
+For example, almost all inequality metrics (Table \ref{tab:tbl1}) are positively correlated, except the ratio of wealth which varies less and sometimes negatively correlated with inequality metrics on income.
+For example, Sweden historically has had low income inequality but high wealth inequality, although the former has been increasing as well.
+Similarly, gender equity measured as the share of women in parliament is generally better in places with lower income inequality but not necessarily low wealth inequality.
+Interestingly, countries with high gender equality perform better in area-based indicators of ecological and biological conservation.
+Higher levels of urbanization are correlated with improvements in access to electricity and internet usage, but also with higher carbon emissions and lower energy intensity.
+
+Lack of variability in many SDG indicators, in particular related to the biosphere, questions their utility to track progress towards the SDG agenda.
+Biosphere variables are either limited to conservation, or resource production, consumption, or emissions.
+Most of the proxies of ecosystem variables are area-based (e.g. % forest area), meaning they change very little over time.
+The lack of variability in the SDGs datasets and a large proportion of missing values (Figs \ref{fig:SM_WB_env}, \ref{fig:SM_WB_env2}, \ref{fig:SM_UNdata}) compelled us to abandon many indicators, including key dynamics on responsible consuption and production (SDG12). Further work may address this limitation by leveraging other datasets with long time series better suited than the SDGs.
+It also questions whether the indicators currently used are reliable proxies for progress - or the lack thereof - towards achieving the SDG agenda.
+If a variable does not change over time at a scale at which information can feedback to political decisions, then it inay not be a very useful proxy of progress towards a desired goal.
+An important distinction to be made is variables which do not change but could (e.g. protected areas), and metrics which cannot really change fast on the time scale of policy making (e.g. area of forest, slow growth rates).
+Other biodiversity related values such as cultural values (intrinsic, recreational, spiritual) are not currently captured by SDG indicators.
+An interesting avenue for future research is to design comparable observables that can be monitored by third parties (not reported by governments) that are sensitive enough to capture progress or lack of it towards the goals.
+Some examples include the essential biodiversity variables initiative advanced by GeoBON [@pereira2013], the human footprint index [@venter2016], recent developments on functional integrity [@mohamed2024], or subnational historical estimates of inequality [@chrisendo2025; @kummu2025].
+All of them offer time series at levels of spatiotemporal resolution that enable sub-national monitoring.
+
+Leveraging these subnational data, future research could explore whether the patterns reported here hold at finer scales.
+Our national level analysis of the interactions between inequality and the biosphere falls short in capturing heterogeneity within countries.
+Most mechanistic accounts of the origin of inequality happen at the scale of individuals, households, or businesses.
+Preliminary analysis of subnational inequality shows that different trends and mechanisms could be in place, calling for different policy interventions depending on context [@chrisendo2025].
+Hence testing for mechanisms would benefit from a higher resolution in space and time, which we were not able to test with SDG data.
+
+Despite these limitations, we find evidence for bistability in inequality, further supporting the hypothesis of inequality traps [@Wu_2024].
+We also find preliminary evidence for hysteresis.
+However the lack of frequent transitions between regimes prevents us from empirically estimating potential tipping points. Our exploratory analysis cannot be interpreted as causal.
+To further test the existence of hysteresis we need a better understanding of the potential mechanisms at the country scale that might be generating the alternative regimes, including a controlling parameter at which the shift from one regime to the other should result in a different break point depending on the direction of the shift.
+Here we only investigated corruption, but other underlying mechanisms exist [@chancel2020unsustainable; @hamann2018; @molander2022].
+Further work can investigate this hypothesis by analyzing other datasets or longer time series, or by exploring the plausibility of alternative mechanisms through modelling [@molander2022].
+Biologically-inspired models of intergenerational wealth accumulation have provided a mechanistic explanation for the emergence of wealth inequality [@arrow2009], but less is known on which mechanisms might explain income or gender inequalities, although some hypotheses have been put forward [@chancel2020unsustainable; @molander2022].
+
+Rising economic inequality is a defining challenge of $21^{st}$ century [@piketty2014].
+We explored potential synergies and trade-offs between inequality- and biosphere-related Sustainable Development Goals.
+We confirm some of the synergies and trade-offs previously reported, but also show that data gaps, low data quality and low variability prevent countries from measuring progress towards the SDG agenda in a meaningful way.
+We discussed alternative datasets that could improve independent monitoring, and suggested further studies investigating whether the patterns reported here hold at subnational scales.
+We found support for the hypothesis of inequality traps, regimes and hysteresis.
+Preliminarily, we showed that corruption, measured as corruption perception index, can drive countries between regimes of inequality.
+Further testing this theory requires higher resolution data closer to the scale at which mechanisms are hypothesized.
+
+# Materials and methods
 
 ```{r echo = FALSE, message=FALSE, warning=FALSE}
 # dat <- read_csv(file = "~/Documents/Projects/DATA/WorldBank/SDG_csv/SDGData.csv") |> 
@@ -101,21 +285,58 @@ It remains an open question whether these patterns are robust across different d
 
 ```
 
-*Datasets:* We used the SDGs datasets made openly available by the World Bank (WB) and United Nations (UN). The WB dataset offers 403 indicators, with time series from 1990 to 2019 for 263 countries or administrative areas (N = 2 013 791 observations). The UN dataset offers time series from 1963 to 2025 for 17 SDGs, 168 targets, and 247 indicators, 687 time series, in 413 administrative areas (N = 2 821 669 observations). Despite their coverage, both datasets contain a high proportion of missing values, some countries have better temporal coverage than others. We focused our analysis on country level indicators only for SDGs 5, 6, 10, 13, 14 and 15 that relate to inequality and the biosphere. We complemented the SDGs datasets with inequality data from the World Inequality database (WID), using their estimates of the ratio of pre-tax national income for working adults (population \> 20 years old) computed as the share of the top 10% divided by the the share of the bottom 50% (`rptinc992j_p0p100`), the share of the 1% (`sptinc992j_p99p100`), and the Gini coefficient (`gptinc992j_p0p100`). We also used their estimates for net wealth inequality computed as the share of the top 10% over the share of the bottom 50% (`rhweal992j_p0p100`), the share of the 1% (`shweal992j_p99p100`), and the Gini coefficient(`ghweal992j_p0p100`). We also used data from the quality of government dataset [@holmberg2009] to investigate the relationship between inequality indicators and the corruption perception index.
+*Datasets:* We used the SDGs datasets made openly available by the World Bank (WB) and United Nations (UN).
+The WB dataset offers 403 indicators, with time series from 1990 to 2019 for 263 countries or administrative areas (N = 2 013 791 observations).
+The UN dataset offers time series from 1963 to 2025 for 17 SDGs, 168 targets, and 247 indicators, 687 time series, in 413 administrative areas (N = 2 821 669 observations).
+Despite their coverage, both datasets contain a high proportion of missing values, some countries have better temporal coverage than others.
+We focused our analysis on country level indicators only for SDGs 5, 6, 10, 13, 14 and 15 that relate to inequality and the biosphere.
+We complemented the SDGs datasets with inequality data from the World Inequality database (WID), using their estimates of the ratio of pre-tax national income for working adults (population \> 20 years old) computed as the share of the top 10% divided by the the share of the bottom 50% (`rptinc992j_p0p100`), the share of the 1% (`sptinc992j_p99p100`), and the Gini coefficient (`gptinc992j_p0p100`).
+We also used their estimates for net wealth inequality computed as the share of the top 10% over the share of the bottom 50% (`rhweal992j_p0p100`), the share of the 1% (`shweal992j_p99p100`), and the Gini coefficient(`ghweal992j_p0p100`).
+We also used data from the quality of government dataset [@holmberg2009] to investigate the relationship between inequality indicators and the corruption perception index.
 
-```{r echo = FALSE}
-#rm(dat, sdg, fls) # remove unnecessary objects
-load(file = paste0(here(), "/data/cleaned_SDGs_2025.Rda")) 
-un_dat <- ungroup(un_dat)
-wb_dat <- ungroup(wb_dat)
+*Variable selection:* We computed the proportion of missing values for all time series related to our initial selection of indicators (Figs \ref{fig:SM_WB_env}, \ref{fig:SM_WB_env2}, \ref{fig:SM_WB_select}, \ref{fig:SM_UNdata}, \ref{fig:SM_UNselect}, \ref{fig:SM_UNred}).
+We discarded indicators for which time series contained more than 30% of missing values, or less than 45 countries.
+Missing values were then imputed using a linear and cubic spline (both rendering the same result), leaving us with `r wb_dat |> pull(country_code) |> unique() |> length()` countries, `r wb_dat |> pull(year) |> unique() |> length()` years of data across 9 indicators for the WB dataset; and `r un_keys |> filter(series %in% unique(un_dat$series)) |>  pull(series) |> unique() |> length()` series capturing `r un_keys |> filter(series %in% unique(un_dat$series)) |>  pull(indicator) |> unique() |> length()` indicators, `r un_dat |> pull(geoAreaName) |> unique() |> length()` countries over `r un_dat |> pull(timePeriodStart) |> unique() |> length()` years for the UN dataset.
+The UN dataset was further reduced to 67 countries because the WID does not report inequality time series for Fiji.
+Thus, we included the WB dataset to compensate for the large proportion of missing values from the UN data set.
+For inequality, however, we complemented the data with the annual time series of the WID because of better coverage both in space, time, and diversity of metrics used.
+We explored using poverty and inequality (e.g. PovCal) data from the WB but the data suffered of similar temporal data gaps as UN.
+Table \ref{tab:tbl1} summarizes our selected variables, their units and available ranges.
+A list of the countries analysed is presented in the supplementary information (SI).
 
-```
+*Ordination:* We used multiple factor analysis (MFA) and principal component analysis (PCA) to reduce the dimensionality of the data and explore similarities and differences across countries.
+MFA enables us to specify the nested structure of our data and account for repeated observations of our variables over time.
+We recovered some of the qualitative results with PCA as robustness check, but these results are presented in the SI.
+All variables were normalized, centered to zero mean and unit variance; highly skewed distributions were log-transformed.
+We also performed a clustering sensitivity analysis following the protocols by Charrad [@charrad2014] and Brock [@brock2008].
+We tested over 10 clustering techniques and compared them across \>30 performance metrics to infer from the data what are the optimal numbers of clusters to fit and preferable algorithms.
+The ordination step helped us identify variables with enough variability and carrying information on inequality or the environment to explore the next steps of the analysis.
+The robustness checks on clustering were necessary to avoid spurious results (e.g. higher number of clusters, over fitting) due to the choice of clustering technique or idiosyncrasies of the data (e.g. raw distributions).
+The use of dimensionality reduction methods and clustering techniques helped us to explore potential regimes and if they are changing over time.
 
-*Variable selection:* We computed the proportion of missing values for all time series related to our initial selection of indicators (Figs \ref{fig:SM_WB_env}, \ref{fig:SM_WB_env2}, \ref{fig:SM_WB_select}, \ref{fig:SM_UNdata}, \ref{fig:SM_UNselect}, \ref{fig:SM_UNred}). We discarded indicators for which time series contained more than 30% of missing values, or less than 45 countries. Missing values were then imputed using a cubic spline, leaving us with `r wb_dat |> pull(country_code) |> unique() |> length()` countries, `r wb_dat |> pull(year) |> unique() |> length()` years of data across 9 indicators for the WB dataset; and `r un_keys |> filter(series %in% unique(un_dat$series)) |>  pull(series) |> unique() |> length()` series capturing `r un_keys |> filter(series %in% unique(un_dat$series)) |>  pull(indicator) |> unique() |> length()` indicators, `r un_dat |> pull(geoAreaName) |> unique() |> length()` countries over `r un_dat |> pull(timePeriodStart) |> unique() |> length()` years for the UN dataset. The UN dataset was further reduced to 67 countries because the WID does not report inequality time series for Fiji. Table \ref{tab:tbl1} summarizes our selected variables, their units and available ranges. A list of the countries analysed is presented in the supplementary information (SI).
+*Analysis of trajectories:* With the results from the MFA we identified candidate variables where synergies or trade-offs are observed.
+A trade-off in the reduced dimensional space occurs when improving on the direction of one indicator (e.g. reducing inequality) implies a decline in the direction of another indicator over time.
+Similarly, a synergy would be when progress in one indicator coincides with improvement in another indicator.
+We studied country trajectories for some of these candidate variables where we found enough variability to test for bimodality.
+Density plots helped us identify candidate variables and expose the main regimes.
+In the next step, we evaluated the modality of the distributions of the inequality and biosphere-based measures.
 
-*Ordination:* We used multiple factor analysis (MFA) and principal component analysis (PCA) to reduce the dimensionality of the data and explore similarities and differences across countries. MFA enables us to specify the nested structure of our data and account for repeated observations of our variables over time. We recovered some of the qualitative results with PCA as robustness check, but these results are presented in the SI. We also performed a clustering sensitivity analysis following the protocols by Charrad [@charrad2014] and Brock [@brock2008]. We tested over 10 clustering techniques and compared them across \>30 performance metrics to infer from the data what are the optimal numbers of clusters to fit and preferable algorithms. The ordination step helped us identify variables with enough variability and carrying information on inequality or the environment to explore the next steps of the analysis. The robustness checks on clustering were necessary to avoid spurious results (e.g. higher number of clusters, over fitting) due to the choice of clustering technique or idiosyncrasies of the data (e.g. raw distributions).
+*Multimodality tests:* If the hypothesis of inequality traps or inequality regimes is true, we would expect to find multimodal distributions.
+We applied the Hartigan’s Dip Test for unimodality.
+If the test is positive at 1% significance level we rejected the hypothesis of unimodality.
+We also expect the modes of these distributions to be correlated to the country groups identified via clustering analysis to discard the possibility that several modes exist independent (or only partially overlapping) with the identified country clusters.
+If the groups are well mixed between modes, then the multimodal pattern could be the consequence of some other process (e.g. seasonality) and not regime shift dynamics.
+We further explore the association between inequality regimes and corruption as a driver through linear regression models.
+Last, we expect most countries' trajectories to remain within a single regime in the parameter space and perhaps a few of them to move between regimes.
 
-*Analysis of trajectories:* With the results from the MFA we identified candidate variables where synergies or trade-offs are observed. A trade-off in the reduced dimensional space occurs when improving on the direction of one indicator (e.g. reducing inequality) implies a decline in the direction of another indicator over time. Similarly, a synergy would be when progress in one indicator coincides with improvement in another indicator. We studied country trajectories for some of these candidate variables where we found enough variability to test for bimodality. Density plots helped us identify candidate variables and expose the main regimes. In the next step, we evaluated the modality of the distributions of the inequality and biosphere-based measures. If the hypothesis of inequality traps or inequality regimes is true, we would expect to find multimodal distributions. We applied the Hartigan’s Dip Test for unimodality. If the test is positive at 1% significance level we rejected the hypothesis of unimodality. We also expect the modes of these distributions to be correlated to the country groups identified via clustering analysis to discard the possibility that several modes exist independent (or only partially overlapping) with the identified country clusters. If the groups are well mixed between modes, then the multimodal pattern could be the consequence of some other process (e.g. seasonality) and not regime shift dynamics. We further explore the association between inequality regimes and corruption as a driver through linear regression models. Last, we expect most countries' trajectories to remain within a single regime in the parameter space and perhaps a few of them to move between regimes.
+*Bifurcation models*: We fitted a cusp bifurcation model [@grasman2009] to the WB data, given it is the data set with largest coverage in time and number of countries.
+The canonical equation of the cusp bifurcation is $\alpha + \beta y - y^3 = 0$.
+In our models $\alpha$ and $\beta$ are bifurcation parameters (or a linear combination of them).
+The estimation method also fits a vector of weights $\gamma$ which are the first order coefficients of a polynomial approximation of a smooth transformation.
+Our first model aggregates the dynamics over time by aggregating mean $CO_2$ emissions as response variable (y in the equation, vertical axis in Fig \ref{fig:cusps}A) , mean and trend of wealth inequality measured as the share of the top 1% on the $\alpha$ dimension, and mean and trend of income inequality also measured as the share of the top 1% on the $\beta$ dimension.
+This way we compared the effects of two different time scales of inequality (income, wealth) on one of our environmental variables.
+Our second model follows a similar logic but uses the full time series, with $CO_2$ emissions as response or state variable, corruption on the $\alpha$ dimension, and inequality on income measured by both the Gini coefficient and the share of the top 1%.
+All models are compared against linear models, the best models were selected by maximising the log-likelihood and minimizing AICc, and BIC (see regression tables in SM).
 
 ```{r table1, include=TRUE, echo=FALSE, warning=FALSE, message=FALSE, opts.label="tbl1"}
 
@@ -184,75 +405,14 @@ knitr::kable(
   column_spec(4, width = "8cm") 
 ```
 
-# Results
-
-We find confirming evidence that inequality regimes exist and that some countries tend to be trapped on high inequality. Exploring corruption data as a potential mechanism, we find empirical evidence suggesting the existence of hysteresis, further providing support for the idea of potential regime shifts in inequality. We also observe some synergies and trade-offs between inequality and environmental goals.
-
-Despite the differences in coverage with respect to countries, time, and indicators tracked, the ordination in both data sets results in two clusters of countries (Fig \ref{fig:wb}, Fig \ref{fig:un}). For the WB data set, countries along the first principal component are differentiated by high levels of economic inequality, high energy intensity but low carbon emissions (positive values of Dim 1, eg. green cluster Mexico: MEX or South Africa: ZAF), versus countries with relatively low gender inequality, high agricultural productivity, high carbon emissions, high urbanization and internet access (negative values in Dim 1, amber cluster). Forest related variables have the lowest loading on the first two components and do not change much over time, while access to the internet or inclusion of women in leadership roles have the highest variability over time. The first dimension on the ordination is best explained by variability in the inequality variables including women in business, access to internet and electricity, while the second dimension is best explained by urbanization and carbon emissions (Fig \ref{fig:SM_WBord}).
-
-\begin{figure*}[ht]
-\centering
-\includegraphics[width = 7in, height = 4in]{fig_mfa_wb}
-\caption{\textbf{Multiple factor analysis with World Bank data} The first 10 principal components explain 94.8\% of the variation, the first two (A) explain 53\%. The 10 first components were used to cluster 151 countries resulting in two clusters (A). The correlation circle across explanatory variables is presented in (B) along their loadings on the first two components of the ordination. Variables in the legend are ordered and colored according to the SDGs used (e.g. orange for gender equality, blues for water and sanitation, reds for inequality, and greens for life on land).}
-\label{fig:wb}
-\end{figure*}
-
-The UN dataset offers a similar ordination, where countries with high values along the first axis and higher values along the second axis have the highest inequalities (e.g Fig \ref{fig:un}). The inequality variables are highly correlated but also explain large amounts of the variance. Contrary to the WB data, here forest related variables do show variability over time, but variables related to biodiversity loss (Red list index) or some of the area based indicators for water related SDGs do not change much over the time period of the data (2000-2021). Places with lower economic inequality also tend to have better opportunities for women to participate in political decision making. Interestingly, high values on the red list index correlate with lower levels of inequality. The first dimension on the ordination is best explained by variability in the inequality, while the second dimension is best explained by key biodiversity areas in terrestrial systems, reservoir statistics, as well as women participation in parliament (Fig \ref{fig:SM_UNord}).
-
-\begin{figure*}[ht]
-\centering
-\includegraphics[width = 7in, height = 4.5in]{fig_UN_ordination}
-\caption{\textbf{Multiple factor analysis with United Nations data} The first 10 principal components used in the ordination explain 72\% of the variation, the first two (A) explain 29.9\%. The first 10 components were used to cluster 67 countries resulting in two clusters (A). The correlation circle across explanatory variables is presented in (B) along their loadings on the first two components of the ordination. Variables in the legend are ordered and coloured according to the SDGs used (e.g. reds are inequality, greens are life in land).}
-\label{fig:un}
-\end{figure*}
-
-```{r include = FALSE}
-d.tst <- map(.x = ineq_dat |> pull(variable) |> unique(),
-             .f = function(x){
-                 ineq_dat |> filter(variable == x) |> 
-                     pull(value) |> diptest::dip.test()
-             }
-             )
-## to calculate N: 
-#table(ineq_dat$variable)
-```
-
-We find evidence of multi-modal distributions in inequality and environmental variables. A Hartigan's Dip test for unimodality results on significant p-values for all variables except the Gini in wealth (ratio of income N = 9145 p \< 2.2e-16, ratio of wealth N = 5766 p = 0.020, share of 1% wealth N = 11871 p \< 2.2e-16, Gini of wealth N = 5852 p = 0.113, share of 1% income N = 19322 p \< 2.2e-16, Gini of income N = 9258 p = 9.023e-05). Significant p-values suggest that the distribution is not unimodal, at least bimodal. This finding supports the hypothesis of the existence of inequality regimes both in income and wealth, particularly when inequality is measured as the share of the top 1% (Fig \ref{fig:bim}). However, the lack of variability in environmental variables and smaller sample size in the UN data set prevent us from statistically deriving modes in the distribution or all our variables (Table \ref{tab:tbl1}). As a result, we only report bimodal distributions for cereal yields, carbon emissions, and energy intensity (WB data, Fig \ref{fig:bim}), and the red list index (UN data, Fig \ref{fig:SM_UNbim}). We also confirm that, as expected, these inequality regimes are related with the country typologies identified.
-
-\begin{figure*}[ht]
-\centering
-\includegraphics[width = 6.5in, height = 3.5in]{bimodal}
-\caption{\textbf{Inequality regimes} We find bimodal distributions for some dimensions of inequality against environmental factors in the WB dataset. Countries trajectories in A using the same cluster groups as in Fig \ref{fig:un}. Bimodal distributions are more common for the share of the top 1\% than other inequality variables (B). The y-axis has been rescaled to the range 0-1 to ease comparison. Supplementary figure \ref{fig:SM_UNbim} shows a similar plot for the UN data, however lack of variability in the environmental data prevents the identification of multiple modes in the distribution.}
-\label{fig:bim}
-\end{figure*}
-\begin{figure*}[ht] 
-\centering 
-\includegraphics[width = 6.5in, height = 2in]{fig_histeresis} 
-\caption{\textbf{Inequality, corruption, and potential hysteresis} We find two inequality regimes that correspond to the country groups previously reported (A). Corruption has been proposed as a generative mechanism of inequality. Here we find support for the idea of corruption being a driver (B) that can tip countries between inequality regimes. For values below 35 or above 80 in the corruption index only one regime exists, in between these values two regimes of inequality exist. A linear regression analysis (N = 148 countries) shows that negative trends on corruption index (lower values means more corruption) increases inequality measured as the mean Gini coefficient on income (C). A regression table for (C) is available on SI Table \ref{tab:reg}.} 
-\label{fig:hysteresis} 
-\end{figure*}
-
-Using data from the quality of government dataset [@holmberg2009], we find support for the hypothesis that corruption increases inequality [@gupta2002; @tacconi2020]. A linear regression, using the mean Gini coefficient of income (per country) as dependent variable, shows the existence of different slopes for the country groups found in the clustering analysis, whereby the higher the corruption trend (negative and significant coefficient), the higher the inequality measured as the mean Gini on income (Fig \ref{fig:hysteresis}). Our results also support the idea of inequality regimes [@Wu_2024] in the sense of finding support for hysteresis between the clusters of countries. There is a region on the corruption space where the two inequality regimes co-exist (approximately between 35 and 80). There are not many transitions between one regime and the other in the historical record, thus we cannot empirically confirm the existence of a tipping point in corruption that potentially triggers a country to shift from one inequality regime to another. Nonetheless, our results provide provisional evidence for the hypothesis of hysteresis and the existence of tipping points in inequality [@Wu_2024].
-
-# Discussion
-
-Although nearly all countries have committed to achieving progress on the SDGs by 2030, it is not clear whether, at the global level, these goals will be met. Nonetheless, the agenda itself has stimulated political willingness and policy action in most countries[@theworl2023]. Making progress on SDGs requires understanding the inevitable synergies and trade-offs between them. Furthermore, it is clear that socio-economic inequalities can hinder collective action and other types of political activity conducive for environmental stewardship [@oreilly2022; @folke2021; @hamann2018]. Here we address this challenge directly by investigating SDGs related to inequality and biosphere stewardship (SDGs 5, 6, 10, 13, 14, and 15) through ordination methods.
-
-We find evidence of synergies and trade-offs. For example, almost all inequality metrics (Table \ref{tab:tbl1}) are positively correlated, except the ratio of wealth which varies less and sometimes negatively correlated with inequality metrics on income. For example, Sweden historically has had low income inequality but high wealth inequality, although the former has been increasing as well. Similarly, gender equity measured as the share of women in parliament is generally better in places with lower income inequality but not necessarily low wealth inequality. Interestingly, countries with high gender equality perform better in area-based indicators of ecological and biological conservation. Higher levels of urbanization are correlated with improvements in access to electricity and internet usage, but also with higher carbon emissions and lower energy intensity.
-
-Lack of variability in many SDG indicators, in particular related to the biosphere, questions their utility to track progress towards the SDG agenda. Biosphere variables are either limited to conservation, or resource production, consumption, or emissions. Most of the proxies of ecosystem variables are area-based (e.g. % forest area), meaning they change very little over time. The lack of variability in the SDGs datasets and a large proportion of missing values (Figs \ref{fig:SM_WB_env}, \ref{fig:SM_WB_env2}, \ref{fig:SM_UNdata}) compelled us to abandon many indicators. It also questions whether the indicators currently used are reliable proxies for progress - or the lack thereof - towards achieving the SDG agenda. If a variable does not change over time at a scale at which information can feedback to political decisions, then it inay not be a very useful proxy of progress towards a desired goal. An important distinction to be made is variables which do not change but could (e.g. protected areas), and metrics which cannot really change fast on the time scale of policy making (e.g. area of forest, slow growth rates). Other biodiversity related values such as cultural values (intrinsic, recreational, spiritual) are not currently captured by SDG indicators. An interesting avenue for future research is to design comparable observables that can be monitored by third parties (not reported by governments) that are sensitive enough to capture progress or lack of it towards the goals. Some examples include the essential biodiversity variables initiative advanced by GeoBON [@pereira2013], the human footprint index [@venter2016], recent developments on functional integrity [@mohamed2024], or subnational historical estimates of inequality [@chrisendo2025; @kummu2025]. All of them offer time series at levels of spatiotemporal resolution that enable sub-national monitoring.
-
-Leveraging these subnational data, future research could explore whether the patterns reported here hold at finer scales. Our national level analysis of the interactions between inequality and the biosphere falls short in capturing heterogeneity within countries. Most mechanistic accounts of the origin of inequality happen at the scale of individuals, households, or businesses. Preliminary analysis of subnational inequality shows that different trends and mechanisms could be in place, calling for different policy interventions depending on context [@chrisendo2025]. Hence testing for mechanisms would benefit from a higher resolution in space and time, which we were not able to test with SDG data.
-
-Despite these limitations, we find evidence for bistability in inequality, further supporting the hypothesis of inequality traps [@Wu_2024]. We also find preliminary evidence for hysteresis. However the lack of transitions between regimes prevents us from empirically estimating potential tipping points. To further test the existence of hysteresis we need a better understanding of the potential mechanisms at the country scale that might be generating the alternative regimes, including a controlling parameter at which the shift from one regime to the other should result in a different break point depending on the direction of the shift. Here we only investigated corruption, but other underlying mechanisms exist [@chancel2020unsustainable; @hamann2018; @molander2022]. Further work can investigate this hypothesis by analyzing other datasets or longer time series, or by exploring the plausibility of alternative mechanisms through modelling [@molander2022]. Biologically-inspired models of intergenerational wealth accumulation have provided a mechanistic explanation for the emergence of wealth inequality [@arrow2009], but less is known on which mechanisms might explain income or gender inequalities, although some hypotheses have been put forward [@chancel2020unsustainable; @molander2022].
-
-# Conclusion
-
-Rising economic inequality is a defining challenge of $21^{st}$ century [@piketty2014]. We explored potential synergies and trade-offs between inequality- and biosphere-related Sustainable Development Goals. We confirm some of the synergies and trade-offs previously reported, but also show that data gaps, low data quality and low variability prevent countries from measuring progress towards the SDG agenda in a meaningful way. We discussed alternative datasets that could improve independent monitoring, and suggested further studies investigating whether the patterns reported here hold at subnational scales. We found support for the hypothesis of inequality traps, regimes and hysteresis. Preliminarily, we showed that corruption, measured as corruption perception index, can drive countries between regimes of inequality. Further testing this theory requires higher resolution data closer to the scale at which mechanisms are hypothesized.
-
 ## Acknowledgements
 
-This work was supported by Formas grant 2020-00454. Our work benefited from feedback from Kevin Berry, Tracie Curry, Robert Heilmayr, Patrik Henriksson, Yolanda Lopez-Maldonado, and Per Molander. The findings and conclusions in this publication are those of the authors and should not be construed to represent any official USDA or U.S. Government determination or policy.
+This work was supported by Formas grant 2020-00454.
+Our work benefited from feedback from Kevin Berry, Tracie Curry, Robert Heilmayr, Patrik Henriksson, Yolanda Lopez-Maldonado, and Per Molander.
+
+The findings and conclusions in this publication are those of the authors and should not be construed to represent any official USDA or U.S.
+Government determination or policy.
+The authors declare no conflict of interest.
 
 # References {.unnumbered}
 
@@ -339,8 +499,36 @@ List of countries analyzed in the WB dataset after removing time series with too
 \label{fig:SM_UNbim}
 \end{figure*}
 
+\begin{figure*}[ht]
+\centering
+\includegraphics[width = 6in, height = 6in]{SM_cusp_static}
+\caption{\textbf{Cusp bifurcation on aggregated data over time} Scatter plot on the parameter space of the bifurcation parameters, colors from blue to green represent the different levels of mean carbon emissions per country. Several countries are in the region of the parameter space where alternative regimes exist (gray shaded area). In this regression the $\alpha$ dimension captures mean and trend of wealth inequality, while the $\beta$ dimension captures mean and trend of income inequality; both measured as the share of the top $1\%$. A residual plot (bottom) shows that indeed there seems to be two modes (regimes) with low probability that points lie in the centre of the distribution (the repeller). Density plots for the different quadrants of the manifold (right) shows that bimodal distributions are found on the upper quadrant of the manifold. Other metrics of goodness-of-fit are shown in table \ref{tab:static_reg}}
+\label{fig:SM_cusp1}
+\end{figure*}
+
+\begin{figure*}[ht]
+\centering
+\includegraphics[width = 6in, height = 6in]{SM_cusp_dynamic}
+\caption{\textbf{Cusp bifurcation on full time series} Scatter plot on the parameter space of the bifurcation parameters, colors from blue to green represent the different levels of carbon emissions. In this regression, the $\alpha$ dimension corruption, while the $\beta$ dimension captures income inequality measured as Gini and share of the $1\%$. A residual plot (bottom) shows that indeed there seems to be two modes (regimes) with low probability that points lie in the centre of the distribution (the repeller). Density plots for the different quadrants of the manifold (right) shows that bimodal distributions are found on the upper quadrant of the manifold. Other metrics of goodness-of-fit are shown in table \ref{tab:dyn_reg}}
+\label{fig:SM_cusp2}
+\end{figure*}
+
 ```{r warning = FALSE, include = TRUE, results='asis', echo = FALSE}
 load(file = paste0(here::here(), "/data/lm_fit_Gini_corruption.Rda") )
 
 stargazer::stargazer(fit, type = "latex", header = FALSE, title = "Regression table for Figure 4C. Mean inequality is regressed against mean and trend of corruption index for 148 countries after controlling for gross national income (mean and trend)", dep.var.labels = "Mean Gini on income", covariate.labels = c("Mean corruption index", "Trend on corruption index", "Mean GNI", "Trend GNI", "Group 2: yellow cluster", "Constant"), label = "tab:reg")
+```
+
+```{r warning = FALSE, include = TRUE, results='asis', echo = FALSE}
+load(file = paste0(here::here(), "/data/cusp_fits.Rda"))
+
+texreg::texreg(
+    fit2,
+    caption = "Cusp bifurcation model on data aggregated over time",
+    label = "tab:static_reg")
+
+texreg::texreg(
+    fit3,
+    caption = "Cusp bifurcation model on the full time series data",
+    label = "tab:dyn_reg")
 ```

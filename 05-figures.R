@@ -12,7 +12,7 @@ library(patchwork)
 library(FactoMineR)
 library(RColorBrewer)
 
-load("data/cleaned_SDGs_2025.Rda") # cleaned datasets
+load("data/cleaned_SDGs_2026.Rda") # cleaned datasets
 load("data/ordination_results.Rda")
 load("data/wii_small-data.RData")
 countries <- read_csv(
@@ -53,17 +53,17 @@ stab <- clValid(
     #metric = "manhattan",
     method = "ward",
     verbose = FALSE
-) ## Diana is the optimal method, but the Best.partition is better
+) ## Diana is the optimal method
 
 optimalScores(stab)
 summary(stab)
 
-clus <- diana(
-    x = wb_mfa$ind$coord[,1:10], diss = FALSE,
-    stop.at.k = 2, metric = 'manhattan',
-    keep.diss = FALSE, keep.data = FALSE
-) |> as.hclust() |>
-    cutree(k = 2)
+# clus <- diana(
+#     x = wb_mfa$ind$coord[,1:10], diss = FALSE,
+#     stop.at.k = 2, metric = 'manhattan',
+#     keep.diss = FALSE, keep.data = FALSE
+# ) |> as.hclust() |>
+#     cutree(k = 2)
 
 #wb_mfa$global.pca$eig  # this shows the percentage of variance explained
 
@@ -156,7 +156,7 @@ clrs <- c("#EF402C", brewer.pal(9,"Reds"), "#407F46", "#f7fcb9" , brewer.pal(3, 
 clrs[2] <- "#E01483"
 #clrs[13] <- "#1F97D4"
 
-wb_short_names |> 
+wb_short_names <- wb_short_names |> 
     mutate(color = clrs)
 
 b <- wb_mfa$quanti.var$coord |> 
@@ -164,10 +164,11 @@ b <- wb_mfa$quanti.var$coord |>
     add_column(var_name = rownames(wb_mfa$quanti.var$coord)) |> 
     select(var_name, Dim.1, Dim.2) |># slice(172:200)
     ## avoid error on splitting:
-    mutate(var_name = str_replace(var_name, "j_p", "j-p")) |> 
+    mutate(var_name = str_replace_all(var_name, "j_p", "j-p")) |> 
     separate(var_name, into = c("year", "var_name"), sep = "_" ) |> #slice(172:200) 
-    mutate(var_name = str_replace(var_name, "j-p", "j_p")) |> 
-    left_join(wb_short_names) |> filter(!str_detect(var_name, "tinc|hwea")) |> 
+    mutate(var_name = str_replace_all(var_name, "j-p", "j_p")) |> #slice(172:200)
+    left_join(wb_short_names) |>  #slice(172:200)
+    #filter(!str_detect(var_name, "tinc|hwea")) |> 
     mutate(year = as.numeric(year)) |># pull(var_name) |> unique()
     ggplot() +
     geom_hline(yintercept = 0, linetype = 2, color = "grey50", linewidth = 0.5) +
@@ -176,15 +177,16 @@ b <- wb_mfa$quanti.var$coord |>
         aes(xend = Dim.1, x = 0, yend = Dim.2, y = 0, color = short_name, alpha = year), 
         arrow = arrow(length = unit(0.02, "npc"))) +
     geom_circle(aes(x0=0, y0=0, r = 1),  color = "grey24", linewidth = 0.01 ) +
-    # scale_color_manual("Variables from the World Bank and World Inequality databases", 
-    #                    values = clrs,
-    #                    guide = guide_legend(ncol = 4, title.position = "top")) +
+    scale_color_manual("Variables from the World Bank and World Inequality databases",
+                       values = clrs,
+                       guide = guide_legend(ncol = 4, title.position = "top")) +
     scale_alpha("Year", guide = guide_legend(ncol = 1, title.position = "top")) +
     labs(x = glue::glue("Dim 1 (", round(wb_mfa$global.pca$eig[1,2], 2), "% of variance explained)" ),
          y = glue::glue("Dim 2 (", round(wb_mfa$global.pca$eig[2,2], 2), "% of variance explained)" ), tag = "B") +
     coord_equal() +
     theme_light(base_size = 10) +
     theme(legend.position = "bottom") 
+
 b
 # c <-  wb_mfa$ind$coord |> 
 #     as_tibble() |> 
@@ -282,11 +284,11 @@ clust_UN <- NbClust(
     #distance = "maximum",
     min.nc = 2, max.nc = 10, 
     method = m, 
-    index = 'all') # 4 recommended clusters
+    index = 'all') # 3 recommended clusters
 
 stab <- clValid(
     obj = un_mfa$ind$coord[,1:10] ,
-    nClust = 4,
+    nClust = 3,
     clMethods = c(
         "hierarchical", "kmeans",  "som", 
         "model", "diana", "sota", "pam", "clara", "agnes"),
@@ -299,16 +301,16 @@ stab <- clValid(
 optimalScores(stab)
 summary(stab)
 
-clus <- diana(
-    x = un_mfa$ind$coord[,1:10], diss = FALSE,
-    stop.at.k = FALSE, metric = 'euclidean',
-    keep.diss = FALSE, keep.data = FALSE
-) |> as.hclust() |>
-    cutree(k = 4)
+# clus <- diana(
+#     x = un_mfa$ind$coord[,1:10], diss = FALSE,
+#     stop.at.k = FALSE, metric = 'euclidean',
+#     keep.diss = FALSE, keep.data = FALSE
+# ) |> as.hclust() |>
+#     cutree(k = 4)
 
 aa <- un_mfa$ind$coord |> 
     as_tibble() |> # remove Fiji
-    add_column(country_code = un_dat |> pull(iso_alpha3_code) |> unique() %>% .[-25]) |> 
+    add_column(country_code = un_dat |> pull(iso_alpha3_code) |> unique()) |> 
     add_column(clust = as_factor(clust_UN$Best.partition)) |> 
     ggplot(aes(Dim.1, Dim.2)) +
     geom_text(aes(label = country_code, color = clust), size = 2,
@@ -323,22 +325,23 @@ aa <- un_mfa$ind$coord |>
     theme_light(base_size = 10)
 aa
 # recover the names and create short names
-un_keys |> filter(series %in% names(un_dat)[8:34]) |> 
+un_keys |> filter(series %in% names(un_dat)[8:33]) |> 
     arrange(series)
+# select(-shweal992j_p0p100, -sptinc992j_p0p100) |> # removes zero variance 
 
 un_short_names <- tibble(
-    var_name = names(un_dat)[c(8:30, 33:34)]
+    var_name = names(un_dat)[c(8:29, 32,33)]
 ) |> arrange(var_name)
 un_short_names$short_name = c(
     "Freshwater area change (%)", "Freshwater area (sq. km)", "Freshwater area (% of total land area)",
     "Seasonal water area change (%)", "Seasonal water area (sq.km)", "Seasonal water area (%)",
     "Rerservoir area (sq.km)", "Reservoir area (%)", "Level of water stress", "Water Use Efficiency",
     "Average freshwater KBA", "Average Mountain KBA", "Average Terrestrial KBA", "Red List Index",
-    "Women in parliament (%)", "Woman in parliament (number)", "Pop. open defecation (%)",
+    "Women in parliament (%)", "Woman in parliament (number)", 
     "Pop. using saniation (%)", "Refugees", "Gini wealth", "Gini income", "Ratio wealth", 
     "Ratio income", "Share 1% wealth", "Share 1% income"
 )
-un_short_names$goal <- c(rep(6,10), rep(15, 4), 5,5,6,6, rep(10, 7))
+un_short_names$goal <- c(rep(6,10), rep(15, 4), 5,5,6, rep(10, 7))
 
 un_short_names <-  un_short_names |> 
     arrange(goal) |> 
@@ -346,7 +349,7 @@ un_short_names <-  un_short_names |>
 
 clrs <- c(
     brewer.pal(3, "YlOrBr")[-2] |> rev(), # SDG5
-    brewer.pal(9, "Blues") |> rev(), brewer.pal(3, "PuBu"), # SDG6 water
+    brewer.pal(9, "Blues") |> rev(), brewer.pal(3, "PuBu")[-1], # SDG6 water
     brewer.pal(7, 'Reds') |> rev(), # SDG10 inq
     brewer.pal(4, "Greens") |> rev() # SDG15 land
 )
@@ -658,4 +661,6 @@ ggsave(plot = (sm_un / sm_un2),
        width = 4, height = 3.5, dpi = 500, bg = "white")
 
 
+#### trajectories in MFA space ####
 
+wb_mfa
