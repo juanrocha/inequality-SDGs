@@ -13,8 +13,9 @@ editor_options:
 ## Working on reviewers comments July 2026
 
 - World Bank variables are wrongly matched to SDGs: ask Maike to correct, she did some of the matching
-- Confirm that centering and re-scaling was done before PCA, add info to the text
-- Added SDG12 to the UN analysis
+- Confirm that centering and re-scaling was done before PCA, add info to the text [X]
+- Added SDG12 to the UN analysis [X]
+- add comparison statistics to linear model, either table or in caption. Add X^2
 
 
 ## BYS retreat 2025
