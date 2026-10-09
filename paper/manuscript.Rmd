@@ -55,7 +55,7 @@ wb_dat <- ungroup(wb_dat)
 
 \begin{abstract}
 
-  The relationship between inequality and the biosphere has been hypothesized to have mutual dependecies and feedbacks. If that is true, such feedbacks may give rise to inequality regimes and potential tipping points between them. Here we explore synergies and trade-offs between inequality and biosphere-related sustainable development goals (SDG). We used the openly available SDG datasets by the World Bank and United Nations to explore interactions between economic inequalities and environmental impacts across countries. Our results suggest existence of inequality traps and we find preliminary evidence that corruption may be a candidate driver. Our evidence rests on existence of bimodal distributions, regressions showing consistently better fit with bifurcation models compared to standard linear alternatives, and identifying country currently on the parameter space where the transition is feasible.
+  The relationship between inequality and the biosphere has been hypothesized to have mutual dependecies and feedbacks. If that is true, such feedbacks may give rise to inequality regimes and potential tipping points between them. Here we explore synergies and trade-offs between inequality and biosphere-related sustainable development goals (SDG). We used the openly available SDG datasets by the World Bank and United Nations to explore interactions between economic inequalities and environmental impacts across countries. Our results suggest existence of inequality traps and we find preliminary evidence that corruption may be a candidate driver. Our evidence rests on existence of bimodal distributions, regressions showing consistently better fit with bifurcation models compared to standard linear alternatives, and identifying countries currently on the parameter space where the transition is feasible.
 
 \end{abstract}
 
@@ -86,7 +86,7 @@ Lastly, recent conceptual and theoretical work has proposed mechanisms by which 
 Inequality traps, similar to the idea of poverty traps [@bowles2011poverty], refers to self sustaining feedback mechanisms that maintain certain levels of inequality.
 These mechanisms maintain multiple equilibria (or regimes) where rich people are prevented from downward mobility and poor people are prevented from upward mobility, thus reinforcing inequality [@bourguignon2006].
 If the mechanisms are strong enough, one expects multi-modal distributions on empirical data that represent the different regimes [@bourguignon2006].
-A regime is the set of initial conditions that lead to the same qualitative behavior, in dynamical systems theory it is the basin of attraction [@rocha2025].
+A regime is the set of initial conditions that lead to the same qualitative behavior, in dynamical systems theory it is the basin of attraction [@rocha2026].
 
 Previous work on the origins and persistence of inequality have proposed mechanisms across scales [@bourguignon2006].
 For example, micro-level dynamics such as aspirations, conspicuous consumption, social norms, and perceptions of fairness have been proposed as potential mechanisms linking inequality and the biosphere by disincentivising cooperation [@hamann2018].
@@ -189,20 +189,24 @@ Thus, we cannot empirically confirm the existence of a tipping point in corrupti
 Nonetheless, our results provide provisional evidence supporting the hypothesis of hysteresis and the existence of tipping points in inequality [@Wu_2024].
 
 The preliminary evidence of bimodal distributions and hysteresis (Fig \ref{fig:bim}, Fig \ref{fig:hysteresis} ) suggest that the dynamics of inequality and the environment could be better explained by bifurcations.
-Given the focus of our work –the potential interactions between inequality and the environment– we fitted statistical models for a cusp bifurcation and compared its fitness against a linear alternative.
+Given the focus of our work –the potential interactions between inequality and the environment– we fitted statistical models for a cusp bifurcation and compared its fitness against the linear and logistic alternatives.
 We found further empirical support for the idea of bifurcations on the dynamics of inequality.
-First, we fitted a model with mean $CO_2$ emissions per capita as response variable, and inequality as bifurcation parameters ($\alpha$ for share of top 1% in wealth and $\beta$ for share of top 1% in income, see Methods).
-We found significant coefficients for our response variable, meaning there is a strong bimodality in the system, as well as significant and positive coefficients for mean income inequality and the trend of inequality in wealth (Fig \ref{fig:cusps}A, \ref{fig:SM_cusp1}, Table \ref{tab:static_reg}).
-But this model takes as input aggregated trends over time.
-Next, we fit a similar model using the full time series, with $CO_2$ emissions as response variable, inequality features on income and corruption as bifurcation parameters ($\alpha$ and $\beta$, see Methods, Fig \ref{fig:cusps}B, \ref{fig:SM_cusp2}, and table \ref{tab:dyn_reg}).
-We confirm the hypothesis that bifurcation dynamics explain much better the data than the alternative linear regression, all coefficients are significant in our second regression.
-In both model fits, several countries lie on the region of the parameter space where multiple regimes are plausible (Fig \ref{fig:cusps}).
-For both cases, a cusp bifurcation is a better than a linear fit to the data by having lower AICc and BIC, while maximizing the log-likelihood (see regression Tables \ref{tab:static_reg}, \ref{tab:dyn_reg}).
+We fitted a model with our proxies of income inequality (Gini, share of 1%, and ratio 10/50) as response variable, and corruption (mean and trend), mean gross national income and mean $CO_2$ emissions as bifurcation parameters ($\alpha$ corruption and $\beta$ for GNI and emissions, see Methods).
+These variables were chosen because they are related to potential mechanisms reinforcing inequality in previous studies [@kacou2022; @bourguignon2006; @chancel2020unsustainable].
+We find significant and strong separation of regimes, with the $\gamma$ weights significantly differing from zero for Gini and the ratio of the top 10 percentile over the bottom 50, but not for the share of the top 1%.
+Mean corruption was not significant, but its trend is, as well as $CO_2$ emissions and gross national income.
+(Fig \ref{fig:cusps}A, \ref{fig:SM_cusp1}, Table \ref{tab:static_reg}).
+
+Next, we fitted a similar model but with our proxies of wealth inequality as response variables instead, given that dynamics of inequality in income and wealth develop at different time scales.
+We find support for mean corruption as a predictor, no support for gross national income or $CO_2$ emissions, and the only inequality variable for which the $\gamma$ weights significantly differ from zero is the ratio of the 10 percentile over the bottom 50 on wealth (Fig \ref{fig:cusps}B, \ref{fig:SM_cusp2}, and table \ref{tab:cusp_reg}).
+These two results highlights that mechanisms responsible for inequality traps can be different depending on the type and scale of inequality.
+Despite these differences, several of the countries analyzed are actually in the region of the parameter space where regime shifts in inequality are feasible in both analyses (Fig \ref{fig:cusps}).
+For both cases, a cusp bifurcation is a better than a linear or a logistic fit to the data by having lower AICc and BIC, while maximizing the log-likelihood (see regression Table \ref{tab:cusp_reg}).
 
 \begin{figure*}[ht]
 \centering
 \includegraphics[width = 6in, height = 4in]{fig_cusps}
-\caption{\textbf{Statistical models of cusp bifurcations} We fitted cusp bifurcation models to the data, with means and trends aggregated over time (A) and with the full time series including corruption (B). In both cases we find that a cusp model is superior in explaining the variability in the data than linear counterparts, by comparing AICc, BIC and log-likelihoods (see regression tables \ref{tab:static_reg}, \ref{tab:dyn_reg}). There are significant effects on the bifurcation parameters, and several instances of our dataset lie on the region of the parameter space where two regimes are possible. Figures \ref{fig:SM_cusp1} and \ref{fig:SM_cusp2} present goodness-of-fit statistics such as residuals and density plots for the different quadrants of the manifold. }
+\caption{\textbf{Statistical models of cusp bifurcations} We fitted cusp bifurcation models to the data, with means and trends aggregated over time (A) and with the full time series including corruption (B). In both cases we find that a cusp model is superior in explaining the variability in the data than linear counterparts, by comparing AICc, BIC and log-likelihoods (see regression table \ref{tab:cusp_reg}). There are significant effects on the bifurcation parameters, and several instances of our dataset lie on the region of the parameter space where two regimes are possible. Figures \ref{fig:SM_cusp1} and \ref{fig:SM_cusp2} present goodness-of-fit statistics such as residuals and density plots for the different quadrants of the manifold. }
 \label{fig:cusps}
 \end{figure*}
 
@@ -248,7 +252,7 @@ Our exploratory analysis cannot be interpreted as causal.
 To further test the existence of hysteresis we need a better understanding of the potential mechanisms at the country scale that might be generating the alternative regimes, including a controlling parameter at which the shift from one regime to the other should result in a different break point depending on the direction of the shift.
 Here we only investigated corruption, but other underlying mechanisms exist [@chancel2020unsustainable; @hamann2018; @molander2022].
 Further work can investigate this hypothesis by analyzing other datasets or longer time series, or by exploring the plausibility of alternative mechanisms through modelling [@molander2022].
-Biologically-inspired models of intergenerational wealth accumulation have provided a mechanistic explanation for the emergence of wealth inequality [@arrow2009], but less is known on which mechanisms might explain income or gender inequalities, although some hypotheses have been put forward [@chancel2020unsustainable; @molander2022].
+Biologically-inspired models of intergenerational wealth accumulation have provided a mechanistic explanation for the emergence of wealth inequality [@arrow2009; @piketty1995], but less is known on which mechanisms might explain income or gender inequalities, although some hypotheses have been put forward [@chancel2020unsustainable; @molander2022].
 
 Rising economic inequality is a defining challenge of $21^{st}$ century [@piketty2014].
 We explored potential synergies and trade-offs between inequality- and biosphere-related Sustainable Development Goals.
@@ -334,17 +338,18 @@ We applied the Hartigan’s Dip Test for unimodality.
 If the test is positive at 1% significance level we rejected the hypothesis of unimodality.
 We also expect the modes of these distributions to be correlated to the country groups identified via clustering analysis (clubs) to discard the possibility that several modes exist independent (or only partially overlapping) with the identified country clusters.
 If the groups are well mixed between modes, then the multimodal pattern could be the consequence of some other process (e.g. seasonality) and not regime shift dynamics.
-We further explore the association between inequality regimes and corruption as a driver through linear regression models.
-Last, we expect most countries' trajectories to remain within a single regime in the parameter space and perhaps a few of them to move between regimes.
+Last, we expect most countries' trajectories to remain within a single regime in the parameter space, and perhaps a few of them to move between regimes.
 
-*Bifurcation models*: We fitted a cusp bifurcation model [@grasman2009] to the WB data, given it is the data set with largest coverage in time and number of countries.
+*Bifurcation models*: We further explore the association between inequality regimes and corruption as a driver through regression models.
+We fitted a cusp bifurcation model [@grasman2009] to the WB data, given it is the data set with largest coverage in time and number of countries.
 The canonical equation of the cusp bifurcation is $\alpha + \beta y - y^3 = 0$.
 In our models $\alpha$ and $\beta$ are bifurcation parameters (or a linear combination of them).
 The estimation method also fits a vector of weights $\gamma$ which are the first order coefficients of a polynomial approximation of a smooth transformation.
-Our first model aggregates the dynamics over time by aggregating mean $CO_2$ emissions as response variable (y in the equation, vertical axis in Fig \ref{fig:cusps}A) , mean and trend of wealth inequality measured as the share of the top 1% on the $\alpha$ dimension, and mean and trend of income inequality also measured as the share of the top 1% on the $\beta$ dimension.
-This way we compared the effects of two different time scales of inequality (income, wealth) on one of our environmental variables.
-Our second model follows a similar logic but uses the full time series, with $CO_2$ emissions as response or state variable, corruption on the $\alpha$ dimension, and inequality on income measured by both the Gini coefficient and the share of the top 1%.
-All models are compared against linear models, the best models were selected by maximising the log-likelihood and minimizing AICc, and BIC (see regression tables in SM).
+Our models aggregate the dynamics over time by aggregating all variables to mean or trends.
+We compared the effects of two different time scales of inequality (income, wealth).
+All models are compared against linear and logistic models, the best models were selected by maximising the log-likelihood and minimizing AICc, and BIC (see regression tables in SM).
+For a cusp regression to be a valid fit, it needs to outperform the linear alternatives, it is expected that at least one of the $\gamma$ coefficients is significantly different from zero (although not necessary for the intercept), and at least one of the $\alpha$ or $\beta$ terms need to be statistical significant [@grasman2009].
+Another common practice is to check that at least 10% of the observations lie within the bifurcation regions on the bifurcation plots [@grasman2009], provided in SM \ref{fig:SM_cusp1} and \ref{fig:SM_cusp2} .
 
 ```{r table1, include=TRUE, echo=FALSE, warning=FALSE, message=FALSE, opts.label="tbl1"}
 
@@ -416,6 +421,7 @@ knitr::kable(
 ## Acknowledgements
 
 This work was supported by Formas grant 2020-00454.
+JCR was also supported by VR grant 2022-04122.
 Our work benefited from feedback from Kevin Berry, Tracie Curry, Robert Heilmayr, Patrik Henriksson, Yolanda Lopez-Maldonado, and Per Molander.
 
 The findings and conclusions in this publication are those of the authors and should not be construed to represent any official USDA or U.S.
@@ -508,14 +514,14 @@ List of countries analyzed in the WB dataset after removing time series with too
 \end{figure*}
 \begin{figure*}[ht]
 \centering
-\includegraphics[width = 6in, height = 6in]{SM_cusp_static}
-\caption{\textbf{Cusp bifurcation on aggregated data over time} Scatter plot on the parameter space of the bifurcation parameters, colors from blue to green represent the different levels of mean carbon emissions per country. Several countries are in the region of the parameter space where alternative regimes exist (gray shaded area). In this regression the $\alpha$ dimension captures mean and trend of wealth inequality, while the $\beta$ dimension captures mean and trend of income inequality; both measured as the share of the top $1\%$. A residual plot (bottom) shows that indeed there seems to be two modes (regimes) with low probability that points lie in the centre of the distribution (the repeller). Density plots for the different quadrants of the manifold (right) shows that bimodal distributions are found on the upper quadrant of the manifold. Other metrics of goodness-of-fit are shown in table \ref{tab:static_reg}}
+\includegraphics[width = 6in, height = 6in]{SM_cusp_income}
+\caption{\textbf{Cusp bifurcation on aggregated data over time} Scatter plot on the parameter space of the bifurcation parameters, colors from blue to green represent the different levels of mean carbon emissions per country. Several countries are in the region of the parameter space where alternative regimes exist (gray shaded area). In this regression the $\alpha$ dimension captures mean and trend of wealth inequality, while the $\beta$ dimension captures mean and trend of income inequality; both measured as the share of the top $1\%$. A residual plot (bottom) shows that indeed there seems to be two modes (regimes) with low probability that points lie in the centre of the distribution (the repeller). Density plots for the different quadrants of the manifold (right) shows that bimodal distributions are found on the upper quadrant of the manifold. Other metrics of goodness-of-fit are shown in table \ref{tab:cusp_reg}}
 \label{fig:SM_cusp1}
 \end{figure*}
 \begin{figure*}[ht]
 \centering
-\includegraphics[width = 6in, height = 6in]{SM_cusp_dynamic}
-\caption{\textbf{Cusp bifurcation on full time series} Scatter plot on the parameter space of the bifurcation parameters, colors from blue to green represent the different levels of carbon emissions. In this regression, the $\alpha$ dimension corruption, while the $\beta$ dimension captures income inequality measured as Gini and share of the $1\%$. A residual plot (bottom) shows that indeed there seems to be two modes (regimes) with low probability that points lie in the centre of the distribution (the repeller). Density plots for the different quadrants of the manifold (right) shows that bimodal distributions are found on the upper quadrant of the manifold. Other metrics of goodness-of-fit are shown in table \ref{tab:dyn_reg}}
+\includegraphics[width = 6in, height = 6in]{SM_cusp_wealth}
+\caption{\textbf{Cusp bifurcation on full time series} Scatter plot on the parameter space of the bifurcation parameters, colors from blue to green represent the different levels of carbon emissions. In this regression, the $\alpha$ dimension corruption, while the $\beta$ dimension captures income inequality measured as Gini and share of the $1\%$. A residual plot (bottom) shows that indeed there seems to be two modes (regimes) with low probability that points lie in the centre of the distribution (the repeller). Density plots for the different quadrants of the manifold (right) shows that bimodal distributions are found on the upper quadrant of the manifold. Other metrics of goodness-of-fit are shown in table \ref{tab:cusp_reg}}
 \label{fig:SM_cusp2}
 \end{figure*}
 
@@ -529,12 +535,15 @@ stargazer::stargazer(fit, type = "latex", header = FALSE, title = "Regression ta
 load(file = paste0(here::here(), "/data/cusp_fits.Rda"))
 
 texreg::texreg(
-    fit2,
-    caption = "Cusp bifurcation model on data aggregated over time",
-    label = "tab:static_reg")
+    l = list(fit4, fit5),
+    custom.header = list("Inequality"=1:2),
+    custom.model.names = c("Income", "Wealth"),
+    custom.coef.names = c("alpha: intercept", "alpha: mean corruption", "alpha: trend corruption", "beta: intercept","beta: mean CO2 emissions","beta: mean gross national income","gamma: intercept","gamma: mean share 1% income", "gamma: mean Gini income","gamma: mean ratio pre-tax income","gamma: mean share 1% wealth", "gamma: mean Gini wealth","gamma: mean ratio pre-tax wealth"),
+    caption = "Cusp bifurcation models fitted to income and wealth data as response variables, with corruption, gross national income and carbon emissions as predictors. The cusp fit for the income model had a lower AICc 319 compared to the logistic (848) and linear (908) fits; a lower BIC 347 compared to the logistic (874) and linear (931) fits; and a higher log-likelihood (-149) compared to the logistic (-414) and linear (-445) counterparts. The cusp fit for the wealth model  had a lower AICc 300 compared to the logistic (914) and linear (1869) fits; a lower BIC 328 compared to the logistic (941) and linear (1893) fits; and a higher log-likelihood (-139) compared to the logistic (-448) and linear (-926) counterparts.",
+    label = "tab:cusp_reg", caption.above = TRUE)
 
-texreg::texreg(
-    fit3,
-    caption = "Cusp bifurcation model on the full time series data",
-    label = "tab:dyn_reg")
+# texreg::texreg(
+#     fit5,
+#     caption = "Cusp bifurcation model on wealth inequality. The cusp fit had a lower AICc 300 compared to the logistic (914) and linear (1869) fits; a lower BIC 328 compared to the logistic (941) and linear (1893) fits; and a higher log-likelihood (-139) compared to the logistic (-448) and linear (-926) counterparts.",
+#     label = "tab:dyn_reg")
 ```

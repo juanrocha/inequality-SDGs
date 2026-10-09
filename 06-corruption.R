@@ -262,7 +262,7 @@ fit3 <- cusp(
 )
 toc() # 626s, 10min
 
-summary(fit3)
+summary(fit3, logist = TRUE)
 plot(fit3)
 names(wb_mini)
 op <- par()
@@ -292,25 +292,25 @@ plotly::ggplotly(g0, tooltip = c("alpha", "beta", "country_code"))
 
 
 ## save models for writing:
-save(fit2, fit3, file = "data/cusp_fits.Rda")
+save(fit4, fit5, file = "data/cusp_fits.Rda")
 
 ## Figures for paper:
 op <- par()
 
 quartz(title = "cusp", width = 6, height =6, pointsize = 8)
 par(oma = c(0,1,0,0))
-plot(fit2) 
+plot(fit4) 
 quartz.save(
-    file = "paper/figures/SM_cusp_static.png", width = 6, height =6, pointsize = 8,
+    file = "paper/figures/SM_cusp_income.png", width = 6, height =6, pointsize = 8,
     type = "png", dpi = 500)
 dev.off()
 
 
 quartz(title = "cusp", width = 6, height =6, pointsize = 8)
 par(oma = c(0,1,0,0))
-plot(fit3)
+plot(fit5)
 quartz.save(
-    file = "paper/figures/SM_cusp_dynamic.png", width = 6, height =6, pointsize = 8,
+    file = "paper/figures/SM_cusp_wealth.png", width = 6, height =6, pointsize = 8,
     type = "png", dpi = 500)
 dev.off()
 
@@ -318,56 +318,66 @@ par(op)
 
 
 
-a <- broom::tidy(fit2) |> 
+a <- broom::tidy(fit4) |> 
     mutate(p_val = case_when(
         p.value < 0.05 ~ "P < 0.05",
         p.value > 0.1 ~ "P > 0.1", .default = "0.05 < P < 0.1"
-    ) |> as_factor()) |> 
-    mutate(labs = c("alpha: intercept", "alpha: mean wealth inequality","alpha: trend wealth inequality",
-                    "beta: intercept","beta: mean income inequality","beta: trend income inequality",
-                    "gamma: intercept","gamma: mean CO2 emissions") |> as_factor() |> fct_rev()) |> 
+    ) |> factor(levels = c("P > 0.1","0.05 < P < 0.1","P < 0.05")))  |> 
+    mutate(labs = c("alpha: intercept", "alpha: mean corruption", "alpha: trend corruption",
+                    "beta: intercept","beta: mean CO2 emissions","beta: mean gross national income",
+                    "gamma: intercept","gamma: mean share 1% income", "gamma: mean Gini income",
+                    "gamma: mean ratio pre-tax income") 
+           |> as_factor() |> fct_rev()) |> 
     ggplot(aes(estimate, labs)) +
     geom_point(aes(color = p_val), size = 2) +
     geom_errorbarh(aes(xmin = estimate - std.error, xmax = estimate + std.error, color = p_val),
                    linewidth = 0.25, width = 0.2) +
-    scale_color_brewer("Significance", palette = "Set1") +
+    scale_color_manual("Significance",values = c("lightblue","#8856a7" )) +
     geom_vline(xintercept = 0, color = "grey", linetype = 2, linewidth = 0.5) +
     labs(y = "term", tag = "A") +
     theme_light(base_size = 7) +
     theme(legend.position.inside = c(0.2,0.67), legend.position = "inside")
 
-b <- broom::tidy(fit3) |> 
+b <- broom::tidy(fit5) |> 
     mutate(p_val = case_when(
         p.value < 0.05 ~ "P < 0.05",
         p.value > 0.1 ~ "P > 0.1", .default = "0.05 < P < 0.1"
     ) |> factor(levels = c("P > 0.1","0.05 < P < 0.1","P < 0.05")))  |> 
-    mutate(labs = c("alpha: intercept", "alpha: corruption",
-                    "beta: intercept","beta: Gini on income","alpha: Share of 1% on income",
-                    "gamma: intercept","gamma: mean CO2 emissions") |> as_factor() |> fct_rev()) |> 
+    mutate(labs = c("alpha: intercept", "alpha: mean corruption", "alpha: trend corruption",
+                    "beta: intercept","beta: mean CO2 emissions","beta: mean gross national income",
+                    "gamma: intercept","gamma: mean share 1% wealth", "gamma: mean Gini wealth",
+                    "gamma: mean ratio pre-tax wealth") |> 
+               as_factor() |> fct_rev()) |> 
     ggplot(aes(estimate, labs)) +
     geom_point(aes(color = p_val), size = 2, show.legend = FALSE) +
     geom_errorbarh(aes(xmin = estimate - std.error, xmax = estimate + std.error, color = p_val),
-                   linewidth = 0.25, width = 0.2, show.legend = FALSE) +
-    scale_color_manual("P value", values = "#4DAF4A") +
+                   linewidth = 0.25, width = 0.2, show.legend = F) +
+    scale_color_manual("Significance",values = c("lightblue","#8856a7" )) +
     geom_vline(xintercept = 0, color = "grey", linetype = 2, linewidth = 0.5) +
     labs(y = "term", tag = "B") +
     theme_light(base_size = 7)
 b
-
-# par(omi = c(0,0,0,0), mai = c(0,0,0,0))
-# cusp3d(fit2, w = 0.02, theta = 160, phi = 35) 
-# quartz.save(
-#     file = "figures/cusp3d_dyn.png", type = "png", width = 2, height=2, dpi = 500
-# )
 # 
-# cusp3d(fit3, w = 0.02, theta = 160, phi = 35)
+# quartz(title = "cusp", width = 2, height =2, pointsize = 8)
+# par(omi = c(0,0,0,0), mai = c(0,0,0,0))
+# cusp3d(fit4, w = 0.02, theta = 160, phi = 35)
+# quartz.save(
+#     file = "figures/cusp3d_wealth.png", type = "png", width = 2, height=2, dpi = 500
+# )
+# dev.off()
+# 
+# par(op)
+# 
+# cusp3d(fit5, w = 0.02, B = 6, Y = 3, Yfloor = -10)
+# plot(fit5)
+
 
 c1 <- ggplot() +
     geom_blank() +
     theme_void(base_size = 7) +
     annotation_custom(
         grob = grid::rasterGrob(
-            image = png::readPNG("figures/cusp3d_static.png"), interpolate = TRUE),
+            image = png::readPNG("figures/cusp3d_income.png"), interpolate = TRUE),
         xmin = -Inf, xmax = Inf, ymin = -Inf, ymax = Inf
     )
 
@@ -376,7 +386,7 @@ c2 <- ggplot() +
     theme_void(base_size = 7) +
     annotation_custom(
         grob = grid::rasterGrob(
-            image = png::readPNG("figures/cusp3d_dyn.png"), interpolate = TRUE),
+            image = png::readPNG("figures/cusp3d_wealth.png"), interpolate = TRUE),
         xmin = -Inf, xmax = Inf, ymin = -Inf, ymax = Inf
     )
 
@@ -385,3 +395,31 @@ ggsave(
     path = "paper/figures/", width = 6, height = 4, dpi = 500, bg = "white"
 )
 
+## Dineke's suggestion:
+# remember for interpretation logLik, higher is better; AIC | BIC: lower is better
+# R^2 is misleading in when fitting cusp regressions, see JSS paper, Grasman et al 
+
+
+fit4 <- cusp(
+    y ~   mean_S_ineq + mean_G_ineq + mean_R_ineq, # mean_S_we + works 
+    alpha ~  mean_crpt + trend_crpt,
+    beta ~ mean_CO2 + mean_gni, # # GNI works well too
+    data = df_dat |> filter(!is.na(mean_crpt))
+)
+
+summary(fit4, logist = TRUE)
+plot(fit4)
+
+
+
+tic()
+fit5 <- cusp(
+    y ~   mean_S_we + mean_G_we + mean_R_we, # mean_S_we + works 
+    alpha ~  mean_crpt + trend_crpt,
+    beta ~ mean_CO2 + mean_gni, # # GNI works well too
+    data = df_dat |> filter(!is.na(mean_crpt))
+)
+toc()
+
+summary(fit5, logist = TRUE)
+plot(fit5)
