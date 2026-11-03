@@ -1,20 +1,20 @@
 ---
 title: "Inequality traps detected in sustainable development goals data"
-subtitle: "Short title: Inequality traps in sustainable development data"
 author: |
-    | \small Juan C. Rocha^1,2^, Maike Hamann^3^, Jiangxiao Qiu^4^, Tong Wu^5^, Tomas Chaigneau^3^, Emilie Lindkvist^1^,
-    | \small  Caroline Schill^1,2,6^, Alon Shepon^7,8^, Andrew R. Tilman^9^, Geraldine D. Verkleij^6^, Anne-Sophie Crépin^1,6^, and  Carl Folke^1,6^
-    | \footnotesize ^1^Stockholm Resilience Centre, Stockholm University
-    | \footnotesize ^2^Anthropocene Laboratory, Royal Swedish Academy of Sciences
-    | \footnotesize ^3^Environment and Sustainability Institute, University of Exeter
+    | \small Juan C. Rocha^1,2,§^, Maike Hamann^3^, Jiangxiao Qiu^4^, Tong Wu^5^, Tomas Chaigneau^3^, Emilie Lindkvist^1^,
+    | \small  Caroline Schill^1,2,6^, Alon Shepon^7,8^, Andrew R. Tilman^9^, Geraldine D. Verkleij^6^, Anne-Sophie Crépin^1,6,10^, and  Carl Folke^1,6^
+    | \footnotesize ^1^Stockholm Resilience Centre, Stockholm University, Sweden
+    | \footnotesize ^2^Anthropocene Laboratory, Royal Swedish Academy of Sciences, Sweden
+    | \footnotesize ^3^Environment and Sustainability Institute, University of Exeter, United Kingdom
     | \footnotesize ^4^School of Forest, Fisheries, and Geomatics Sciences, Fort Lauderdale Research and Education Center, 
-    | \footnotesize Institute of Food and Agricultural Sciences, University of Florida
-    | \footnotesize ^5^The Natural Capital Project and Institute for International Studies, Stanford University
-    | \footnotesize ^6^Beijer Institute of Ecological Economics, Royal Swedish Academy of Sciences
-    | \footnotesize ^7^The Steinhardt Museum of Natural History, Tel Aviv University, Tel Aviv
-    | \footnotesize ^8^The Department of Public Policy, Social Sciences Faculty, Tel Aviv University, Tel Aviv
+    | \footnotesize Institute of Food and Agricultural Sciences, University of Florida, USA
+    | \footnotesize ^5^The Natural Capital Project and Institute for International Studies, Stanford University, USA
+    | \footnotesize ^6^Beijer Institute of Ecological Economics, Royal Swedish Academy of Sciences, Sweden
+    | \footnotesize ^7^The Steinhardt Museum of Natural History, Tel Aviv University, Tel Aviv, Israel
+    | \footnotesize ^8^The Department of Public Policy, Social Sciences Faculty, Tel Aviv University, Tel Aviv, Israel
     | \footnotesize ^9^USDA Forest Service, Northern Research Station, St. Paul, MN, USA
-    | \small \texttt{\href{mailto:juan.rocha@su.se}{\nolinkurl{juan.rocha@su.se}}}
+    | \footnotesize ^10^Vienna University of Economics and Business (WU), Vienna, Austria
+    | \small § corresponding author: \texttt{\href{mailto:juan.rocha@su.se}{\nolinkurl{juan.rocha@su.se}}}
 output:
   pdf_document:
     dev: pdf
@@ -113,13 +113,13 @@ If there are nonlinear dynamics in inequality keeping countries trapped in a par
 Here we explore the possible existence of inequality traps and regimes by investigating synergies and trade-offs between inequality and biosphere-related sustainable development goals across nations.
 
 To that end, we analyzed data on SDGs from United Nations (UN) and World Bank (WB), data on inequality by the World Inequality Database, and data on corruption by the Quality of Government datasets [@holmberg2009].
-We first selected variables and countries for which there was enough data and apply ordination and clustering methods to distinguish countries with similar dynamics.
+We first selected variables and countries for which there was enough data and applied ordination and clustering methods to distinguish countries with similar dynamics.
 We applied statistical test looking for signatures of bimodal distributions, and fitted statistical models to test for signatures of nonlinear behavior (e.g. tipping points, bifurcations) in the data (see Materials and methods).
 
 # Results
 
 We find multimodal distributions on inequality and environmental data confirming that inequality regimes exist, and that some countries can be trapped on a high inequality regime.
-Exploring corruption as a potential mechanism maintaining the regimes, we find that nolinear statistical models that include the possibility of hysteresis fit the data better than linear counterparts, further providing support for the idea of potential regime shifts in inequality.
+Exploring corruption as a potential mechanism maintaining the regimes, we find that nonlinear statistical models that include the possibility of hysteresis fit the data better than linear counterparts, further providing support for the idea of potential regime shifts in inequality.
 We also observe some synergies and trade-offs between inequality and environmental goals.
 
 Despite the differences in coverage with respect to countries, time, and indicators tracked, the ordination in both SDGs data sets results in two clusters of countries (Fig \ref{fig:wb}, Fig \ref{fig:un}).
@@ -130,7 +130,7 @@ The first dimension on the ordination is best explained by variability in the in
 \begin{figure*}[ht]
 \centering
 \includegraphics[width = 7in, height = 4in]{fig_mfa_wb}
-\caption{\textbf{Multiple factor analysis with World Bank data} The first 10 principal components explain 94.8\% of the variation, the first two (A) explain 53\%. The 10 first components were used to cluster 151 countries resulting in two clusters (A). Only countries and SDG time series with low missing values (<30\%) were included. The correlation circle across explanatory variables is presented in (B) along their loadings on the first two components of the ordination. Variables in the legend are ordered and colored according to the SDGs used (e.g. orange for gender equality, blues for water and sanitation, reds for inequality, and greens for life on land).}
+\caption{\textbf{Multiple factor analysis with World Bank data} The first 10 principal components explain 94.8\% of the variation, the first two (A) explain 53\%. The 10 first components were used to cluster 151 countries resulting in two clusters (A). Only countries and SDG time series with few missing values (<30\%) were included. The correlation circle across explanatory variables is presented in (B) along their loadings on the first two components of the ordination. Variables in the legend are ordered and colored according to the SDGs used (e.g. reds are inequality, greens are life in land).}
 \label{fig:wb}
 \end{figure*}
 
@@ -144,7 +144,7 @@ The first dimension on the ordination is best explained by variability in the in
 \begin{figure*}[ht]
 \centering
 \includegraphics[width = 7in, height = 4.5in]{fig_UN_ordination}
-\caption{\textbf{Multiple factor analysis with United Nations data} The first 10 principal components used in the ordination explain 72\% of the variation, the first two (A) explain 29.9\%. The first 10 components were used to cluster 67 countries resulting in two clusters (A). Only countries and SDG time series with low missing values (<30\%) were included. The correlation circle across explanatory variables is presented in (B) along their loadings on the first two components of the ordination. Variables in the legend are ordered and coloured according to the SDGs used (e.g. reds are inequality, greens are life in land).}
+\caption{\textbf{Multiple factor analysis with United Nations data} The first 10 principal components used in the ordination explain 72\% of the variation, the first two (A) explain 29.9\%. The first 10 components were used to cluster 67 countries resulting in two clusters (A). Only countries and SDG time series with low missing values (<30\%) were included. The correlation circle across explanatory variables is presented in (B) along their loadings on the first two components of the ordination. Variables in the legend are ordered and coloured according to the SDGs used (e.g. orange for gender equality, blues for water and sanitation, reds for inequality, and greens for life on land).}
 \label{fig:un}
 \end{figure*}
 
@@ -163,14 +163,14 @@ We find evidence of multi-modal distributions in inequality and environmental va
 A Hartigan's Dip test for unimodality results on significant p-values for all variables except the Gini in wealth (ratio of income N = 9145 p \< 2.2e-16, ratio of wealth N = 5766 p = 0.020, share of 1% wealth N = 11871 p \< 2.2e-16, Gini of wealth N = 5852 p = 0.113, share of 1% income N = 19322 p \< 2.2e-16, Gini of income N = 9258 p = 9.023e-05).
 Significant p-values suggest that the distribution is not unimodal, at least bimodal.
 This finding supports the hypothesis of the existence of inequality regimes [@Wu_2024; @bourguignon2006] both in income and wealth, particularly when inequality is measured as the share of the top 1% (Fig \ref{fig:bim}).
-However, the lack of variability in environmental variables and smaller sample size in the UN data set prevent us from statistically deriving modes in the distribution or all our variables (Table \ref{tab:tbl1}).
+However, the lack of variability in environmental variables and smaller sample size in the UN data set prevent us from statistically deriving modes in the distribution for all our variables (Table \ref{tab:tbl1}).
 As a result, we only report bimodal distributions for cereal yields, carbon emissions, and energy intensity (WB data, Fig \ref{fig:bim}), and the red list index (UN data, Fig \ref{fig:SM_UNbim}).
 We also confirm that, as expected, these inequality regimes are related to the country typologies identified.
 
 \begin{figure*}[ht]
 \centering
 \includegraphics[width = 6.5in, height = 3.5in]{bimodal}
-\caption{\textbf{Inequality regimes} We find bimodal distributions for some dimensions of inequality against environmental factors in the WB dataset. Countries trajectories in A using the same cluster groups as in Fig \ref{fig:un}. Bimodal distributions are more common for the share of the top 1\% than other inequality variables (B). The y-axis has been rescaled to the range 0-1 to ease comparison. Supplementary figure \ref{fig:SM_UNbim} shows a similar plot for the UN data, however lack of variability in the environmental data prevents the identification of multiple modes in the distribution.}
+\caption{\textbf{Inequality regimes} We find bimodal distributions for some dimensions of inequality against environmental factors in the WB dataset. Countries trajectories over time are shown in A, colouring them according to the groups as in Fig \ref{fig:un}. Bimodal distributions are more common for the share of the top 1\% than other inequality variables (B). The y-axis has been rescaled to the range 0-1 to ease comparison. Supplementary figure \ref{fig:SM_UNbim} shows a similar plot for the UN data, however lack of variability in the environmental data prevents the identification of multiple modes in the distribution.}
 \label{fig:bim}
 \end{figure*}
 \begin{figure*}[ht] 
@@ -195,13 +195,13 @@ We fitted a model with our proxies of income inequality (Gini, share of 1%, and 
 These variables were chosen because they are related to potential mechanisms reinforcing inequality in previous studies [@kacou2022; @bourguignon2006; @chancel2020unsustainable].
 We find significant and strong separation of regimes, with the $\gamma$ weights significantly differing from zero for Gini and the ratio of the top 10 percentile over the bottom 50, but not for the share of the top 1%.
 Mean corruption was not significant, but its trend is, as well as $CO_2$ emissions and gross national income.
-(Fig \ref{fig:cusps}A, \ref{fig:SM_cusp1}, Table \ref{tab:static_reg}).
+(Fig \ref{fig:cusps}A, \ref{fig:SM_cusp1}, Table \ref{tab:cusp_reg}).
 
 Next, we fitted a similar model but with our proxies of wealth inequality as response variables instead, given that dynamics of inequality in income and wealth develop at different time scales.
 We find support for mean corruption as a predictor, no support for gross national income or $CO_2$ emissions, and the only inequality variable for which the $\gamma$ weights significantly differ from zero is the ratio of the 10 percentile over the bottom 50 on wealth (Fig \ref{fig:cusps}B, \ref{fig:SM_cusp2}, and table \ref{tab:cusp_reg}).
 These two results highlights that mechanisms responsible for inequality traps can be different depending on the type and scale of inequality.
 Despite these differences, several of the countries analyzed are actually in the region of the parameter space where regime shifts in inequality are feasible in both analyses (Fig \ref{fig:cusps}).
-For both cases, a cusp bifurcation is a better than a linear or a logistic fit to the data by having lower AICc and BIC, while maximizing the log-likelihood (see regression Table \ref{tab:cusp_reg}).
+For both cases, a cusp bifurcation is a better fit than a linear or a logistic fit to the data by having lower AICc and BIC, while maximizing the log-likelihood (see regression Table \ref{tab:cusp_reg}).
 
 \begin{figure*}[ht]
 \centering
@@ -258,8 +258,8 @@ Rising economic inequality is a defining challenge of $21^{st}$ century [@pikett
 We explored potential synergies and trade-offs between inequality- and biosphere-related Sustainable Development Goals.
 We confirm some of the synergies and trade-offs previously reported, but also show that data gaps, low data quality and low variability prevent countries from measuring progress towards the SDG agenda in a meaningful way.
 We discussed alternative datasets that could improve independent monitoring, and suggested further studies investigating whether the patterns reported here hold at subnational scales.
-We found support for the hypothesis of inequality traps, regimes and hysteresis.
-Preliminarily, we showed that corruption, measured as corruption perception index, can drive countries between regimes of inequality.
+We find support for the hypothesis of inequality traps, regimes and hysteresis.
+Preliminarily, we show that corruption, measured as corruption perception index, can drive countries between regimes of inequality.
 Further testing this theory would require higher resolution data closer to the scale at which mechanisms are hypothesized.
 
 # Materials and methods
@@ -307,7 +307,7 @@ We also used their estimates for net wealth inequality computed as the share of 
 We also used data from the quality of government dataset [@holmberg2009] to investigate the relationship between inequality indicators and the corruption perception index.
 
 *Variable selection:* We computed the proportion of missing values for all time series related to our initial selection of indicators (Figs \ref{fig:SM_WB_env}, \ref{fig:SM_WB_env2}, \ref{fig:SM_WB_select}, \ref{fig:SM_UNdata}, \ref{fig:SM_UNselect}, \ref{fig:SM_UNred}).
-We discarded indicators for which time series contained more than 30% of missing values, or less than 45 countries.
+We discarded indicators for which time series contained more than 30% of missing values, or fewer than 45 countries.
 Missing values were then imputed using a linear and cubic spline (both rendering the same result), leaving us with `r wb_dat |> pull(country_code) |> unique() |> length()` countries, `r wb_dat |> pull(year) |> unique() |> length()` years of data across 9 indicators for the WB dataset; and `r un_keys |> filter(series %in% unique(un_dat$series)) |>  pull(series) |> unique() |> length()` series capturing `r un_keys |> filter(series %in% unique(un_dat$series)) |>  pull(indicator) |> unique() |> length()` indicators, `r un_dat |> pull(geoAreaName) |> unique() |> length()` countries over `r un_dat |> pull(timePeriodStart) |> unique() |> length()` years for the UN dataset.
 The UN dataset was further reduced to 67 countries because the WID does not report inequality time series for Fiji.
 Thus, we included the WB dataset to compensate for the large proportion of missing values from the UN data set.
@@ -315,41 +315,6 @@ For inequality, however, we complemented the data with the annual time series of
 We explored using poverty and inequality (e.g. PovCal) data from the WB but the data suffered of similar temporal data gaps as UN.
 Table \ref{tab:tbl1} summarizes our selected variables, their units and available ranges.
 A list of the countries analysed is presented in the supplementary information (SI).
-
-*Ordination:* We used multiple factor analysis (MFA) to reduce the dimensionality of the data and explore similarities and differences across countries.
-MFA enables us to specify the nested structure of our data and account for repeated observations of our variables over time.
-All variables were normalized, centered to zero mean and unit variance; highly skewed distributions were log-transformed.
-We also performed a clustering sensitivity analysis following the protocols by Charrad [@charrad2014] and Brock [@brock2008].
-We tested over 10 clustering techniques and compared them across \>30 performance metrics to infer from the data what are the optimal numbers of clusters to fit and preferable algorithms.
-In the economics literature, these clusters are often called clubs [@bourguignon2006; @kacou2022].
-The ordination step helped us identify variables with enough variability and carrying information on inequality or the environment to explore the next steps of the analysis.
-The robustness checks on clustering were necessary to avoid spurious results (e.g. higher number of clusters, over fitting) due to the choice of clustering technique or idiosyncrasies of the data (e.g. raw distributions).
-The use of dimensionality reduction methods and clustering techniques helped us to explore potential regimes and if they are changing over time.
-
-*Analysis of trajectories:* With the results from the MFA we identified candidate variables where synergies or trade-offs are observed.
-A trade-off in the reduced dimensional space occurs when improving on the direction of one indicator (e.g. reducing inequality) implies a decline in the direction of another indicator over time.
-Similarly, a synergy would be when progress in one indicator coincides with improvement in another indicator.
-We studied country trajectories for some of these candidate variables where we found enough variability to test for bimodality.
-Density plots helped us identify candidate variables and expose the main regimes.
-In the next step, we evaluated the modality of the distributions of the inequality and biosphere-based measures.
-
-*Multimodality tests:* If the hypothesis of inequality traps or inequality regimes is true, we would expect to find multimodal distributions.
-We applied the Hartigan’s Dip Test for unimodality.
-If the test is positive at 1% significance level we rejected the hypothesis of unimodality.
-We also expect the modes of these distributions to be correlated to the country groups identified via clustering analysis (clubs) to discard the possibility that several modes exist independent (or only partially overlapping) with the identified country clusters.
-If the groups are well mixed between modes, then the multimodal pattern could be the consequence of some other process (e.g. seasonality) and not regime shift dynamics.
-Last, we expect most countries' trajectories to remain within a single regime in the parameter space, and perhaps a few of them to move between regimes.
-
-*Bifurcation models*: We further explore the association between inequality regimes and corruption as a driver through regression models.
-We fitted a cusp bifurcation model [@grasman2009] to the WB data, given it is the data set with largest coverage in time and number of countries.
-The canonical equation of the cusp bifurcation is $\alpha + \beta y - y^3 = 0$.
-In our models $\alpha$ and $\beta$ are bifurcation parameters (or a linear combination of them).
-The estimation method also fits a vector of weights $\gamma$ which are the first order coefficients of a polynomial approximation of a smooth transformation.
-Our models aggregate the dynamics over time by aggregating all variables to mean or trends.
-We compared the effects of two different time scales of inequality (income, wealth).
-All models are compared against linear and logistic models, the best models were selected by maximising the log-likelihood and minimizing AICc, and BIC (see regression tables in SM).
-For a cusp regression to be a valid fit, it needs to outperform the linear alternatives, it is expected that at least one of the $\gamma$ coefficients is significantly different from zero (although not necessary for the intercept), and at least one of the $\alpha$ or $\beta$ terms need to be statistical significant [@grasman2009].
-Another common practice is to check that at least 10% of the observations lie within the bifurcation regions on the bifurcation plots [@grasman2009], provided in SM \ref{fig:SM_cusp1} and \ref{fig:SM_cusp2} .
 
 ```{r table1, include=TRUE, echo=FALSE, warning=FALSE, message=FALSE, opts.label="tbl1"}
 
@@ -418,6 +383,44 @@ knitr::kable(
   column_spec(4, width = "8cm") 
 ```
 
+*Ordination:* We used multiple factor analysis (MFA) to reduce the dimensionality of the data and explore similarities and differences across countries.
+MFA enables us to specify the nested structure of our data and account for repeated observations of our variables over time.
+All variables were normalized, centered to zero mean and unit variance; highly skewed distributions were log-transformed.
+We also performed a clustering sensitivity analysis following the protocols by Charrad [@charrad2014] and Brock [@brock2008].
+We tested over 10 clustering techniques and compared them across \>30 performance metrics to infer from the data what are the optimal numbers of clusters to fit and preferable algorithms.
+In the economics literature, these clusters are often called clubs [@bourguignon2006; @kacou2022].
+The ordination step helped us identify variables with enough variability and carrying information on inequality or the environment to explore the next steps of the analysis.
+The robustness checks on clustering were necessary to avoid spurious results (e.g. higher number of clusters, over fitting) due to the choice of clustering technique or idiosyncrasies of the data (e.g. raw distributions).
+The use of dimensionality reduction methods and clustering techniques helped us to explore potential regimes and if they are changing over time.
+
+*Analysis of trajectories:* With the results from the MFA we identified candidate variables where synergies or trade-offs are observed.
+A trade-off in the reduced dimensional space occurs when improving on the direction of one indicator (e.g. reducing inequality) implies a decline in the direction of another indicator over time.
+Similarly, a synergy would be when progress in one indicator coincides with improvement in another indicator.
+We studied country trajectories for some of these candidate variables where we found enough variability to test for bimodality.
+Density plots helped us identify candidate variables and expose the main regimes.
+In the next step, we evaluated the modality of the distributions of the inequality and biosphere-based measures.
+
+*Multimodality tests:* If the hypothesis of inequality traps or inequality regimes is true, we would expect to find multimodal distributions.
+We applied the Hartigan’s Dip Test for unimodality.
+If the test is positive at 1% significance level we rejected the hypothesis of unimodality.
+We also expect the modes of these distributions to be correlated to the country groups identified via clustering analysis (clubs) to discard the possibility that several modes exist independent (or only partially overlapping) with the identified country clusters.
+If the groups are well mixed between modes, then the multimodal pattern could be the consequence of some other process (e.g. seasonality) and not regime shift dynamics.
+Last, we expect most countries' trajectories to remain within a single regime in the parameter space, and perhaps a few of them to move between regimes.
+
+*Bifurcation models*: We further explore the association between inequality regimes and corruption as a driver through regression models.
+We fitted a cusp bifurcation model [@grasman2009] to the WB data, given it is the data set with largest coverage in time and number of countries.
+The canonical equation of the cusp bifurcation is $\alpha + \beta y - y^3 = 0$.
+In our models $\alpha$ and $\beta$ are bifurcation parameters (or a linear combination of them).
+The estimation method also fits a vector of weights $\gamma$ which are the first order coefficients of a polynomial approximation of a smooth transformation.
+Our models aggregate the dynamics over time by aggregating all variables to mean or trends.
+We compared the effects of two different time scales of inequality (income, wealth).
+All models are compared against linear and logistic models, the best models were selected by maximising the log-likelihood and minimizing AICc, and BIC (see regression tables in SM).
+For a cusp regression to be a valid fit, it needs to outperform the linear alternatives, it is expected that at least one of the $\gamma$ coefficients is significantly different from zero (although not necessary for the intercept), and at least one of the $\alpha$ or $\beta$ terms need to be statistical significant [@grasman2009].
+Another common practice is to check that at least 10% of the observations lie within the bifurcation regions on the bifurcation plots [@grasman2009], provided in SM \ref{fig:SM_cusp1} and \ref{fig:SM_cusp2} .
+
+```         
+```
+
 ## Acknowledgements
 
 This work was supported by Formas grant 2020-00454.
@@ -427,6 +430,18 @@ Our work benefited from feedback from Kevin Berry, Tracie Curry, Robert Heilmayr
 The findings and conclusions in this publication are those of the authors and should not be construed to represent any official USDA or U.S.
 Government determination or policy.
 The authors declare no conflict of interest.
+
+**Author contributions**: All authors contributed to conceptualization and review and editing the final draft.
+JR wrote the original draft, developed software, methodology and visualizations; CF, ASC, CS, EL and JR participated in funding acquisition and project management.
+
+**Competing interest**: The authors declare no competing interests.
+
+**Ethics, Consent to Participate, and Consent to Publish declarations**: not applicable
+
+## Data availability
+
+All data used in this manuscript is publicly available from the World Bank (<https://data.worldbank.org>), United Nations (API access at: <https://unstats.un.org/SDGAPI/swagger/>), the Quality of Government data base (<https://www.gu.se/en/quality-government/qog-data>), or the World Inequality Database (<https://wid.world>).
+We have not produced new data in this study.
 
 # References {.unnumbered}
 
@@ -515,13 +530,13 @@ List of countries analyzed in the WB dataset after removing time series with too
 \begin{figure*}[ht]
 \centering
 \includegraphics[width = 6in, height = 6in]{SM_cusp_income}
-\caption{\textbf{Cusp bifurcation on aggregated data over time} Scatter plot on the parameter space of the bifurcation parameters, colors from blue to green represent the different levels of mean carbon emissions per country. Several countries are in the region of the parameter space where alternative regimes exist (gray shaded area). In this regression the $\alpha$ dimension captures mean and trend of wealth inequality, while the $\beta$ dimension captures mean and trend of income inequality; both measured as the share of the top $1\%$. A residual plot (bottom) shows that indeed there seems to be two modes (regimes) with low probability that points lie in the centre of the distribution (the repeller). Density plots for the different quadrants of the manifold (right) shows that bimodal distributions are found on the upper quadrant of the manifold. Other metrics of goodness-of-fit are shown in table \ref{tab:cusp_reg}}
+\caption{\textbf{Cusp bifurcation on income inequality} Scatter plot on the parameter space of the bifurcation parameters, colors from blue to green represent the different levels of combined income inequality per country (Gini, ratio 10/50, and share of the top 1\%). Several countries are in the region of the parameter space where alternative regimes exist (gray shaded area). In this regression the $\alpha$ dimension captures mean and trend of corruption, while the $\beta$ dimension captures mean carbon emissions and gross national income. Both emissions and GNI are proxies of consumption, and together with corruption, they are hypothesized mechanisms for inequality traps. A residual plot (bottom) shows that indeed there seems to be two modes (regimes) with low probability that points lie in the centre of the distribution (the repeller). Density plots for the different quadrants of the manifold (right) shows skewed distributions are found on the upper quadrant of the manifold. Other metrics of goodness-of-fit are shown in table \ref{tab:cusp_reg}}
 \label{fig:SM_cusp1}
 \end{figure*}
 \begin{figure*}[ht]
 \centering
 \includegraphics[width = 6in, height = 6in]{SM_cusp_wealth}
-\caption{\textbf{Cusp bifurcation on full time series} Scatter plot on the parameter space of the bifurcation parameters, colors from blue to green represent the different levels of carbon emissions. In this regression, the $\alpha$ dimension corruption, while the $\beta$ dimension captures income inequality measured as Gini and share of the $1\%$. A residual plot (bottom) shows that indeed there seems to be two modes (regimes) with low probability that points lie in the centre of the distribution (the repeller). Density plots for the different quadrants of the manifold (right) shows that bimodal distributions are found on the upper quadrant of the manifold. Other metrics of goodness-of-fit are shown in table \ref{tab:cusp_reg}}
+\caption{\textbf{Cusp bifurcation on wealth inequality} Scatter plot on the parameter space of the bifurcation parameters, colors from blue to green represent the different levels of combined wealth inequality per country (Gini, ratio 10/50, and share of the top 1\%). Several countries are in the region of the parameter space where alternative regimes exist (gray shaded area). In this regression the $\alpha$ dimension captures mean and trend of corruption, while the $\beta$ dimension captures mean carbon emissions and gross national income. Both emissions and GNI are proxies of consumption, and together with corruption, they are hypothesized mechanisms for inequality traps. A residual plot (bottom) shows that indeed there seems to be two modes (regimes) with low probability that points lie in the centre of the distribution (the repeller). Density plots for the different quadrants of the manifold (right) shows skewed distributions are found on the upper quadrant of the manifold. Other metrics of goodness-of-fit are shown in table \ref{tab:cusp_reg}}
 \label{fig:SM_cusp2}
 \end{figure*}
 
